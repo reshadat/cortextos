@@ -426,6 +426,50 @@ export function formatQuestionMessage(
 }
 
 /**
+ * Load Slack credentials for hook scripts.
+ * Reads SLACK_BOT_TOKEN and SLACK_CHANNEL_ID from agent .env.
+ */
+export function loadSlackEnv(): {
+  botToken?: string;
+  channelId?: string;
+  allowedUserId?: string;
+  agentName: string;
+  stateDir: string;
+  ctxRoot: string;
+} {
+  const agentName = process.env.CTX_AGENT_NAME || require('path').basename(process.cwd());
+  const ctxRoot = process.env.CTX_ROOT || join(homedir(), '.officeos', 'default');
+  const stateDir = join(ctxRoot, 'state', agentName);
+
+  const envPaths = [
+    process.env.CTX_AGENT_DIR ? join(process.env.CTX_AGENT_DIR, '.env') : null,
+    join(process.cwd(), '.env'),
+  ].filter(Boolean) as string[];
+
+  for (const envPath of envPaths) {
+    if (existsSync(envPath)) {
+      const content = readFileSync(envPath, 'utf-8');
+      const botToken = content.match(/^SLACK_BOT_TOKEN=(.+)$/m)?.[1]?.trim();
+      const channelId = content.match(/^SLACK_CHANNEL_ID=(.+)$/m)?.[1]?.trim();
+      const allowedUserId = content.match(/^SLACK_USER_ID=(.+)$/m)?.[1]?.trim();
+      if (botToken || channelId) {
+        return { botToken, channelId, allowedUserId, agentName, stateDir, ctxRoot };
+      }
+      break;
+    }
+  }
+
+  return {
+    botToken: process.env.SLACK_BOT_TOKEN,
+    channelId: process.env.SLACK_CHANNEL_ID,
+    allowedUserId: process.env.SLACK_USER_ID,
+    agentName,
+    stateDir,
+    ctxRoot,
+  };
+}
+
+/**
  * Cleanup a response file, ignoring errors.
  */
 export function cleanupResponseFile(filePath: string): void {

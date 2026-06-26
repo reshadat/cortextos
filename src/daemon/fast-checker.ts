@@ -38,6 +38,9 @@ export class FastChecker {
   // External Telegram handler (set by daemon)
   private telegramMessages: Array<{ formatted: string; ackIds: string[] }> = [];
 
+  // External Slack handler (set by SlackControlPlane via queueSlackMessage)
+  private slackMessages: Array<{ formatted: string }> = [];
+
   // Persistent dedup: message hashes to prevent duplicate delivery
   private seenHashes: Set<string> = new Set();
   private dedupFilePath: string = '';
@@ -163,6 +166,14 @@ export class FastChecker {
   }
 
   /**
+   * Queue a formatted Slack message for injection.
+   * Called by SlackControlPlane when a message arrives via Socket Mode.
+   */
+  queueSlackMessage(formatted: string): void {
+    this.slackMessages.push({ formatted });
+  }
+
+  /**
    * Single poll cycle: check inbox + queued Telegram messages.
    */
   private async pollCycle(): Promise<void> {
@@ -175,6 +186,13 @@ export class FastChecker {
       const msg = this.telegramMessages.shift()!;
       messageBlock += msg.formatted;
       hasTelegramMessage = true;
+    }
+
+    // Process queued Slack messages
+    while (this.slackMessages.length > 0) {
+      const msg = this.slackMessages.shift()!;
+      messageBlock += msg.formatted;
+      hasTelegramMessage = true; // treat same as Telegram for typing indicator logic
     }
 
     // Check agent inbox
@@ -279,6 +297,26 @@ Reply using: cortextos bus send-message ${safeFrom} normal '<your reply>' ${msg.
     return `=== TELEGRAM from [USER: ${sanitizeForPtyInjection(from)}] (chat_id:${chatId}) ===
 ${replyCx}${historyCx}${body}
 ${lastSentCtx}Reply using: cortextos bus send-telegram ${chatId} '<your reply>'
+
+`;
+  }
+
+  /**
+   * Format a Slack text message for injection.
+   * Mirrors formatTelegramTextMessage, uses SLACK header and officeos bus send-slack.
+   */
+  static formatSlackMessage(
+    from: string,
+    channelId: string,
+    text: string,
+  ): string {
+    const isSlashCommand = /^\/[a-zA-Z]/.test(stripControlChars(text).trim());
+    const body = isSlashCommand
+      ? sanitizeForPtyInjection(text).trim()
+      : wrapFenceSafe(text);
+    return `=== SLACK from [USER: ${sanitizeForPtyInjection(from)}] (channel:${channelId}) ===
+${body}
+Reply using: officeos bus send-slack ${channelId} '<your reply>'
 
 `;
   }

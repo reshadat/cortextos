@@ -16,6 +16,7 @@ import { collectTelegramCommands, registerTelegramCommands } from '../bus/metric
 import { stripControlChars } from '../utils/validate.js';
 import { processMediaMessage } from '../telegram/media.js';
 import { stripBom } from '../utils/strip-bom.js';
+import { SlackControlPlane } from '../slack/control-plane.js';
 
 type LogFn = (msg: string) => void;
 
@@ -24,6 +25,7 @@ type LogFn = (msg: string) => void;
  */
 export class AgentManager {
   private agents: Map<string, { process: AgentProcess; checker: FastChecker; poller?: TelegramPoller; activityPoller?: TelegramPoller; telegramRejectCount?: number; telegramLastRejectAlertAt?: number }> = new Map();
+  private slackCP: SlackControlPlane;
   private workers: Map<string, WorkerProcess> = new Map();
   /** Daemon-level cron scheduler registry: one CronScheduler per enabled agent. */
   private cronSchedulers: Map<string, CronScheduler> = new Map();
@@ -49,6 +51,7 @@ export class AgentManager {
     this.ctxRoot = ctxRoot;
     this.frameworkRoot = frameworkRoot;
     this.org = org;
+    this.slackCP = new SlackControlPlane(frameworkRoot);
     this.daemonJustCrashed = this.detectDaemonCrashMarkers();
     if (this.daemonJustCrashed) {
       console.log('[agent-manager] Detected .daemon-crashed marker(s) — previous daemon exited abnormally. Will quiet BUG-011 alarm for this startup cycle.');
@@ -131,6 +134,11 @@ export class AgentManager {
       const entry = instanceEnabled[name];
       if (entry && entry.enabled === false) {
         console.log(`[agent-manager] Skipping disabled agent: ${name} (enabled-agents.json)`);
+        continue;
+      }
+      // officeOs: auto_start: false means on-demand only — started by Python watcher via IPC
+      if (config.auto_start === false) {
+        console.log(`[agent-manager] Skipping auto-start: ${name} (auto_start: false — on-demand via Slack)`);
         continue;
       }
       // BUG-043 fix: pass the per-agent org so startAgent can use it instead
@@ -421,6 +429,11 @@ export class AgentManager {
     // the agent PTY via injectAgent().  This is the Phase 2 daemon-managed
     // external cron system — agents no longer need to call CronCreate on boot.
     this.startAgentCronScheduler(name);
+
+    // Wire Slack control plane if agent has Slack credentials
+    this.slackCP.init(name, agentDir, checker, config, log).catch((err) => {
+      log(`Slack control plane init error: ${err.message || err}`);
+    });
 
     // Start fast checker in background
     checker.start().catch(err => {
@@ -848,6 +861,7 @@ export class AgentManager {
     if (entry.poller) entry.poller.stop();
     if (entry.activityPoller) entry.activityPoller.stop();
     entry.checker.stop();
+    this.slackCP.cleanup(name).catch(() => {}); // non-blocking, best-effort
     await entry.process.stop();
     this.agents.delete(name);
 

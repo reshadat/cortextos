@@ -209,6 +209,19 @@ export interface AgentConfig {
    * poller will be skipped regardless.
    */
   telegram_polling?: boolean;
+  /**
+   * Whether this agent runs the Slack Socket Mode listener. Defaults to true
+   * when absent. Set to false on worker agents that should not own a Slack
+   * connection — only the designated orchestrator should listen for Slack messages.
+   */
+  slack_polling?: boolean;
+  /**
+   * When false, discoverAndStart() skips launching this agent automatically.
+   * The agent starts only when the Python watcher sends a start-agent IPC command
+   * upon receiving a Slack message. Use on the orchestrator to keep it idle until
+   * actually needed (on-demand orchestrator pattern).
+   */
+  auto_start?: boolean;
 }
 
 export interface CronEntry {
@@ -461,6 +474,19 @@ export interface OrgContext {
    *  save-output. The instruction is injected into the boot prompt
    *  dynamically — no agent markdown files are modified. */
   require_deliverables?: boolean;
+}
+
+// Slack Types
+
+export interface SlackMessageEvent {
+  type: 'message';
+  user: string;
+  text: string;
+  channel: string;
+  channel_type: string;
+  ts: string;
+  thread_ts?: string;
+  bot_id?: string;
 }
 
 // Telegram Types
