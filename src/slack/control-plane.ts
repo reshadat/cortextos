@@ -26,6 +26,33 @@ interface AgentEntry {
 const ALLOW_RE = /^allow$/i;
 const DENY_RE  = /^deny$/i;
 
+// ── Per-user sliding-window rate limiter ─────────────────────────────────────
+// Configurable via SLACK_READONLY_RATE_LIMIT=<count>/<seconds> (e.g. "5/60").
+// Applies to READONLY users only. Owner is never rate-limited.
+class RateLimiter {
+  private windows = new Map<string, number[]>(); // userId → timestamps[]
+  private maxCount: number;
+  private windowMs: number;
+
+  constructor(spec: string) {
+    const [c, s] = spec.split('/');
+    this.maxCount  = Math.max(1, parseInt(c, 10) || 5);
+    this.windowMs  = Math.max(1000, (parseInt(s, 10) || 60) * 1000);
+  }
+
+  // Returns true if the message is allowed, false if rate-limited.
+  check(userId: string): boolean {
+    const now  = Date.now();
+    const hits  = (this.windows.get(userId) ?? []).filter((t) => now - t < this.windowMs);
+    if (hits.length >= this.maxCount) return false;
+    hits.push(now);
+    this.windows.set(userId, hits);
+    return true;
+  }
+
+  summary(): string { return `${this.maxCount}/${this.windowMs / 1000}s`; }
+}
+
 // ── Approval file handler ────────────────────────────────────────────────────
 function writeApprovalResponse(stateDir: string, decision: 'allow' | 'deny', log: LogFn): void {
   let latest: { path: string; mtime: number; prefix: string } | null = null;
@@ -131,6 +158,9 @@ export class SlackControlPlane {
       get('SLACK_ALLOWED_DOMAINS').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),
     );
 
+    // Rate limit for READONLY users. Default: 10 messages per 60s. Owner exempt.
+    const rateLimiter = new RateLimiter(get('SLACK_READONLY_RATE_LIMIT') || '10/60');
+
     if (!botToken || !appToken) return;
 
     if (!ownerId) {
@@ -177,7 +207,13 @@ export class SlackControlPlane {
 
       const text = (event.text || '').trim();
 
-      // Gate 4: approval routing — OWNER only
+      // Gate 4: rate limit — READONLY users only
+      if (isReadonly && !rateLimiter.check(userId)) {
+        log(`Slack: rate-limited ${userId} (readonly) — exceeded ${rateLimiter.summary()}`);
+        return;
+      }
+
+      // Gate 5: approval routing — OWNER only
       if (isOwner) {
         if (ALLOW_RE.test(text)) { writeApprovalResponse(stateDir, 'allow', log); return; }
         if (DENY_RE.test(text))  { writeApprovalResponse(stateDir, 'deny',  log); return; }
@@ -226,7 +262,7 @@ export class SlackControlPlane {
 
     const summary = [
       `owner: ${ownerId}`,
-      readonlyIds.size > 0 ? `readonly: [${[...readonlyIds].join(', ')}]` : null,
+      readonlyIds.size > 0 ? `readonly: [${[...readonlyIds].join(', ')}] rate:${rateLimiter.summary()}` : null,
       allowedChannels.size > 0 ? `channels: [${[...allowedChannels].join(', ')}]` : 'DM-only',
       allowedDomains.size > 0 ? `domains: [${[...allowedDomains].join(', ')}]` : null,
     ].filter(Boolean).join(', ');
