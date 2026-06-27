@@ -10,7 +10,8 @@
  * specific (the approval files are written by the channel-neutral hooks).
  */
 import { join } from 'path';
-import { readFileSync, writeFileSync, readdirSync, statSync, unlinkSync } from 'fs';
+import { readFileSync, readdirSync, statSync, unlinkSync, renameSync } from 'fs';
+import { atomicWriteSync } from '../utils/atomic.js';
 import type { InboundHandlers } from '../channels/adapter.js';
 
 type LogFn = (msg: string) => void;
@@ -70,10 +71,21 @@ export function writeApprovalResponse(
   }
 
   try {
+    // Atomic claim: rename the pending file before writing the decision. Two
+    // concurrent approve/deny (e.g. Slack `allow` + a dashboard click) race on
+    // the rename — only the winner resolves; the loser's rename throws and it
+    // backs off, so the decision can't be double-written or contradicted.
+    const claimPath = `${chosen.path}.claiming`;
+    try {
+      renameSync(chosen.path, claimPath);
+    } catch {
+      log(`Channel: approval ${chosen.uniqueId} already claimed by another resolver — ignoring`);
+      return;
+    }
     const responseFile = join(stateDir, `${chosen.prefix}-${chosen.uniqueId}.json`);
-    writeFileSync(responseFile, JSON.stringify({ decision, ts: Date.now() }), 'utf-8');
+    atomicWriteSync(responseFile, JSON.stringify({ decision, ts: Date.now() }));
     log(`Channel: approval written: ${decision} → ${chosen.prefix}-${chosen.uniqueId}.json`);
-    try { unlinkSync(chosen.path); } catch { /* already gone */ }
+    try { unlinkSync(claimPath); } catch { /* best-effort */ }
   } catch (err: any) {
     log(`Channel: approval write error: ${err.message}`);
   }

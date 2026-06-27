@@ -84,6 +84,12 @@ export function nextFireFromCron(expr: string, fromMs: number): number {
 
   let [minuteStr, hourStr, domStr, monthStr, dowStr] = parts;
 
+  // Vixie cron day semantics: when BOTH day-of-month and day-of-week are
+  // restricted (neither is '*'), a day matches if EITHER matches (OR). When one
+  // is '*', they combine with AND (the '*' always matches). Capture before expand.
+  const domRestricted = domStr.trim() !== '*';
+  const dowRestricted = dowStr.trim() !== '*';
+
   let minutes: number[], hours: number[], doms: number[], months: number[], dows: number[];
   try {
     minutes = expandField(minuteStr, 0, 59);
@@ -110,10 +116,13 @@ export function nextFireFromCron(expr: string, fromMs: number): number {
     const mo = d.getMonth() + 1; // 1-12
     const dw = d.getDay();       // 0-6
 
+    const domMatch = doms.includes(dy);
+    const dowMatch = dows.includes(dw);
+    const dayMatch = (domRestricted && dowRestricted) ? (domMatch || dowMatch) : (domMatch && dowMatch);
+
     if (
       months.includes(mo) &&
-      doms.includes(dy) &&
-      dows.includes(dw) &&
+      dayMatch &&
       hours.includes(h) &&
       minutes.includes(m)
     ) {

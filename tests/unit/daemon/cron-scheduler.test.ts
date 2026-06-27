@@ -105,6 +105,26 @@ describe('nextFireFromCron', () => {
     expect(loc.date).toBe(new Date(fromMs).getDate());
   });
 
+  it('uses Vixie OR semantics when both day-of-month and day-of-week are restricted', () => {
+    // Jan 13 2025 is a MONDAY (dow 1), not Friday (dow 5). At 11:00 the same day,
+    // `0 12 13 * 5` must fire at 12:00 because the 13th matches DOM (OR) — under
+    // the old AND semantics it would skip the day entirely (13th AND Friday).
+    const fromMs = new Date(2025, 0, 13, 11, 0, 0, 0).getTime();
+    const next = nextFireFromCron('0 12 13 * 5', fromMs);
+    expect(next).not.toBeNaN();
+    const loc = localOf(next);
+    expect(loc.date).toBe(13);
+    expect(loc.hours).toBe(12);
+    expect(loc.minutes).toBe(0);
+  });
+
+  it('combines with AND when one day field is * (the * always matches)', () => {
+    // `0 12 13 * *` (dow=*) fires only on the 13th — never on a non-13th weekday.
+    const fromMs = new Date(2025, 0, 6, 11, 0, 0, 0).getTime(); // Jan 6 (Monday), not the 13th
+    const loc = localOf(nextFireFromCron('0 12 13 * *', fromMs));
+    expect(loc.date).toBe(13);
+  });
+
   it('wraps to next day when local hour 13 has already passed today', () => {
     // Construct a "from" time in local hour 14 today.
     const ref = new Date();

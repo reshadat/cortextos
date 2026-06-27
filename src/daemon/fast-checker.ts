@@ -1185,6 +1185,14 @@ Reply using: cortextos bus send-telegram ${chatId} '<your reply>'
     const hash = this.hashMessage(text);
     if (this.seenHashes.has(hash)) return true;
     this.seenHashes.add(hash);
+    // Bound the in-memory Set so a long-lived agent doesn't leak unboundedly and
+    // doesn't dedup against its entire process lifetime (the persisted file is
+    // already capped at 1000). Insertion-ordered → evict the oldest.
+    if (this.seenHashes.size > 2000) {
+      const evict = this.seenHashes.size - 1000;
+      let i = 0;
+      for (const h of this.seenHashes) { if (i++ >= evict) break; this.seenHashes.delete(h); }
+    }
     this.saveDedupHashes();
     return false;
   }
