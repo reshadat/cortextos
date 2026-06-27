@@ -28,6 +28,7 @@ import { logOutboundSlackMessage, cacheLastSentSlack } from '../slack/logging.js
 import { resolveAdapter } from '../channels/registry.js';
 import { activeConversations, getTarget } from '../channels/reply-targets.js';
 import { resolveRequestId } from '../channels/current-request.js';
+import { sendToReplyTarget } from '../channels/send.js';
 import { detectChannel, type EnvMap } from '../channels/channel-config.js';
 import { stripBom } from '../utils/strip-bom.js';
 import type { Priority, Task, TaskStatus, EventCategory, EventSeverity, ApprovalCategory, ApprovalStatus, OrgContext, CronDefinition } from '../types/index.js';
@@ -1204,6 +1205,21 @@ busCommand
       console.error(`react failed: ${err.message || err}`);
       process.exit(1);
     }
+  });
+
+// Adapter-agnostic proactive notify: post to the agent's owner channel via its
+// own adapter (used for boot "back online", alerts) — no channel named.
+busCommand
+  .command('notify')
+  .description("Proactively message the owner on the agent's channel")
+  .argument('<message>', 'Message text')
+  .action(async (message: string) => {
+    message = message.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+    const env = resolveEnv();
+    if (!env.agentName || !env.ctxRoot || !env.agentDir) { console.error('notify: no agent context.'); process.exit(1); }
+    const stateDir = join(env.ctxRoot, 'state', env.agentName);
+    const res = await sendToReplyTarget(env.agentDir, stateDir, message);
+    console.log(res ? `Notified owner${res.messageId ? ` (${res.messageId})` : ''}` : 'notify: no owner channel configured for this agent.');
   });
 
 busCommand
