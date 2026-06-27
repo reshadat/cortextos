@@ -193,21 +193,21 @@ describe('channel message loop', () => {
     expect(got[0].origin_channel).toBe('C_A');
   });
 
-  // ── SERIALIZATION: two humans never share one model turn ────────────────────
-  const slackFmt = (ch: string, txt: string) =>
-    `=== SLACK from [USER: U] [OWNER] (channel:${ch}) [ts:1] [thread:1] [req:r] ===\n${txt}\nReply: x\n\n`;
+  // ── SERIALIZATION: one request per turn (two replies never share a thread) ──
+  const slackFmt = (ch: string, txt: string, req = 'r') =>
+    `=== SLACK from [USER: U] [OWNER] (channel:${ch}) [ts:1] [thread:1] [req:${req}] ===\n${txt}\nReply: x\n\n`;
 
-  it('serialization: two channels inject ONE conversation per turn (no merge)', async () => {
+  it('serialization: distinct requests inject ONE per turn (no merge)', async () => {
     const agent = mockAgent();
     const checker = new FastChecker(agent, makePaths(ctxRoot, 'orch'), join(ctxRoot, 'fw'));
-    checker.queueSlackMessage(slackFmt('C_A', 'from Alice'));
-    checker.queueSlackMessage(slackFmt('C_B', 'from Bob'));
+    checker.queueSlackMessage(slackFmt('C_A', 'from Alice', 'rA'));
+    checker.queueSlackMessage(slackFmt('C_B', 'from Bob', 'rB'));
 
     await (checker as any).pollCycle();
     expect(agent.injectMessage).toHaveBeenCalledTimes(1);
     const turn1 = agent.injectMessage.mock.calls[0][0];
     expect(turn1).toContain('from Alice');
-    expect(turn1).not.toContain('from Bob'); // Bob is NOT in Alice's turn
+    expect(turn1).not.toContain('from Bob'); // Bob's request is NOT in Alice's turn
 
     await (checker as any).pollCycle();
     expect(agent.injectMessage.mock.calls[1][0]).toContain('from Bob');

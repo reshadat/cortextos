@@ -204,6 +204,34 @@ export function ackInbox(paths: BusPaths, messageId: string): void {
 }
 
 /**
+ * Move specific inflight messages back to the inbox so they are re-read on the
+ * next poll cycle (instead of waiting for the 5-min stale recovery). Used by the
+ * daemon's per-request serialization: checkInbox claims everything, the daemon
+ * processes one request this turn and requeues the rest immediately.
+ */
+export function requeueInflight(paths: BusPaths, messageIds: string[]): void {
+  if (messageIds.length === 0) return;
+  const { inflight, inbox } = paths;
+  ensureDir(inbox);
+  const wanted = new Set(messageIds);
+  let files: string[];
+  try {
+    files = readdirSync(inflight).filter(f => f.endsWith('.json'));
+  } catch {
+    return;
+  }
+  for (const file of files) {
+    const filePath = join(inflight, file);
+    try {
+      const msg = JSON.parse(readFileSync(filePath, 'utf-8'));
+      if (wanted.has(msg.id)) renameSync(filePath, join(inbox, file));
+    } catch {
+      // Skip corrupt files
+    }
+  }
+}
+
+/**
  * Recover stale inflight messages (older than thresholdSeconds) back to inbox.
  */
 function recoverStaleInflight(

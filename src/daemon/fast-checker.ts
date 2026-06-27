@@ -4,13 +4,20 @@ import { join } from 'path';
 import { createHash } from 'crypto';
 import { hardRestart } from '../bus/system.js';
 import type { InboxMessage, BusPaths, TelegramMessage, TelegramCallbackQuery, BusEnvelope } from '../types/index.js';
-import { checkInbox, ackInbox } from '../bus/message.js';
+import { checkInbox, ackInbox, requeueInflight } from '../bus/message.js';
+import { selectRequestTurn, type PendingItem, type SelectedTurn } from './turn-selector.js';
 import { updateApproval } from '../bus/approval.js';
 import { AgentProcess } from './agent-process.js';
 import type { TelegramAPI } from '../telegram/api.js';
 import { KEYS } from '../pty/inject.js';
 import { stripControlChars, sanitizeForPtyInjection, wrapFenceSafe } from '../utils/validate.js';
 import { writeCurrentRequest } from '../channels/current-request.js';
+
+/** A pending item's source handle — how commitTurn drains/acks it. */
+type TurnRef =
+  | { kind: 'tg'; m: { formatted: string; ackIds: string[] } }
+  | { kind: 'sl'; m: { formatted: string; envelope?: BusEnvelope } }
+  | { kind: 'ib'; m: InboxMessage };
 
 type LogFn = (msg: string) => void;
 
@@ -186,6 +193,8 @@ export class FastChecker {
       // the conversation id. Fall back to a fresh id only if absent.
       const headerReqId = formatted.match(/\[req:([^\]]+)\]/)?.[1];
       envelope = {
+        p: 1,
+        message: formatted,
         request_id: headerReqId || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
         origin_channel: channelMatch?.[1],
         origin_user: userMatch?.[1],
@@ -199,9 +208,22 @@ export class FastChecker {
   /**
    * Single poll cycle: check inbox + queued Telegram messages.
    */
+  /** Drain the selected items from their sources and requeue deferred inbox. */
+  private commitTurn(turn: SelectedTurn): void {
+    const sel = turn.selected.map((i) => i.ref as TurnRef);
+    const selTg = new Set(sel.filter((r): r is Extract<TurnRef, { kind: 'tg' }> => r.kind === 'tg').map((r) => r.m));
+    const selSl = new Set(sel.filter((r): r is Extract<TurnRef, { kind: 'sl' }> => r.kind === 'sl').map((r) => r.m));
+    if (selTg.size) this.telegramMessages = this.telegramMessages.filter((m) => !selTg.has(m));
+    if (selSl.size) this.slackMessages = this.slackMessages.filter((m) => !selSl.has(m));
+    for (const r of sel) if (r.kind === 'ib') ackInbox(this.paths, r.m.id);
+    const deferredInbox = turn.deferred
+      .map((i) => i.ref as TurnRef)
+      .filter((r): r is Extract<TurnRef, { kind: 'ib' }> => r.kind === 'ib')
+      .map((r) => r.m.id);
+    requeueInflight(this.paths, deferredInbox);
+  }
+
   private async pollCycle(): Promise<void> {
-    let messageBlock = '';
-    const ackIds: string[] = [];
     let hasTelegramMessage = false;
 
     // Drop loop-guarded Slack messages up front (they don't belong to any turn).
@@ -213,65 +235,39 @@ export class FastChecker {
       return true;
     });
 
-    // PER-CONVERSATION SERIALIZATION: inject at most ONE human conversation per
-    // turn so two people's messages never merge into a single model turn.
-    // DRAIN-ON-SUCCESS: peek the batch; only remove it from the queue after a
-    // successful inject, so a failed inject (session refresh / crash) requeues
-    // it instead of silently dropping a user's message.
-    let drainHuman: (() => void) | null = null;
-    // request_id(s) being injected this turn — written for daemon-enforced
-    // correlation so outbound bus/reply commands never depend on the LLM
-    // hand-typing (and reusing/corrupting) the id.
-    const turnReqIds: Array<string | undefined> = [];
-
-    if (this.telegramMessages.length > 0) {
-      // Telegram = one chat per agent → already a single conversation.
-      const n = this.telegramMessages.length;
-      for (const msg of this.telegramMessages) messageBlock += msg.formatted;
-      hasTelegramMessage = true;
-      drainHuman = () => this.telegramMessages.splice(0, n);
-    } else if (this.slackMessages.length > 0) {
-      // Pick the conversation (origin channel) of the oldest queued message and
-      // drain only that one; other conversations wait for the next cycle.
-      const targetConv = this.slackMessages[0].envelope?.origin_channel ?? '__unknown__';
-      for (const msg of this.slackMessages) {
-        if ((msg.envelope?.origin_channel ?? '__unknown__') === targetConv) {
-          messageBlock += msg.formatted;
-          turnReqIds.push(msg.envelope?.request_id);
-        }
-      }
-      hasTelegramMessage = true; // typing-indicator parity
-      drainHuman = () => {
-        this.slackMessages = this.slackMessages.filter(
-          (msg) => (msg.envelope?.origin_channel ?? '__unknown__') !== targetConv,
-        );
-      };
+    // PER-REQUEST SERIALIZATION: gather pending work as a flat, source-agnostic
+    // list and let the selector pick exactly ONE request to run this turn. Human
+    // channels take priority over the agent-to-agent inbox; the inbox is only
+    // claimed when no human is waiting (so a claim is never wasted). One request
+    // per turn keeps the daemon's current-request a single id, so bus reply can't
+    // collapse two replies onto one thread.
+    const human: PendingItem[] = [
+      ...this.telegramMessages.map((m) => ({ requestId: undefined, formatted: m.formatted, ref: { kind: 'tg' as const, m } })),
+      ...this.slackMessages.map((m) => ({ requestId: m.envelope?.request_id, formatted: m.formatted, ref: { kind: 'sl' as const, m } })),
+    ];
+    let inboxClaimed: InboxMessage[] = [];
+    let pending = human;
+    if (pending.length === 0) {
+      inboxClaimed = checkInbox(this.paths);
+      pending = inboxClaimed.map((m) => ({ requestId: m.request_id, formatted: this.formatInboxMessage(m), ref: { kind: 'ib' as const, m } }));
     }
 
-    // Agent inbox (agent-to-agent / routing — the agent's own work items).
-    const inboxMessages = checkInbox(this.paths);
-    for (const msg of inboxMessages) {
-      messageBlock += this.formatInboxMessage(msg);
-      ackIds.push(msg.id);
-      turnReqIds.push(msg.request_id);
-    }
-
-    if (messageBlock) {
-      // Stamp the turn's request_id(s) BEFORE inject, so the agent's outbound
+    const turn = selectRequestTurn(pending);
+    if (turn) {
+      // Stamp the turn's single request BEFORE inject, so the agent's outbound
       // commands resolve against the daemon's truth, not what it retypes.
-      writeCurrentRequest(this.paths.stateDir, turnReqIds);
-      const injected = this.agent.injectMessage(messageBlock);
+      writeCurrentRequest(this.paths.stateDir, turn.requestIds);
+      const injected = this.agent.injectMessage(turn.block);
       if (injected) {
-        drainHuman?.();                 // remove the human batch only on success
-        for (const id of ackIds) ackInbox(this.paths, id);
-        this.log(`Injected ${messageBlock.length} bytes`);
-        if (hasTelegramMessage) {
-          this.lastMessageInjectedAt = Date.now();
-        }
+        this.commitTurn(turn);
+        hasTelegramMessage = turn.selected.some((i) => (i.ref as TurnRef).kind !== 'ib');
+        this.log(`Injected ${turn.block.length} bytes`);
+        if (hasTelegramMessage) this.lastMessageInjectedAt = Date.now();
         await sleep(5000);
+      } else {
+        // Failed inject — release any inbox we claimed so nothing is lost.
+        requeueInflight(this.paths, inboxClaimed.map((m) => m.id));
       }
-      // On failure: nothing drained, inbox not acked (recovered from inflight)
-      // → everything is retried on the next cycle. No silent loss.
     }
 
     // Typing indicator: send while Claude is actively working
