@@ -50,6 +50,12 @@
       "type": "recurring",
       "interval": "7d",
       "prompt": "Read .claude/skills/catalog-browse/SKILL.md and execute the catalog browse workflow. Check for new community skills and recommend useful ones."
+    },
+    {
+      "name": "jd-improvement-review",
+      "type": "recurring",
+      "interval": "7d",
+      "prompt": "Read interaction logs for all agents: look for orgs/*/agents/*/logs/interactions.jsonl files. Find patterns: what was escalated most? What triggered ASK_HUMAN most? What queries had no matching agent? Propose specific JD updates (new keywords, responsibilities, provides/needs changes) per agent. Write proposals to the org jd-proposals.md for human review. Also recommend autonomy expansions: which agents have high handle-rate on categories currently always escalated?"
     }
   ],
   "ecosystem": {
@@ -65,5 +71,14 @@
     "community_publish": {
       "enabled": false
     }
+  },
+  "jd": {
+    "title": "",
+    "description": "",
+    "responsibilities": [],
+    "provides": [],
+    "needs": [],
+    "keywords": [],
+    "out_of_scope": []
   }
 }

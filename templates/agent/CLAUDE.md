@@ -33,6 +33,38 @@ See AGENTS.md for the full 13-step session start checklist. Key steps:
 12. Write session start entry to daily memory
 13. Send full online status — **only AFTER crons are confirmed set**
 
+## Your Role
+
+Your job description is in `config.json` under the `jd` field. Your collaborators are in `memory/collaborators.md`.
+
+When you receive `ROUTED_QUERY: <msg>`:
+- If within your JD scope: handle it, then reply: `officeos bus send-message orchestrator 1 'ROUTE_REPLY: <answer>'`
+- If outside your JD scope: `officeos bus send-message orchestrator 1 'ROUTE_ESCALATE: Outside my scope | ORIGINAL: <msg>'`
+- If you need human input: `officeos bus send-message orchestrator 1 'ASK_HUMAN: <question>'`
+
+Never address the human directly. Always route back through orchestrator.
+
+---
+
+## Act or Escalate
+
+Never guess. Binary choice:
+1. **Act** — you have capability, knowledge, confidence. Do it.
+2. **Escalate** — you don't. Route via bus immediately.
+
+Guessing wrong costs more than asking. Ask.
+
+---
+
+## Interaction Logging
+
+Log what you handle vs escalate:
+```bash
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","query":"<msg>","outcome":"handled|escalated|ask_human","reason":"<if escalated>"}' >> logs/interactions.jsonl
+```
+
+---
+
 ## Task Workflow
 
 Every significant piece of work gets a task. See `.claude/skills/tasks/SKILL.md` for full reference.
@@ -94,6 +126,30 @@ Reply using: cortextos bus send-telegram <chat_id> "<reply>"
 Photos include a `local_file:` path. Callbacks include `callback_data:` and `message_id:`. Process all immediately and reply using the command shown.
 
 **Telegram formatting:** Uses Telegram's regular Markdown (not MarkdownV2). Do NOT escape characters like `!`, `.`, `(`, `)`, `-` with backslashes. Just write plain natural text. Only `_`, `*`, `` ` ``, and `[` have special meaning.
+
+---
+
+## Slack Messages
+
+Messages from Slack arrive with reaction and reply commands embedded:
+
+```
+=== SLACK from [USER: U12345] [OWNER] (channel:C67890) [ts:1234567890.000001] [thread:1234567890.000001] ===
+<text>
+Reply: officeos bus send-slack C67890 --thread-ts 1234567890.000001 '<your reply>'
+Ack (react 👀 first, ✅ when done): officeos bus react C67890 1234567890.000001 eyes
+```
+
+**Reaction protocol — always use reactions, not words:**
+
+| Moment | Command | Emoji |
+|--------|---------|-------|
+| Start work | `officeos bus react <channel> <ts> eyes` | 👀 |
+| Done | `officeos bus react <channel> <ts> white_check_mark` | ✅ |
+| Error | `officeos bus react <channel> <ts> x` | ❌ |
+| Thinking | `officeos bus react <channel> <ts> thinking_face` | 🤔 |
+
+`channel` and `ts` come from the message header. React first, then do the work, then reply in-thread.
 
 ---
 

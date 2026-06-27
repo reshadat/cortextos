@@ -86,11 +86,27 @@ pm2 start ecosystem.config.js && pm2 save && pm2 startup
 ## Slack App Setup
 
 1. [api.slack.com/apps](https://api.slack.com/apps) → Create App → **Enable Socket Mode** → generate App-Level Token (`xapp-...`) with scope `connections:write`
-2. **Bot Token Scopes:** `channels:history`, `chat:write`, `chat:write.public`, `groups:history`, `im:history`, `im:read`, `im:write`, `channels:read`, `mpim:write`
+2. **Bot Token Scopes:** `channels:history`, `chat:write`, `chat:write.public`, `groups:history`, `im:history`, `im:read`, `im:write`, `channels:read`, `mpim:write`, `reactions:write`
 3. **Event Subscriptions → Bot events:** `message.channels`, `message.groups`, `message.im`, `member_joined_channel`
 4. Install to workspace → copy Bot Token (`xoxb-...`)
 5. Your **User ID**: Profile → More → Copy Member ID (`U...`)
 6. **Channel ID**: Right-click channel → Copy link → extract `C...` segment
+
+### Threaded Replies
+
+officeOs replies in the same Slack thread as the message it's responding to. When you reply in a thread, the agent receives the full thread context (up to 20 messages) before your latest message. No configuration needed — thread tracking is automatic.
+
+### Emoji Reactions
+
+Agents acknowledge messages with emoji reactions instead of words:
+
+- 👀 `:eyes` — "I saw this and I'm working on it"
+- ✅ `:white_check_mark` — done
+- ❌ `:x` — error
+
+Agents react via: `officeos bus react <channel-id> <message-ts> <emoji-name>`
+
+The `reactions:write` scope (step 2 above) enables this. If you omit it, reactions fail silently — agents fall back to text replies.
 
 ---
 
@@ -192,6 +208,11 @@ officeos dashboard           # Start web dashboard (--port 3000)
 officeos bus send-slack <channel-id> '<message>'
 ```
 
+| Command | Description |
+|---|---|
+| `officeos sync-jds` | Sync all agent JD blocks → jds-registry.md + collaborator files |
+| `officeos list-jds` | List all agents and their job descriptions |
+
 `cortextos` is a legacy alias — existing scripts continue to work.
 
 ---
@@ -216,6 +237,51 @@ officeos bus send-slack <channel-id> '<message>'
 | `analyst` | System health, metrics, autoresearch |
 | `agent` | General-purpose worker |
 | `agent-codex` | Codex-runtime worker (`runtime: codex-app-server`) |
+
+---
+
+## Routing Protocol
+
+The orchestrator routes queries to specialist agents via bus message prefixes:
+
+| Message | Direction | Meaning |
+|---------|-----------|---------|
+| `ROUTED_QUERY: <msg>` | Orch → Agent | Handle this query |
+| `ROUTE_REPLY: <answer>` | Agent → Orch | Answer to relay to human |
+| `ROUTE_ESCALATE: <reason> | ORIGINAL: <msg>` | Agent → Orch | Cannot handle, re-route |
+| `ASK_HUMAN: <question>` | Agent → Orch | Need human input |
+
+Bus messages carry a structured envelope (daemon-level): request_id for correlation,
+origin_channel for reply routing, hop_count for loop detection (drops at 10).
+Agents see only the plain message text — envelope metadata is invisible to them.
+
+---
+
+## Agent Job Descriptions
+
+Each agent declares what it does in `config.json` under the `jd` field:
+
+```json
+{
+  "jd": {
+    "title": "Documentation Specialist",
+    "description": "Finds and explains internal documentation",
+    "responsibilities": ["Answer questions about internal docs", "Summarize runbooks"],
+    "provides": ["Documentation search", "URL summarization"],
+    "needs": ["Codebase context"],
+    "keywords": ["docs", "wiki", "runbook", "how-to"],
+    "out_of_scope": ["Code changes", "Deployments"]
+  }
+}
+```
+
+After filling in JD blocks, run:
+```bash
+officeos sync-jds
+```
+This writes a `jds-registry.md` to the orchestrator's dir and `memory/collaborators.md` to matched agents.
+
+The orchestrator reads the registry and routes queries based on semantic intent matching — not keyword lookup. "How does the Snyk parser work?" routes to `codebase-agent` because its responsibility is "Describe internal code behavior", even though "Snyk" isn't in the keywords.
 
 ---
 

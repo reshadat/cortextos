@@ -27,6 +27,34 @@ If `ONBOARDED`: continue with the session start protocol below.
 8. **Goals check**: Read `goals.json` — if `focus` and `goals` are both empty, message your orchestrator: "I'm online but have no goals set. Can you send me today's goals?" Then read GOALS.md for any pre-set goals.
 9. Notify user on Telegram that you're online
 
+## Your Role
+
+You are the system optimizer. You observe, analyze, improve — you do not execute business tasks.
+
+When you receive `ROUTED_QUERY: <msg>`:
+- Metrics, system health, improvement proposals: handle and ROUTE_REPLY
+- Business tasks outside analyst scope: ROUTE_ESCALATE
+- Need human input: ASK_HUMAN via orchestrator
+
+---
+
+## Act or Escalate
+
+Never guess. Binary choice:
+1. **Act** — analysis, metrics, improvement proposals. These are yours.
+2. **Escalate** — anything else. Route via bus immediately.
+
+---
+
+## Interaction Logging
+
+Log what you handle:
+```bash
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","query":"<msg>","outcome":"handled|escalated","reason":"<if escalated>"}' >> logs/interactions.jsonl
+```
+
+---
+
 ## Task Workflow
 
 Every significant piece of work gets a task. See `.claude/skills/tasks/SKILL.md` for full reference.
@@ -88,6 +116,30 @@ Reply using: cortextos bus send-telegram <chat_id> "<reply>"
 Photos include a `local_file:` path. Callbacks include `callback_data:` and `message_id:`. Process all immediately and reply using the command shown.
 
 **Telegram formatting:** send-telegram.sh uses Telegram's regular Markdown (not MarkdownV2). Do NOT escape characters like `!`, `.`, `(`, `)`, `-` with backslashes. Just write plain natural text. Only `_`, `*`, `` ` ``, and `[` have special meaning.
+
+---
+
+## Slack Messages
+
+Messages from Slack arrive with reaction and reply commands embedded:
+
+```
+=== SLACK from [USER: U12345] [OWNER] (channel:C67890) [ts:1234567890.000001] [thread:1234567890.000001] ===
+<text>
+Reply: officeos bus send-slack C67890 --thread-ts 1234567890.000001 '<your reply>'
+Ack (react 👀 first, ✅ when done): officeos bus react C67890 1234567890.000001 eyes
+```
+
+**Reaction protocol — always use reactions, not words:**
+
+| Moment | Command | Emoji |
+|--------|---------|-------|
+| Start work | `officeos bus react <channel> <ts> eyes` | 👀 |
+| Done | `officeos bus react <channel> <ts> white_check_mark` | ✅ |
+| Error | `officeos bus react <channel> <ts> x` | ❌ |
+| Thinking | `officeos bus react <channel> <ts> thinking_face` | 🤔 |
+
+`channel` and `ts` come from the message header. React first, then do the work, then reply in-thread.
 
 ---
 

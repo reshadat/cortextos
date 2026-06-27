@@ -4,6 +4,7 @@ import { homedir } from 'os';
 import { randomBytes } from 'crypto';
 import type { AgentConfig, CtxEnv } from '../types/index.js';
 import { OutputBuffer } from './output-buffer.js';
+import { applyHeadroom } from './headroom.js';
 import type { TelegramAPI } from '../telegram/api.js';
 import { ensureDir, atomicWriteSync } from '../utils/atomic.js';
 import { resolvePaths } from '../utils/paths.js';
@@ -419,16 +420,16 @@ export class CodexAppServerPTY {
       }
 
       const spawnFn = this._spawnFn!;
-      const pty = spawnFn('codex', [
-        'app-server',
-        '--enable', 'goals',
-        '--listen', this._socketListenArg,
-      ], {
+      const baseEnv = this.buildEnv();
+      const codexCmd = ['codex', 'app-server', '--enable', 'goals', '--listen', this._socketListenArg];
+      applyHeadroom(codexCmd, baseEnv, this._config, 'codex').then(({ cmd: finalCmd, env: finalEnv }) => {
+        const [spawnCmd, ...spawnArgs] = finalCmd;
+        const pty = spawnFn(spawnCmd, spawnArgs, {
         name: 'xterm-256color',
         cols: 200,
         rows: 50,
         cwd: this._socketCwd,
-        env: this.buildEnv(),
+        env: finalEnv as Record<string, string>,
       });
 
       this._appServerPty = pty;
@@ -447,6 +448,7 @@ export class CodexAppServerPTY {
       });
 
       this.waitForSocket().then(resolve, reject);
+      }).catch(reject);
     });
   }
 

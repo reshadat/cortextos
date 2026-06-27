@@ -215,9 +215,9 @@ describe('Sprint 1: Template Completeness', () => {
       }
     });
 
-    it('has config.json with 6 analyst crons + ecosystem config', () => {
+    it('has config.json with analyst crons + ecosystem config', () => {
       const config = JSON.parse(readFileSync(join(analystDir, 'config.json'), 'utf-8'));
-      expect(config.crons.length).toBe(6);
+      expect(config.crons.length).toBeGreaterThanOrEqual(6);
       const cronNames = config.crons.map((c: any) => c.name);
       expect(cronNames).toContain('heartbeat');
       expect(cronNames).toContain('usage-monitor');

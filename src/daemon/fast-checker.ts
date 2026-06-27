@@ -3,7 +3,7 @@ import { execFile } from 'child_process';
 import { join } from 'path';
 import { createHash } from 'crypto';
 import { hardRestart } from '../bus/system.js';
-import type { InboxMessage, BusPaths, TelegramMessage, TelegramCallbackQuery } from '../types/index.js';
+import type { InboxMessage, BusPaths, TelegramMessage, TelegramCallbackQuery, BusEnvelope } from '../types/index.js';
 import { checkInbox, ackInbox } from '../bus/message.js';
 import { updateApproval } from '../bus/approval.js';
 import { AgentProcess } from './agent-process.js';
@@ -39,7 +39,7 @@ export class FastChecker {
   private telegramMessages: Array<{ formatted: string; ackIds: string[] }> = [];
 
   // External Slack handler (set by SlackControlPlane via queueSlackMessage)
-  private slackMessages: Array<{ formatted: string }> = [];
+  private slackMessages: Array<{ formatted: string; envelope?: BusEnvelope }> = [];
 
   // Persistent dedup: message hashes to prevent duplicate delivery
   private seenHashes: Set<string> = new Set();
@@ -168,9 +168,27 @@ export class FastChecker {
   /**
    * Queue a formatted Slack message for injection.
    * Called by SlackControlPlane when a message arrives via Socket Mode.
+   * Extracts a BusEnvelope for daemon-level correlation tracking and loop
+   * detection when the message header contains Slack routing metadata.
    */
   queueSlackMessage(formatted: string): void {
-    this.slackMessages.push({ formatted });
+    let envelope: BusEnvelope | undefined;
+    // Slack messages from control-plane.ts include [ts:...] and [thread:...]
+    // in their header — use that as a reliable signal that envelope metadata
+    // can be extracted. The envelope is daemon-only; agents never see it.
+    if (formatted.includes('[ts:') && formatted.includes('[thread:')) {
+      const channelMatch = formatted.match(/\(channel:([^)]+)\)/);
+      const userMatch = formatted.match(/\[USER:\s+([^\]]+?)\]/);
+      const roleMatch = formatted.match(/\[(OWNER|READONLY)\]/);
+      envelope = {
+        request_id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+        origin_channel: channelMatch?.[1],
+        origin_user: userMatch?.[1],
+        origin_role: roleMatch?.[1]?.toLowerCase() as 'owner' | 'readonly' | undefined,
+        hop_count: 0,
+      };
+    }
+    this.slackMessages.push({ formatted, envelope });
   }
 
   /**
@@ -191,6 +209,11 @@ export class FastChecker {
     // Process queued Slack messages
     while (this.slackMessages.length > 0) {
       const msg = this.slackMessages.shift()!;
+      // Loop-guard: drop messages that have been routed too many times
+      if (msg.envelope?.hop_count !== undefined && msg.envelope.hop_count >= 10) {
+        this.log(`[loop-guard] Dropping Slack message with hop_count=${msg.envelope.hop_count} (request_id=${msg.envelope.request_id ?? 'n/a'}, channel=${msg.envelope.origin_channel ?? 'n/a'})`);
+        continue;
+      }
       messageBlock += msg.formatted;
       hasTelegramMessage = true; // treat same as Telegram for typing indicator logic
     }

@@ -17,5 +17,14 @@
   ],
   "ecosystem": {
     "local_version_control": { "enabled": true }
+  },
+  "jd": {
+    "title": "",
+    "description": "",
+    "responsibilities": [],
+    "provides": [],
+    "needs": [],
+    "keywords": [],
+    "out_of_scope": []
   }
 }
