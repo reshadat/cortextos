@@ -9,23 +9,32 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { resolveAdapter } from './registry.js';
-import type { OutboundTarget } from './adapter.js';
+import { stripBom } from '../utils/strip-bom.js';
 
-/** Read one key out of an agent's .env, falling back to process.env. */
+/** Read one key out of an agent's .env (BOM-safe), falling back to process.env. */
 function readEnvKey(agentDir: string, key: string): string {
   const envFile = join(agentDir, '.env');
   if (existsSync(envFile)) {
-    const m = readFileSync(envFile, 'utf-8').match(new RegExp(`^${key}=(.+)$`, 'm'));
+    const m = stripBom(readFileSync(envFile, 'utf-8')).match(new RegExp(`^${key}=(.+)$`, 'm'));
     if (m) return m[1].trim();
   }
   return process.env[key]?.trim() || '';
 }
 
+/** The agent's owner-facing channel: single SLACK_CHANNEL_ID, else first of SLACK_ALLOWED_CHANNELS. */
+function ownerChannel(agentDir: string): string {
+  const single = readEnvKey(agentDir, 'SLACK_CHANNEL_ID');
+  if (single) return single;
+  return readEnvKey(agentDir, 'SLACK_ALLOWED_CHANNELS')
+    .split(',').map((s) => s.trim()).filter(Boolean)[0] || '';
+}
+
 /**
- * Send `text` to the agent's current Slack reply target (the channel/thread of
- * the last inbound message, from slack-thread.json), falling back to the
- * configured SLACK_CHANNEL_ID. Returns null when no target is known (caller
- * skips — same as the old hooks did when there was no thread state).
+ * Send `text` to the agent's OWNER channel — these are agent→owner hook
+ * notifications (permission/plan/ask/compact/crash), so they must land where the
+ * owner watches, never in a readonly user's channel/thread. We thread the reply
+ * only when the last inbound message was in that same owner channel. Returns
+ * null (caller skips) when no owner channel is configured.
  */
 export async function sendToReplyTarget(
   agentDir: string,
@@ -38,11 +47,12 @@ export async function sendToReplyTarget(
   const adapter = resolveAdapter('slack', { botToken, agentDir, stateDir });
   if (!adapter) return null;
 
-  let target: OutboundTarget | null = adapter.resolveReplyTarget(stateDir);
-  if (!target) {
-    const channel = readEnvKey(agentDir, 'SLACK_CHANNEL_ID');
-    if (!channel) return null;
-    target = { conversationId: channel };
-  }
-  return adapter.sendMessage(target, text);
+  const channel = ownerChannel(agentDir);
+  if (!channel) return null;
+
+  // Thread only if the last inbound thread belongs to the owner channel.
+  const last = adapter.resolveReplyTarget(stateDir);
+  const threadId = last && last.conversationId === channel ? last.threadId : undefined;
+
+  return adapter.sendMessage({ conversationId: channel, threadId }, text);
 }

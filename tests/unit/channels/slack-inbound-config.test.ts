@@ -55,6 +55,14 @@ describe('readSlackInboundConfig', () => {
     expect([...parsed!.config.allowedChannels]).toEqual(['CSINGLE']);
     expect(parsed!.config.rateLimitSpec).toBe('10/60'); // default
   });
+
+  it('parses a BOM-prefixed .env (Windows) — Slack still starts', () => {
+    writeEnv('﻿SLACK_BOT_TOKEN=xoxb-1\nSLACK_APP_TOKEN=xapp-1\nSLACK_USER_ID=UOWNER\n');
+    const parsed = readSlackInboundConfig(dir, '/state');
+    expect(parsed).not.toBeNull();
+    expect(parsed!.botToken).toBe('xoxb-1');
+    expect(parsed!.config.ownerId).toBe('UOWNER');
+  });
 });
 
 describe('resolveAdapter inbound path', () => {

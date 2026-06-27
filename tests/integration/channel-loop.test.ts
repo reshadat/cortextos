@@ -122,9 +122,9 @@ describe('channel message loop', () => {
   });
 
   // ── OUTBOUND: agent reply → adapter → wire ─────────────────────────────────
-  it('outbound: a reply lands on the channel+thread of the last inbound message', async () => {
+  it('outbound: a hook reply lands on the owner channel, threaded to the last inbound', async () => {
     const paths = makePaths(ctxRoot, 'orch');
-    // inbound persisted this reply target:
+    // inbound (in the owner channel) persisted this reply target:
     wf(join(paths.stateDir, 'slack-thread.json'), JSON.stringify({ channel: 'C1', threadTs: '1700.1', msgTs: '1700.1' }));
 
     const outbox = join(ctxRoot, 'outbox.jsonl');
@@ -132,12 +132,12 @@ describe('channel message loop', () => {
     process.env.OFFICEOS_MOCK_OUTBOX = outbox;
     const agentDir = join(ctxRoot, 'agent');
     mkdirSync(agentDir, { recursive: true });
-    wf(join(agentDir, '.env'), 'SLACK_BOT_TOKEN=xoxb-1\n');
+    wf(join(agentDir, '.env'), 'SLACK_BOT_TOKEN=xoxb-1\nSLACK_CHANNEL_ID=C1\n');
 
     const res = await sendToReplyTarget(agentDir, paths.stateDir, 'all green');
     expect(res).toEqual({ messageId: 'mock-ts-1' });
     const sent = JSON.parse(readFileSync(outbox, 'utf-8').trim());
-    expect(sent).toMatchObject({ op: 'sendMessage', text: 'all green' });
+    expect(sent).toMatchObject({ op: 'sendMessage', text: 'all green', target: { conversationId: 'C1', threadId: '1700.1' } });
   });
 
   // ── INTER-AGENT: ROUTED_QUERY → ROUTE_REPLY over the file bus ───────────────

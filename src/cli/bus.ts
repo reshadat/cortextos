@@ -26,6 +26,7 @@ import { TelegramAPI } from '../telegram/api.js';
 import { logOutboundMessage, cacheLastSent } from '../telegram/logging.js';
 import { logOutboundSlackMessage, cacheLastSentSlack } from '../slack/logging.js';
 import { resolveAdapter } from '../channels/registry.js';
+import { stripBom } from '../utils/strip-bom.js';
 import type { Priority, Task, TaskStatus, EventCategory, EventSeverity, ApprovalCategory, ApprovalStatus, OrgContext, CronDefinition } from '../types/index.js';
 
 /**
@@ -1042,7 +1043,7 @@ busCommand
     if (env.agentDir) {
       const agentEnv = join(env.agentDir, '.env');
       if (existsSync(agentEnv)) {
-        const content = readFileSync(agentEnv, 'utf-8');
+        const content = stripBom(readFileSync(agentEnv, 'utf-8'));
         const match = content.match(/^SLACK_BOT_TOKEN=(.+)$/m);
         if (match && match[1].trim()) botToken = match[1].trim();
       }
@@ -1164,7 +1165,7 @@ busCommand
     if (env.agentDir) {
       const agentEnv = join(env.agentDir, '.env');
       if (existsSync(agentEnv)) {
-        const content = readFileSync(agentEnv, 'utf-8');
+        const content = stripBom(readFileSync(agentEnv, 'utf-8'));
         const match = content.match(/^SLACK_BOT_TOKEN=(.+)$/m);
         if (match && match[1].trim()) botToken = match[1].trim();
       }

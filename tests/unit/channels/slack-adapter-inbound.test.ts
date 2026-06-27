@@ -111,6 +111,13 @@ describe('SlackAdapter inbound gates', () => {
     expect(c.messages).toHaveLength(1);
   });
 
+  it('DM-only (no channels configured) rejects a non-DM message — no fail-open (gate 2)', async () => {
+    const { h, c } = handlers();
+    await new SlackAdapter('xoxb', makeConfig({ allowedChannels: new Set() }, dir)).start(h);
+    await fire({ user: 'UOWNER', text: 'hi', channel: 'CRANDOM', channel_type: 'channel' });
+    expect(c.messages).toHaveLength(0);
+  });
+
   it('accepts a readonly DM (gate 2)', async () => {
     const { h, c } = handlers();
     await new SlackAdapter('xoxb', makeConfig({ readonlyIds: new Set(['URO']) }, dir)).start(h);
@@ -162,8 +169,8 @@ describe('SlackAdapter inbound gates', () => {
   });
 
   it('enforces the email domain allowlist and caches the lookup (gate 3)', async () => {
-    const fetchMock = vi.fn(async (url: string) => {
-      const isEvil = url.includes('UEVIL');
+    const fetchMock = vi.fn(async (url: any) => {
+      const isEvil = String(url).includes('UEVIL');
       return { json: async () => ({ user: { profile: { email: isEvil ? 'x@evil.com' : 'x@acme.com' } } }) } as any;
     });
     vi.stubGlobal('fetch', fetchMock);
