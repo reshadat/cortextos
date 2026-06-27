@@ -37,14 +37,12 @@ See AGENTS.md for the full 13-step session start checklist. Key steps:
 
 Your job description is in `config.json` under the `jd` field. Your collaborators are in `memory/collaborators.md`.
 
-A `ROUTED_QUERY` carries a `[req:<id>]` correlation tag. **Echo it back** in every reply so the orchestrator relays your answer to the right human (multiple users may be active at once).
+When you receive a `ROUTED_QUERY: <msg>`:
+- Within your JD scope: handle it, then `officeos bus send-message <sender> 1 'ROUTE_REPLY: <answer>'`
+- Outside your JD scope: `officeos bus send-message <sender> 1 'ROUTE_ESCALATE: Outside my scope | ORIGINAL: <msg>'`
+- Need human input: `officeos bus send-message <sender> 1 'ASK_HUMAN: <question>'`
 
-When you receive `ROUTED_QUERY: [req:<id>] <msg>`:
-- Within your JD scope: handle it, then reply with the tag — `officeos bus send-message <sender> 1 --request-id <id> 'ROUTE_REPLY: [req:<id>] <answer>'`
-- Outside your JD scope: `officeos bus send-message <sender> 1 --request-id <id> 'ROUTE_ESCALATE: [req:<id>] Outside my scope | ORIGINAL: <msg>'`
-- Need human input: `officeos bus send-message <sender> 1 --request-id <id> 'ASK_HUMAN: [req:<id>] <question>'`
-
-`<sender>` is the agent that routed to you — use the `Reply using:` command from the message header, never a hard-coded name. Never address the human directly; always route back through whoever sent you the query.
+The framework keeps your reply bound to the original request — you don't carry an id. `<sender>` is the agent that routed to you. Never address the human directly; always route back through whoever sent you the query.
 
 ---
 
@@ -133,25 +131,16 @@ Photos include a `local_file:` path. Callbacks include `callback_data:` and `mes
 
 ## Slack Messages
 
-Messages from Slack arrive with reaction and reply commands embedded:
+Each message arrives with reply and react commands embedded:
 
 ```
-=== SLACK from [USER: U12345] [OWNER] (channel:C67890) [ts:1234567890.000001] [thread:1234567890.000001] ===
+=== SLACK from [USER: U12345] [OWNER] (channel:C67890) [ts:…] [thread:…] [req:…] ===
 <text>
-Reply: officeos bus send-slack C67890 --thread-ts 1234567890.000001 '<your reply>'
-Ack (react 👀 first, ✅ when done): officeos bus react C67890 1234567890.000001 eyes
+Reply: officeos bus reply '<your reply>'
+React ONLY if you need the user to respond (a question or a confirm): officeos bus react <emoji>
 ```
 
-**Reaction protocol — always use reactions, not words:**
-
-| Moment | Command | Emoji |
-|--------|---------|-------|
-| Start work | `officeos bus react <channel> <ts> eyes` | 👀 |
-| Done | `officeos bus react <channel> <ts> white_check_mark` | ✅ |
-| Error | `officeos bus react <channel> <ts> x` | ❌ |
-| Thinking | `officeos bus react <channel> <ts> thinking_face` | 🤔 |
-
-`channel` and `ts` come from the message header. React first, then do the work, then reply in-thread.
+`bus reply` and `bus react` act on the current message — no channel or id to type. React sparingly: only when the ball is in the user's court (you asked something or need a confirm). Otherwise just reply.
 
 ---
 

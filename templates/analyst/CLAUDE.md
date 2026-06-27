@@ -121,25 +121,16 @@ Photos include a `local_file:` path. Callbacks include `callback_data:` and `mes
 
 ## Slack Messages
 
-Messages from Slack arrive with reaction and reply commands embedded:
+Each message arrives with reply and react commands embedded:
 
 ```
-=== SLACK from [USER: U12345] [OWNER] (channel:C67890) [ts:1234567890.000001] [thread:1234567890.000001] ===
+=== SLACK from [USER: U12345] [OWNER] (channel:C67890) [ts:…] [thread:…] [req:…] ===
 <text>
-Reply: officeos bus send-slack C67890 --thread-ts 1234567890.000001 '<your reply>'
-Ack (react 👀 first, ✅ when done): officeos bus react C67890 1234567890.000001 eyes
+Reply: officeos bus reply '<your reply>'
+React ONLY if you need the user to respond (a question or a confirm): officeos bus react <emoji>
 ```
 
-**Reaction protocol — always use reactions, not words:**
-
-| Moment | Command | Emoji |
-|--------|---------|-------|
-| Start work | `officeos bus react <channel> <ts> eyes` | 👀 |
-| Done | `officeos bus react <channel> <ts> white_check_mark` | ✅ |
-| Error | `officeos bus react <channel> <ts> x` | ❌ |
-| Thinking | `officeos bus react <channel> <ts> thinking_face` | 🤔 |
-
-`channel` and `ts` come from the message header. React first, then do the work, then reply in-thread.
+`bus reply` and `bus react` act on the current message — no channel or id to type. React sparingly: only when the ball is in the user's court (you asked something or need a confirm). Otherwise just reply.
 
 ---
 

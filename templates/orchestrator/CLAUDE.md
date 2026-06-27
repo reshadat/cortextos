@@ -37,21 +37,18 @@ See AGENTS.md for the full 13-step session start checklist. Key steps:
 
 You are the single human-facing interface. No business domain work. Route, match, coordinate.
 
-Every inbound Slack message carries `[req:<id>]` and `(channel:<C…>)` in its header. **Carry both through routing so concurrent users never cross** — never rely on "the last message".
+You are the single human-facing interface. Route, match, coordinate.
 
-On every Slack or Telegram message:
+On every message:
 1. Check @jds-registry.md — which agent's JD fits this query?
-2. Route, threading the correlation:
-   `officeos bus send-message <agent> 1 --request-id <id> --origin-channel <C…> 'ROUTED_QUERY: [req:<id>] <msg>'`
-3. Wait for that agent's `ROUTE_REPLY: [req:<id>] <answer>`, then relay to the ORIGINAL channel for that id:
-   `officeos bus send-slack <C…> --request-id <id> '<answer>'`
+2. Route to it: `officeos bus send-message <agent> 1 'ROUTED_QUERY: <msg>'`
+3. When that agent's `ROUTE_REPLY` lands, relay to the human: `officeos bus reply '<answer>'`
 
-Match each reply to its `[req:<id>]` — do not assume one conversation at a time.
-Multi-domain query: fan out (each with its own/forwarded `[req:<id>]`), aggregate by id, reply per origin.
-No agent matches: handle yourself OR tell human no specialist exists yet.
-
-On ROUTE_ESCALATE from an agent: re-route (carry the same `[req:<id>]`) or handle yourself.
-On ASK_HUMAN: post the question to the origin channel **in-thread**; the human's in-thread reply is the answer — relay it back to the asking agent for that `[req:<id>]`.
+`bus reply` goes to the human who sent the current request — no channel or id needed; the framework routes it.
+Multi-domain query: fan out to each agent, then relay each reply with `bus reply` as it arrives.
+No agent matches: handle yourself OR tell the human no specialist exists yet.
+On ROUTE_ESCALATE: re-route or handle yourself.
+On ASK_HUMAN: post the question with `bus reply`; the human's reply comes back to relay to the asking agent.
 
 ---
 
@@ -256,30 +253,28 @@ If it requires domain expertise (code, content, email, research), delegate to th
 
 ---
 
-## Slack Messages
+## Messages
 
-Messages from Slack arrive with reaction and reply commands embedded:
+Each message arrives with reply and react commands embedded:
 
 ```
-=== SLACK from [USER: U12345] [OWNER] (channel:C67890) [ts:1234567890.000001] [thread:1234567890.000001] ===
+=== SLACK from [USER: U12345] [OWNER] (channel:C67890) [ts:…] [thread:…] [req:…] ===
 <text>
-Reply: officeos bus send-slack C67890 --thread-ts 1234567890.000001 '<your reply>'
-React ONLY if you need the user to respond (a question or a confirm): officeos bus react C67890 1234567890.000001 <emoji>
+Reply: officeos bus reply '<your reply>'
+React ONLY if you need the user to respond (a question or a confirm): officeos bus react <emoji>
 ```
 
-**Reaction protocol — react sparingly, NOT on every message.**
+`bus reply` and `bus react` act on the current message — no channel or id to type.
 
-Do not 👀/✅ ordinary messages. Most turns just need a reply (or nothing). Use a
-reaction ONLY when the ball is in the user's court — you asked them something or
-need them to confirm/approve:
+**Reaction protocol — react sparingly, NOT on every message.** Most turns just need a reply (or nothing). React ONLY when the ball is in the user's court:
 
 | Moment | Command | Emoji |
 |--------|---------|-------|
-| Asked the user a question | `officeos bus react <channel> <ts> thinking_face` | 🤔 |
-| Need the user to confirm / approve | `officeos bus react <channel> <ts> raised_hand` | ✋ |
-| Something failed and you need a decision | `officeos bus react <channel> <ts> x` | ❌ |
+| Asked the user a question | `officeos bus react thinking_face` | 🤔 |
+| Need the user to confirm / approve | `officeos bus react raised_hand` | ✋ |
+| Something failed and you need a decision | `officeos bus react x` | ❌ |
 
-`channel` and `ts` come from the message header. Otherwise: just reply in-thread when you have something to say — no reaction.
+Otherwise: just reply when you have something to say — no reaction.
 
 **Approval messages** include a short ID — always echo it back:
 ```

@@ -8,6 +8,7 @@
  * channel = add one ChannelConfigSpec entry; no CLI change.
  */
 import { resolveAdapter } from './registry.js';
+import type { ChannelAdapter } from './adapter.js';
 import { TelegramAPI, formatValidateError } from '../telegram/api.js';
 
 export type EnvMap = Record<string, string | undefined>;
@@ -28,6 +29,12 @@ export interface ChannelConfigSpec {
   requiredKeys: string[];
   /** Live credential check via the channel's own adapter. */
   validate(env: EnvMap): Promise<ChannelValidation>;
+  /**
+   * Resolve the runtime ChannelAdapter for sending/reacting, from the agent's
+   * env. Returns null when this channel has no adapter wired yet (so the CLI can
+   * report a clean "not supported" rather than naming the channel itself).
+   */
+  adapter(env: EnvMap, opts?: { agentDir?: string; stateDir?: string }): ChannelAdapter | null;
 }
 
 export const CHANNEL_SPECS: ChannelConfigSpec[] = [
@@ -44,6 +51,7 @@ export const CHANNEL_SPECS: ChannelConfigSpec[] = [
       // Slack API hiccup shouldn't block enable.
       return { ok: false, detail: res.error ?? 'unknown', blocking: false };
     },
+    adapter: (e, opts) => resolveAdapter('slack', { botToken: e.SLACK_BOT_TOKEN, appToken: e.SLACK_APP_TOKEN, ...opts }),
   },
   {
     kind: 'telegram',
@@ -60,6 +68,10 @@ export const CHANNEL_SPECS: ChannelConfigSpec[] = [
       const transient = v.reason === 'network_error' || v.reason === 'rate_limited';
       return { ok: false, detail: formatValidateError(v), blocking: !transient };
     },
+    // Telegram is not a registry adapter yet — the CLI sends via TelegramAPI on
+    // the legacy path. Returning null keeps `bus reply` adapter-agnostic and
+    // reports cleanly until a Telegram adapter is registered.
+    adapter: () => null,
   },
 ];
 

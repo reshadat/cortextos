@@ -10,6 +10,7 @@ import { AgentProcess } from './agent-process.js';
 import type { TelegramAPI } from '../telegram/api.js';
 import { KEYS } from '../pty/inject.js';
 import { stripControlChars, sanitizeForPtyInjection, wrapFenceSafe } from '../utils/validate.js';
+import { writeCurrentRequest } from '../channels/current-request.js';
 
 type LogFn = (msg: string) => void;
 
@@ -218,6 +219,10 @@ export class FastChecker {
     // successful inject, so a failed inject (session refresh / crash) requeues
     // it instead of silently dropping a user's message.
     let drainHuman: (() => void) | null = null;
+    // request_id(s) being injected this turn — written for daemon-enforced
+    // correlation so outbound bus/reply commands never depend on the LLM
+    // hand-typing (and reusing/corrupting) the id.
+    const turnReqIds: Array<string | undefined> = [];
 
     if (this.telegramMessages.length > 0) {
       // Telegram = one chat per agent → already a single conversation.
@@ -230,7 +235,10 @@ export class FastChecker {
       // drain only that one; other conversations wait for the next cycle.
       const targetConv = this.slackMessages[0].envelope?.origin_channel ?? '__unknown__';
       for (const msg of this.slackMessages) {
-        if ((msg.envelope?.origin_channel ?? '__unknown__') === targetConv) messageBlock += msg.formatted;
+        if ((msg.envelope?.origin_channel ?? '__unknown__') === targetConv) {
+          messageBlock += msg.formatted;
+          turnReqIds.push(msg.envelope?.request_id);
+        }
       }
       hasTelegramMessage = true; // typing-indicator parity
       drainHuman = () => {
@@ -245,9 +253,13 @@ export class FastChecker {
     for (const msg of inboxMessages) {
       messageBlock += this.formatInboxMessage(msg);
       ackIds.push(msg.id);
+      turnReqIds.push(msg.request_id);
     }
 
     if (messageBlock) {
+      // Stamp the turn's request_id(s) BEFORE inject, so the agent's outbound
+      // commands resolve against the daemon's truth, not what it retypes.
+      writeCurrentRequest(this.paths.stateDir, turnReqIds);
       const injected = this.agent.injectMessage(messageBlock);
       if (injected) {
         drainHuman?.();                 // remove the human batch only on success

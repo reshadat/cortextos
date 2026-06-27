@@ -27,6 +27,8 @@ import { logOutboundMessage, cacheLastSent } from '../telegram/logging.js';
 import { logOutboundSlackMessage, cacheLastSentSlack } from '../slack/logging.js';
 import { resolveAdapter } from '../channels/registry.js';
 import { activeConversations, getTarget } from '../channels/reply-targets.js';
+import { resolveRequestId } from '../channels/current-request.js';
+import { detectChannel, type EnvMap } from '../channels/channel-config.js';
 import { stripBom } from '../utils/strip-bom.js';
 import type { Priority, Task, TaskStatus, EventCategory, EventSeverity, ApprovalCategory, ApprovalStatus, OrgContext, CronDefinition } from '../types/index.js';
 
@@ -121,8 +123,15 @@ busCommand
       console.error(`Warning: agent '${to}' not found in project. Message will be queued but may never be read.`);
     }
 
+    // Daemon-enforced correlation: resolve the request_id from this agent's
+    // current turn so a reused/corrupted id the agent typed can't mis-route the
+    // agent→agent hop. The envelope id is authoritative downstream (the receiving
+    // daemon stamps ITS current-request from it), so the right id propagates the
+    // whole chain regardless of the [req:] text the LLM narrated.
+    const effReqId = resolveRequestId(paths.stateDir, opts.requestId);
+    const effOrigin = opts.originChannel || (effReqId ? getTarget(paths.stateDir, effReqId)?.conversationId : undefined);
     const msgId = sendMessage(paths, env.agentName, to, priority as Priority, text, effectiveReplyTo,
-      (opts.requestId || opts.originChannel) ? { request_id: opts.requestId, origin_channel: opts.originChannel } : undefined);
+      (effReqId || effOrigin) ? { request_id: effReqId, origin_channel: effOrigin } : undefined);
     try {
       logEvent(paths, env.agentName, env.org, 'message', 'agent_message_sent', 'info', JSON.stringify({ to, priority, msg_id: msgId, reply_to: effectiveReplyTo ?? null }));
     } catch { /* non-fatal */ }
@@ -1072,15 +1081,21 @@ busCommand
       const outboundAllowlist = (process.env.SLACK_OUTBOUND_CHANNELS || '')
         .split(',').map((s: string) => s.trim()).filter(Boolean);
 
-      // If a request id is given, the only valid channel is THAT request's target.
-      if (opts.requestId) {
-        const t = getTarget(stateDir, opts.requestId);
-        if (!t || t.conversationId !== channelId) {
-          console.error(`send-slack: channel ${channelId} does not match request ${opts.requestId}'s conversation.`);
-          process.exit(1);
+      // Daemon-enforced correlation: resolve the request_id from the daemon's
+      // current turn (ignoring a reused/character-dropped id the agent retyped),
+      // then route to THAT request's stored conversation — overriding whatever
+      // channel the agent typed. The reply lands on the right conversation even
+      // if the LLM corrupted the channel or the id.
+      const effectiveReqId = resolveRequestId(stateDir, opts.requestId);
+      const target = effectiveReqId ? getTarget(stateDir, effectiveReqId) : null;
+      if (target) {
+        if (channelId !== target.conversationId) {
+          console.error(`send-slack: routing to request ${effectiveReqId}'s conversation ${target.conversationId} (typed channel ${channelId} overridden).`);
+          channelId = target.conversationId;
         }
-        if (!opts.threadTs && t.threadId) opts.threadTs = t.threadId;
+        if (!opts.threadTs && target.threadId) opts.threadTs = target.threadId;
       } else {
+        // No request target — proactive send. Default-deny unless allowlisted.
         const allowed = new Set<string>([...active, ...outboundAllowlist]);
         if (!allowed.has(channelId)) {
           console.error(`send-slack: channel ${channelId} not in active conversations or SLACK_OUTBOUND_CHANNELS — refusing (default-deny).`);
@@ -1113,6 +1128,80 @@ busCommand
       console.log(`Message sent${slackTs ? ` ts:${slackTs}` : ''}`);
     } catch (err: any) {
       console.error(`Failed to send: ${err.message || err}`);
+      process.exit(1);
+    }
+  });
+
+/** Load the agent's .env (over process.env) into a map for channel detection. */
+function loadAgentEnvMap(agentDir?: string): EnvMap {
+  const map: EnvMap = { ...process.env };
+  if (agentDir) {
+    const p = join(agentDir, '.env');
+    if (existsSync(p)) {
+      for (const line of stripBom(readFileSync(p, 'utf-8')).split('\n')) {
+        const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
+        if (m) map[m[1]] = m[2].trim();
+      }
+    }
+  }
+  return map;
+}
+
+// Adapter-agnostic reply: the agent says `bus reply '<text>'` and the framework
+// routes it — via the agent's own channel adapter — to the conversation that
+// owns the current request. No channel id, no "slack", and (with the daemon's
+// current-request) usually no request id either.
+busCommand
+  .command('reply')
+  .description("Reply to the human who sent the current request, via the agent's channel adapter")
+  .argument('<message>', 'Reply text')
+  .option('--request-id <id>', 'Request to reply to (default: the current turn)')
+  .action(async (message: string, opts: { requestId?: string }) => {
+    message = message.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+    const env = resolveEnv();
+    if (!env.agentName || !env.ctxRoot) { console.error('reply: no agent context.'); process.exit(1); }
+    const stateDir = join(env.ctxRoot, 'state', env.agentName);
+    const spec = detectChannel(loadAgentEnvMap(env.agentDir));
+    if (!spec) { console.error('reply: this agent has no messaging channel configured.'); process.exit(1); }
+    const reqId = resolveRequestId(stateDir, opts.requestId);
+    const target = reqId ? getTarget(stateDir, reqId) : null;
+    if (!target) { console.error(`reply: no reply target for the current request — nothing to reply to.`); process.exit(1); }
+    const adapter = spec.adapter(loadAgentEnvMap(env.agentDir), { agentDir: env.agentDir, stateDir });
+    if (!adapter) { console.error(`reply: ${spec.kind} has no adapter wired yet.`); process.exit(1); }
+    try {
+      const sent = await adapter.sendMessage({ conversationId: target.conversationId, threadId: target.threadId }, message);
+      if (env.ctxRoot && env.agentName) {
+        logOutboundSlackMessage(env.ctxRoot, env.agentName, target.conversationId, message, sent?.messageId || '');
+      }
+      console.log(`Replied to request ${reqId}${sent?.messageId ? ` (${sent.messageId})` : ''}`);
+    } catch (err: any) {
+      console.error(`reply failed: ${err.message || err}`);
+      process.exit(1);
+    }
+  });
+
+// Adapter-agnostic reaction on the current request's inbound message.
+busCommand
+  .command('react')
+  .description("React to the current request's message, via the agent's channel adapter")
+  .argument('<emoji>', 'Emoji name (e.g. eyes, white_check_mark)')
+  .option('--request-id <id>', 'Request to react to (default: the current turn)')
+  .action(async (emoji: string, opts: { requestId?: string }) => {
+    const env = resolveEnv();
+    if (!env.agentName || !env.ctxRoot) { console.error('react: no agent context.'); process.exit(1); }
+    const stateDir = join(env.ctxRoot, 'state', env.agentName);
+    const spec = detectChannel(loadAgentEnvMap(env.agentDir));
+    if (!spec) { console.error('react: this agent has no messaging channel configured.'); process.exit(1); }
+    const reqId = resolveRequestId(stateDir, opts.requestId);
+    const target = reqId ? getTarget(stateDir, reqId) : null;
+    if (!target || !target.messageId) { console.error('react: no message to react to for the current request.'); process.exit(1); }
+    const adapter = spec.adapter(loadAgentEnvMap(env.agentDir), { agentDir: env.agentDir, stateDir });
+    if (!adapter) { console.error(`react: ${spec.kind} has no adapter wired yet.`); process.exit(1); }
+    try {
+      await adapter.addReaction({ conversationId: target.conversationId, threadId: target.threadId }, target.messageId, emoji.replace(/:/g, ''));
+      console.log(`Reacted ${emoji} on request ${reqId}`);
+    } catch (err: any) {
+      console.error(`react failed: ${err.message || err}`);
       process.exit(1);
     }
   });
@@ -1166,8 +1255,8 @@ busCommand
   });
 
 busCommand
-  .command('react')
-  .description('Add an emoji reaction to a Slack message')
+  .command('react-slack')
+  .description('Add an emoji reaction to a Slack message (low-level; prefer `bus react <emoji>`)')
   .argument('<channel-id>', 'Slack channel ID (C...)')
   .argument('<message-ts>', 'Timestamp of the message to react to')
   .argument('<emoji>', 'Emoji name without colons (e.g. eyes, white_check_mark, x)')
