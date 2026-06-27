@@ -209,8 +209,24 @@ describe('channel message loop', () => {
     expect(turn1).toContain('from Alice');
     expect(turn1).not.toContain('from Bob'); // Bob's request is NOT in Alice's turn
 
+    // Simulate the Stop hook firing (agent finished the turn) so the idle gate
+    // lets the next request through.
+    (checker as any).lastInjectAt = 0;
     await (checker as any).pollCycle();
     expect(agent.injectMessage.mock.calls[1][0]).toContain('from Bob');
+  }, 20000);
+
+  it('idle gate: no new request is injected while the agent is still busy', async () => {
+    const agent = mockAgent();
+    const checker = new FastChecker(agent, makePaths(ctxRoot, 'orch'), join(ctxRoot, 'fw'));
+    checker.queueSlackMessage(slackFmt('C_A', 'from Alice', 'rA'));
+    checker.queueSlackMessage(slackFmt('C_B', 'from Bob', 'rB'));
+
+    await (checker as any).pollCycle();
+    expect(agent.injectMessage).toHaveBeenCalledTimes(1); // Alice injected
+    await (checker as any).pollCycle();
+    // No last_idle.flag written → agent still busy → Bob NOT injected yet.
+    expect(agent.injectMessage).toHaveBeenCalledTimes(1);
   }, 20000);
 
   it('drain-on-failure: a failed inject does not drop the message', async () => {

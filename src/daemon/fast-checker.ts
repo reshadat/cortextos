@@ -34,6 +34,9 @@ export class FastChecker {
   private typingLastSent: number = 0;
   // Hook-based typing: track when we last injected a Telegram message (ms)
   private lastMessageInjectedAt: number = 0;
+  /** When the last turn was injected (any source) — gates the NEXT injection so
+   *  the daemon never advances current-request while the agent is mid-turn. */
+  private lastInjectAt: number = 0;
   // Track outbound message log size to detect when agent sends a reply
   private outboundLogSize: number = 0;
   // Track stdout log size to detect when agent is actively producing output
@@ -223,6 +226,26 @@ export class FastChecker {
     requeueInflight(this.paths, deferredInbox);
   }
 
+  /**
+   * Is the agent still working the turn we last injected? Gate the next
+   * injection on this so current-request never advances under a lagging reply
+   * (which would cross threads). The Stop hook writes last_idle.flag when the
+   * agent finishes a turn; if we injected after the last idle, it's still busy.
+   */
+  private isAgentBusy(): boolean {
+    if (this.lastInjectAt === 0) return false;
+    // Safety: never stay "busy" forever if the Stop hook misfires.
+    if (Date.now() - this.lastInjectAt > 10 * 60 * 1000) return false;
+    const flagPath = join(this.paths.stateDir, 'last_idle.flag');
+    try {
+      if (!existsSync(flagPath)) return true; // no idle since boot → working
+      const idleTs = parseInt(readFileSync(flagPath, 'utf-8').trim(), 10) * 1000;
+      return this.lastInjectAt > idleTs;
+    } catch {
+      return true;
+    }
+  }
+
   private async pollCycle(): Promise<void> {
     let hasTelegramMessage = false;
 
@@ -235,6 +258,10 @@ export class FastChecker {
       return true;
     });
 
+    // IDLE GATE: only start a new request when the agent has finished the last
+    // one. Without this, current-request advances under a lagging reply and
+    // threads cross. While busy, leave everything queued (nothing consumed/lost).
+    if (!this.isAgentBusy()) {
     // PER-REQUEST SERIALIZATION: gather pending work as a flat, source-agnostic
     // list and let the selector pick exactly ONE request to run this turn. Human
     // channels take priority over the agent-to-agent inbox; the inbox is only
@@ -260,6 +287,7 @@ export class FastChecker {
       const injected = this.agent.injectMessage(turn.block);
       if (injected) {
         this.commitTurn(turn);
+        this.lastInjectAt = Date.now();   // gate the next request until idle
         hasTelegramMessage = turn.selected.some((i) => (i.ref as TurnRef).kind !== 'ib');
         this.log(`Injected ${turn.block.length} bytes`);
         if (hasTelegramMessage) this.lastMessageInjectedAt = Date.now();
@@ -269,6 +297,7 @@ export class FastChecker {
         requeueInflight(this.paths, inboxClaimed.map((m) => m.id));
       }
     }
+    } // end idle gate
 
     // Typing indicator: send while Claude is actively working
     if (this.chatId && this.telegramApi && this.isAgentActive()) {
