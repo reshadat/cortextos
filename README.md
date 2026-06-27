@@ -193,3 +193,5 @@ No Slack? Run headless (`slack_polling: false`) and use the file bus for inter-a
 ---
 
 MIT licensed — see [LICENSE](LICENSE).
+
+Built on [cortextOS](https://github.com/grandamenium/cortextos) by grandamenium. officeOs extends it with a Slack-first channel adapter, JD-based multi-team routing, shared agents, and an interactive onboarding wizard. Thank you to the upstream project.
