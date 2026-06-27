@@ -157,7 +157,7 @@ Otherwise, confirm defaults and move on.
 
 ### Step 10b: Migration check
 
-> "Are you setting me up from scratch, or am I picking up from an existing analyst agent or workspace? If you have an existing setup, I can import their memory, runbooks, and knowledge base content."
+> "Are you setting me up from scratch, or am I picking up from an existing analyst agent or workspace? If you have an existing setup, I can import their memory, procedures, and knowledge base content."
 
 **END YOUR TURN.** If migrating, copy MEMORY.md, memory/ files, and custom skills from the old directory. Note what was imported.
 
@@ -171,13 +171,13 @@ echo "Knowledge Base: $KB_STATUS"
 ```
 
 **If NOT configured:**
-> "The knowledge base is a critical dependency for my analytics and monitoring work — I use it to correlate past incidents, search runbooks, and build up a historical memory of system behavior.
+> "The knowledge base is a critical dependency for my analytics and monitoring work — I use it to correlate past incidents, search procedures, and build up a historical memory of system behavior.
 >
 > To enable: add GEMINI_API_KEY to orgs/${CTX_ORG}/secrets.env (free key at https://aistudio.google.com/app/apikey). Recommend setting this up before going live."
 
 **If KB is enabled:**
 > "Knowledge base is ready. What should I keep searchable? For example:
-> - Monitoring runbooks and incident history
+> - Monitoring procedures and incident history
 > - Performance baselines and anomaly notes
 > - Any reference docs relevant to your system"
 
@@ -267,7 +267,7 @@ If setting up now, for each tool:
 
 ### Step 14: Ask for external context
 
-> "Is there any existing monitoring setup, runbooks, or incident history I should know about? Previous reports, known failure modes, or dashboards I should reference?"
+> "Is there any existing monitoring setup, procedures, or incident history I should know about? Previous reports, known failure modes, or dashboards I should reference?"
 
 For each item:
 - Read the content
@@ -282,7 +282,7 @@ cat > "${CTX_AGENT_DIR}/MEMORY.md" << 'EOF'
 # Long-Term Memory
 
 ## External Context
-<summarize monitoring runbooks, incident history, known failure modes collected above>
+<summarize monitoring procedures, incident history, known failure modes collected above>
 
 ## Monitoring Baselines
 <what "healthy" looks like for this org based on their answers>

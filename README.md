@@ -266,10 +266,10 @@ Each agent declares what it does in `config.json` under the `jd` field:
   "jd": {
     "title": "Documentation Specialist",
     "description": "Finds and explains internal documentation",
-    "responsibilities": ["Answer questions about internal docs", "Summarize runbooks"],
+    "responsibilities": ["Answer questions about internal docs", "Explain how systems work"],
     "provides": ["Documentation search", "URL summarization"],
     "needs": ["Codebase context"],
-    "keywords": ["docs", "wiki", "runbook", "how-to"],
+    "keywords": ["docs", "wiki", "how-to", "explain"],
     "out_of_scope": ["Code changes", "Deployments"]
   }
 }
@@ -281,7 +281,7 @@ officeos sync-jds
 ```
 This writes a `jds-registry.md` to the orchestrator's dir and `memory/collaborators.md` to matched agents.
 
-The orchestrator reads the registry and routes queries based on semantic intent matching — not keyword lookup. "How does the Snyk parser work?" routes to `codebase-agent` because its responsibility is "Describe internal code behavior", even though "Snyk" isn't in the keywords.
+The orchestrator reads the registry and routes queries based on semantic intent matching — not keyword lookup. "How does the auth module work?" routes to `codebase-agent` because its responsibility is "Describe internal code behavior", even though "auth" isn't in the keywords.
 
 ---
 
