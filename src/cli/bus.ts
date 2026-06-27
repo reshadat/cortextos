@@ -25,6 +25,7 @@ import { IPCClient } from '../daemon/ipc-server.js';
 import { TelegramAPI } from '../telegram/api.js';
 import { logOutboundMessage, cacheLastSent } from '../telegram/logging.js';
 import { logOutboundSlackMessage, cacheLastSentSlack } from '../slack/logging.js';
+import { resolveAdapter } from '../channels/registry.js';
 import type { Priority, Task, TaskStatus, EventCategory, EventSeverity, ApprovalCategory, ApprovalStatus, OrgContext, CronDefinition } from '../types/index.js';
 
 /**
@@ -1075,16 +1076,15 @@ busCommand
     }
 
     try {
-      const payload: Record<string, unknown> = { channel: channelId, text: message, mrkdwn: true };
-      if (opts.threadTs) payload.thread_ts = opts.threadTs;
-      const body = JSON.stringify(payload);
-      const res = await fetch('https://slack.com/api/chat.postMessage', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${botToken}`, 'Content-Type': 'application/json' },
-        body,
-      });
-      const data = await res.json() as any;
-      const slackTs = data?.ts || '';
+      // Send through the channel adapter (OFFICEOS_CHANNEL_ADAPTER=mock swaps it
+      // for tests). The allowlist gate + logging below are unchanged.
+      const adapter = resolveAdapter('slack', { botToken });
+      if (!adapter) {
+        console.error('Error: could not resolve a Slack channel adapter.');
+        process.exit(1);
+      }
+      const sent = await adapter.sendMessage({ conversationId: channelId, threadId: opts.threadTs }, message);
+      const slackTs = sent?.messageId || '';
 
       if (env.agentName && env.ctxRoot) {
         logOutboundSlackMessage(env.ctxRoot, env.agentName, channelId, message, slackTs);
@@ -1177,17 +1177,13 @@ busCommand
     }
 
     try {
-      const body = JSON.stringify({ channel: channelId, timestamp: messageTs, name: emoji });
-      const res = await fetch('https://slack.com/api/reactions.add', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${botToken}`, 'Content-Type': 'application/json' },
-        body,
-      });
-      const data = await res.json() as any;
-      if (!data.ok && data.error !== 'already_reacted') {
-        console.error(`Slack reaction failed: ${data.error || 'unknown'}`);
+      const adapter = resolveAdapter('slack', { botToken });
+      if (!adapter) {
+        console.error('Error: could not resolve a Slack channel adapter.');
         process.exit(1);
       }
+      // addReaction is tolerant of already_reacted / missing scope (see SlackAPI).
+      await adapter.addReaction({ conversationId: channelId }, messageTs, emoji);
       console.log(`Reacted :${emoji}:`);
     } catch (err: any) {
       console.error(`Failed to react: ${err.message || err}`);

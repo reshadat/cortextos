@@ -3,6 +3,7 @@ import { existsSync, writeFileSync, mkdirSync, readdirSync, readFileSync } from 
 import {
   readStdin, outputDecision, generateId, waitForResponseFile, cleanupResponseFile,
 } from './index.js';
+import { sendToReplyTarget } from '../channels/send.js';
 
 function findMostRecentPlan(stateDir: string): string | null {
   try {
@@ -57,32 +58,14 @@ async function main(): Promise<void> {
   mkdirSync(stateDir, { recursive: true });
   writeFileSync(pendingFile, JSON.stringify({ uniqueId, shortId: uniqueId.slice(0, 6), agentName, type: 'plan', channelId }), 'utf-8');
 
-  let threadTs: string | undefined;
-  try {
-    const threadState = JSON.parse(readFileSync(join(stateDir, 'slack-thread.json'), 'utf-8'));
-    if (threadState.channel === channelId && threadState.threadTs) threadTs = threadState.threadTs;
-  } catch { /* no active thread */ }
-
   const truncated = plan && plan.length > 800 ? '\n…(truncated)' : '';
   const shortId = uniqueId.slice(0, 6);
   const message = `[Plan] *${agentName}* has a plan:\n\`\`\`\n${planPreview}${truncated}\n\`\`\`\nReply \`allow ${shortId}\` to approve or \`deny ${shortId}\` to reject (30 min timeout → auto-approve)`;
 
-  const payload: Record<string, unknown> = { channel: channelId, text: message, mrkdwn: true };
-  if (threadTs) payload.thread_ts = threadTs;
-  const body = JSON.stringify(payload);
-  const controller = new AbortController();
-  const sendTimer = setTimeout(() => controller.abort(), 10000);
   try {
-    await fetch('https://slack.com/api/chat.postMessage', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${botToken}`, 'Content-Type': 'application/json' },
-      body,
-      signal: controller.signal,
-    });
+    await sendToReplyTarget(agentDir, stateDir, message);
   } catch {
     // Non-fatal
-  } finally {
-    clearTimeout(sendTimer);
   }
 
   const content = await waitForResponseFile(responseFile, 30 * 60 * 1000);

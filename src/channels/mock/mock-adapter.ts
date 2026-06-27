@@ -35,6 +35,8 @@ export class MockAdapter implements ChannelAdapter {
   }
 
   resolveReplyTarget(): OutboundTarget | null {
+    // Lets a test exercise a caller's "no reply target" fallback path.
+    if (process.env.OFFICEOS_MOCK_NO_TARGET === '1') return null;
     return { conversationId: 'C_MOCK', threadId: undefined };
   }
 

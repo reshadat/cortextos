@@ -4,6 +4,7 @@ import {
   readStdin, parseHookInput, outputDecision, generateId,
   waitForResponseFile, formatToolSummary, isClaudeDirOperation, cleanupResponseFile,
 } from './index.js';
+import { sendToReplyTarget } from '../channels/send.js';
 
 async function main(): Promise<void> {
   const input = await readStdin();
@@ -52,31 +53,12 @@ async function main(): Promise<void> {
   mkdirSync(stateDir, { recursive: true });
   writeFileSync(pendingFile, JSON.stringify({ uniqueId, shortId: uniqueId.slice(0, 6), agentName, tool_name, channelId }), 'utf-8');
 
-  // Read active thread state so the approval message lands in the right thread
-  let threadTs: string | undefined;
-  try {
-    const threadState = JSON.parse(require('fs').readFileSync(join(stateDir, 'slack-thread.json'), 'utf-8'));
-    if (threadState.channel === channelId && threadState.threadTs) threadTs = threadState.threadTs;
-  } catch { /* no active thread — post to channel */ }
-
   const message = `[Permission] *${agentName}* wants to run \`${tool_name}\`\n${summary.slice(0, 1500)}\nReply \`allow ${uniqueId.slice(0, 6)}\` or \`deny ${uniqueId.slice(0, 6)}\` (30 min timeout → deny)`;
 
-  const payload: Record<string, unknown> = { channel: channelId, text: message, mrkdwn: true };
-  if (threadTs) payload.thread_ts = threadTs;
-  const body = JSON.stringify(payload);
-  const controller = new AbortController();
-  const sendTimer = setTimeout(() => controller.abort(), 10000);
   try {
-    await fetch('https://slack.com/api/chat.postMessage', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${botToken}`, 'Content-Type': 'application/json' },
-      body,
-      signal: controller.signal,
-    });
+    await sendToReplyTarget(agentDir, stateDir, message);
   } catch {
-    // Non-fatal — continue waiting for response file
-  } finally {
-    clearTimeout(sendTimer);
+    // Non-fatal — continue waiting for the response file
   }
 
   const content = await waitForResponseFile(responseFile, 30 * 60 * 1000);
