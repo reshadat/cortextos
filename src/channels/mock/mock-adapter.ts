@@ -7,10 +7,11 @@
  * Outbound calls append to the JSONL file at OFFICEOS_MOCK_OUTBOX (when set) so
  * a parent test process can assert on what was "sent".
  */
-import { appendFileSync } from 'fs';
+import { appendFileSync, existsSync, readFileSync } from 'fs';
 import type {
   ChannelAdapter,
   InboundHandlers,
+  IncomingMessage,
   OutboundTarget,
   ValidationResult,
 } from '../adapter.js';
@@ -40,8 +41,22 @@ export class MockAdapter implements ChannelAdapter {
     return { conversationId: 'C_MOCK', threadId: undefined };
   }
 
-  async start(_handlers: InboundHandlers): Promise<void> {
-    /* no scripted inbound by default */
+  async start(handlers: InboundHandlers): Promise<void> {
+    // Scripted inbound: replay a JSONL file of IncomingMessage objects so an
+    // integration test can drive the full inbound loop (adapter → handlers →
+    // bus → agent) with zero network.
+    const inbox = process.env.OFFICEOS_MOCK_INBOX;
+    if (!inbox || !existsSync(inbox)) return;
+    for (const line of readFileSync(inbox, 'utf-8').split('\n')) {
+      if (!line.trim()) continue;
+      const msg = JSON.parse(line) as IncomingMessage;
+      if (msg.text?.match(/^(allow|deny)\b/i) && msg.senderRole === 'owner') {
+        const [, decision, shortId] = msg.text.match(/^(allow|deny)(?:\s+(\S+))?/i)!;
+        handlers.onApproval(decision.toLowerCase() as 'allow' | 'deny', shortId, msg.senderRole);
+      } else {
+        await handlers.onMessage(msg);
+      }
+    }
   }
 
   async stop(): Promise<void> {

@@ -1,0 +1,167 @@
+/**
+ * Channel message loop — integration.
+ *
+ * Exercises the real pipeline around the (non-deterministic) agent brain:
+ *   inbound:   adapter → channel-core handlers → FastChecker → agent.injectMessage
+ *   outbound:  agent reply → adapter.sendMessage → wire
+ *   approval:  owner "allow <id>" → onApproval → approval file → hook unblocks
+ *   inter-agent: ROUTED_QUERY over the file bus → ROUTE_REPLY back
+ *
+ * The LLM step itself is stubbed (the agent is a spy); everything else is real.
+ */
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, existsSync, writeFileSync as wf } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import { vi } from 'vitest';
+import type { BusPaths } from '../../src/types/index.js';
+import { FastChecker } from '../../src/daemon/fast-checker.js';
+import { makeChannelHandlers } from '../../src/daemon/channel-core.js';
+import { MockAdapter } from '../../src/channels/mock/mock-adapter.js';
+import { sendToReplyTarget } from '../../src/channels/send.js';
+import { sendMessage, checkInbox, ackInbox } from '../../src/bus/message.js';
+import type { IncomingMessage } from '../../src/channels/adapter.js';
+
+function mockAgent(name = 'orch') {
+  return { name, isBootstrapped: vi.fn().mockReturnValue(true), injectMessage: vi.fn().mockReturnValue(true), write: vi.fn() } as any;
+}
+
+function makePaths(ctxRoot: string, agent: string): BusPaths {
+  const p: BusPaths = {
+    ctxRoot,
+    inbox: join(ctxRoot, 'inbox', agent),
+    inflight: join(ctxRoot, 'inflight', agent),
+    processed: join(ctxRoot, 'processed', agent),
+    logDir: join(ctxRoot, 'logs', agent),
+    stateDir: join(ctxRoot, 'state', agent),
+    taskDir: join(ctxRoot, 'orgs', 'test-org', 'tasks'),
+    approvalDir: join(ctxRoot, 'orgs', 'test-org', 'approvals'),
+    analyticsDir: join(ctxRoot, 'orgs', 'test-org', 'analytics'),
+    heartbeatDir: join(ctxRoot, 'heartbeats'),
+  };
+  for (const d of Object.values(p)) if (d !== ctxRoot) mkdirSync(d, { recursive: true });
+  return p;
+}
+
+const incoming = (over: Partial<IncomingMessage> = {}): IncomingMessage => ({
+  kind: 'slack', senderId: 'U1', senderRole: 'owner', text: 'what shipped overnight?',
+  conversationId: 'C1', messageId: '1700.1', injection: '=== SLACK from [USER: U1] [OWNER] (channel:C1) ===\nwhat shipped overnight?\n',
+  raw: {}, ...over,
+});
+
+describe('channel message loop', () => {
+  let ctxRoot: string;
+  const saved: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    ctxRoot = mkdtempSync(join(tmpdir(), 'chan-loop-'));
+    for (const k of ['OFFICEOS_CHANNEL_ADAPTER', 'OFFICEOS_MOCK_OUTBOX', 'OFFICEOS_MOCK_INBOX', 'SLACK_BOT_TOKEN']) saved[k] = process.env[k];
+  });
+  afterEach(() => {
+    for (const k of Object.keys(saved)) { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; }
+    rmSync(ctxRoot, { recursive: true, force: true });
+  });
+
+  // ── INBOUND: message → bus → agent ─────────────────────────────────────────
+  it('inbound: a queued message is injected into the agent via the bus poll cycle', async () => {
+    const agent = mockAgent();
+    const paths = makePaths(ctxRoot, 'orch');
+    const checker = new FastChecker(agent, paths, join(ctxRoot, 'fw'));
+    const handlers = makeChannelHandlers(checker, paths.stateDir, () => {});
+
+    handlers.onMessage(incoming({ injection: 'INJECT-BLOCK-1' }));
+    await (checker as any).pollCycle();
+
+    expect(agent.injectMessage).toHaveBeenCalledTimes(1);
+    expect(agent.injectMessage.mock.calls[0][0]).toContain('INJECT-BLOCK-1');
+  });
+
+  it('inbound: duplicate messages are injected once (dedup)', async () => {
+    const agent = mockAgent();
+    const paths = makePaths(ctxRoot, 'orch');
+    const checker = new FastChecker(agent, paths, join(ctxRoot, 'fw'));
+    const handlers = makeChannelHandlers(checker, paths.stateDir, () => {});
+
+    handlers.onMessage(incoming({ injection: 'DUP-BLOCK' }));
+    handlers.onMessage(incoming({ injection: 'DUP-BLOCK' }));
+    await (checker as any).pollCycle();
+
+    expect(agent.injectMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('inbound: MockAdapter.start replays a scripted inbox through to the agent', async () => {
+    const agent = mockAgent();
+    const paths = makePaths(ctxRoot, 'orch');
+    const checker = new FastChecker(agent, paths, join(ctxRoot, 'fw'));
+    const handlers = makeChannelHandlers(checker, paths.stateDir, () => {});
+
+    const inbox = join(ctxRoot, 'mock-inbox.jsonl');
+    writeFileSync(inbox, JSON.stringify(incoming({ injection: 'SCRIPTED-1' })) + '\n');
+    process.env.OFFICEOS_MOCK_INBOX = inbox;
+
+    await new MockAdapter().start(handlers);
+    await (checker as any).pollCycle();
+
+    expect(agent.injectMessage).toHaveBeenCalledTimes(1);
+    expect(agent.injectMessage.mock.calls[0][0]).toContain('SCRIPTED-1');
+  });
+
+  // ── APPROVAL: owner "allow <id>" → approval file the hook waits on ──────────
+  it('approval: an owner allow decision writes the response file the permission hook polls', async () => {
+    const paths = makePaths(ctxRoot, 'orch');
+    const handlers = makeChannelHandlers({ queueSlackMessage: () => {}, isDuplicate: () => false }, paths.stateDir, () => {});
+    // a permission hook would have written this pending marker:
+    wf(join(paths.stateDir, 'hook-response-abc123.pending'), JSON.stringify({ uniqueId: 'abc123' }));
+
+    // owner types "allow abc123" in Slack → adapter routes to onApproval
+    handlers.onApproval('allow', 'abc123', 'owner');
+
+    const responseFile = join(paths.stateDir, 'hook-response-abc123.json');
+    expect(existsSync(responseFile)).toBe(true);
+    expect(JSON.parse(readFileSync(responseFile, 'utf-8')).decision).toBe('allow');
+  });
+
+  // ── OUTBOUND: agent reply → adapter → wire ─────────────────────────────────
+  it('outbound: a reply lands on the channel+thread of the last inbound message', async () => {
+    const paths = makePaths(ctxRoot, 'orch');
+    // inbound persisted this reply target:
+    wf(join(paths.stateDir, 'slack-thread.json'), JSON.stringify({ channel: 'C1', threadTs: '1700.1', msgTs: '1700.1' }));
+
+    const outbox = join(ctxRoot, 'outbox.jsonl');
+    process.env.OFFICEOS_CHANNEL_ADAPTER = 'mock';
+    process.env.OFFICEOS_MOCK_OUTBOX = outbox;
+    const agentDir = join(ctxRoot, 'agent');
+    mkdirSync(agentDir, { recursive: true });
+    wf(join(agentDir, '.env'), 'SLACK_BOT_TOKEN=xoxb-1\n');
+
+    const res = await sendToReplyTarget(agentDir, paths.stateDir, 'all green');
+    expect(res).toEqual({ messageId: 'mock-ts-1' });
+    const sent = JSON.parse(readFileSync(outbox, 'utf-8').trim());
+    expect(sent).toMatchObject({ op: 'sendMessage', text: 'all green' });
+  });
+
+  // ── INTER-AGENT: ROUTED_QUERY → ROUTE_REPLY over the file bus ───────────────
+  it('inter-agent: orchestrator routes a query and the specialist replies over the bus', () => {
+    const orch = makePaths(ctxRoot, 'orch');
+    const analyst = makePaths(ctxRoot, 'analyst');
+
+    // orch → analyst
+    const qId = sendMessage(orch, 'orch', 'analyst', 'high', 'ROUTED_QUERY: summarize nightly metrics');
+    const got = checkInbox(analyst);
+    expect(got).toHaveLength(1);
+    expect(got[0].from).toBe('orch');
+    expect(got[0].text).toMatch(/^ROUTED_QUERY:/);
+    ackInbox(analyst, qId);
+
+    // analyst → orch (reply references the original)
+    const rId = sendMessage(analyst, 'analyst', 'orch', 'high', 'ROUTE_REPLY: no anomalies', qId);
+    const reply = checkInbox(orch);
+    expect(reply).toHaveLength(1);
+    expect(reply[0].text).toMatch(/^ROUTE_REPLY:/);
+    ackInbox(orch, rId);
+
+    // both inboxes drained
+    expect(checkInbox(orch)).toHaveLength(0);
+    expect(checkInbox(analyst)).toHaveLength(0);
+  });
+});
