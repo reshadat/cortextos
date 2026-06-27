@@ -47,7 +47,13 @@ export interface CronHealth {
   expectedIntervalMs: number;
   /** Gap (now - lastFire) in ms; null if never fired. */
   gapMs: number | null;
-  /** Fraction of fires in the last 24h that succeeded (0–1). 1.0 if no fires. */
+  /**
+   * Fraction of fires in the last 24h that were successfully DISPATCHED (0–1).
+   * NOTE: 'fired' means the prompt was injected into the agent — NOT that the
+   * scheduled work completed. The runtime has no completion ack from the agent
+   * yet, so this is a dispatch rate, not an outcome/success rate. A value of 1.0
+   * means every fire was delivered, not that every monitoring run succeeded.
+   */
   successRate24h: number;
   /** Raw count of fire attempts in the last 24h. */
   firesLast24h: number;
@@ -121,8 +127,10 @@ export function computeHealth(
   // ── 24h metrics ───────────────────────────────────────────────────────────
 
   const firesLast24h = executionsLast24h.length;
-  const successCount = executionsLast24h.filter(e => e.status === 'fired').length;
-  const successRate24h = firesLast24h > 0 ? successCount / firesLast24h : 1;
+  // 'fired' = successfully dispatched (prompt injected). NOT a completion ack —
+  // see successRate24h doc. This is a dispatch rate; true outcome is unknown.
+  const dispatchedCount = executionsLast24h.filter(e => e.status === 'fired').length;
+  const successRate24h = firesLast24h > 0 ? dispatchedCount / firesLast24h : 1;
 
   // ── State machine ─────────────────────────────────────────────────────────
 
