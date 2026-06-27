@@ -28,6 +28,12 @@ export interface IncomingMessage {
   threadId?: string;
   /** True when the text is a slash command (different sanitization). */
   isSlashCommand?: boolean;
+  /**
+   * The channel-rendered PTY injection block. The adapter owns its channel's
+   * exact wire format (header, reply/react commands, readonly preamble); the
+   * core just dedups and queues it. Lets a future channel keep its own shape.
+   */
+  injection?: string;
   /** The original channel event, for anything the core can't express yet. */
   raw: unknown;
 }
@@ -96,4 +102,8 @@ export interface AdapterContext {
    */
   botToken?: string;
   appToken?: string;
+  /** Build a full inbound (gates + socket) adapter rather than outbound-only. */
+  forInbound?: boolean;
+  /** Logger threaded into the inbound loop. */
+  log?: (msg: string) => void;
 }

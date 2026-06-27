@@ -138,6 +138,7 @@ export async function validateBotToken(botToken: string): Promise<{ ok: boolean;
   // Routes through the channel adapter — Slack by default, MockAdapter when
   // OFFICEOS_CHANNEL_ADAPTER=mock (the black-box E2E path).
   const adapter = resolveAdapter('slack', { botToken });
+  if (!adapter) return { ok: true, botUserId: null };
   const res = await adapter.validateCredentials();
   if (res.ok) {
     const id = res.identity ?? null;

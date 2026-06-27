@@ -75,8 +75,8 @@ describe('SlackAdapter', () => {
     expect(new SlackAdapter('xoxb-x').resolveReplyTarget(dir)).toBeNull();
   });
 
-  it('start throws until Phase B', async () => {
+  it('start throws when constructed outbound-only (no inbound config)', async () => {
     await expect(new SlackAdapter('xoxb-x').start({ onMessage: () => {}, onApproval: () => {} }))
-      .rejects.toThrow(/Phase B/);
+      .rejects.toThrow(/no inbound config/);
   });
 });

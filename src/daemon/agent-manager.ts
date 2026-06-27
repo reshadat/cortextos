@@ -16,7 +16,9 @@ import { collectTelegramCommands, registerTelegramCommands } from '../bus/metric
 import { stripControlChars } from '../utils/validate.js';
 import { processMediaMessage } from '../telegram/media.js';
 import { stripBom } from '../utils/strip-bom.js';
-import { SlackControlPlane } from '../slack/control-plane.js';
+import { resolveAdapter } from '../channels/registry.js';
+import { makeChannelHandlers } from './channel-core.js';
+import type { ChannelAdapter } from '../channels/adapter.js';
 
 type LogFn = (msg: string) => void;
 
@@ -25,7 +27,8 @@ type LogFn = (msg: string) => void;
  */
 export class AgentManager {
   private agents: Map<string, { process: AgentProcess; checker: FastChecker; poller?: TelegramPoller; activityPoller?: TelegramPoller; telegramRejectCount?: number; telegramLastRejectAlertAt?: number }> = new Map();
-  private slackCP: SlackControlPlane;
+  /** Per-agent Slack (or other) channel adapter, started on agent boot. */
+  private channelAdapters: Map<string, ChannelAdapter> = new Map();
   private workers: Map<string, WorkerProcess> = new Map();
   /** Daemon-level cron scheduler registry: one CronScheduler per enabled agent. */
   private cronSchedulers: Map<string, CronScheduler> = new Map();
@@ -51,7 +54,6 @@ export class AgentManager {
     this.ctxRoot = ctxRoot;
     this.frameworkRoot = frameworkRoot;
     this.org = org;
-    this.slackCP = new SlackControlPlane(frameworkRoot);
     this.daemonJustCrashed = this.detectDaemonCrashMarkers();
     if (this.daemonJustCrashed) {
       console.log('[agent-manager] Detected .daemon-crashed marker(s) — previous daemon exited abnormally. Will quiet BUG-011 alarm for this startup cycle.');
@@ -430,10 +432,23 @@ export class AgentManager {
     // external cron system — agents no longer need to call CronCreate on boot.
     this.startAgentCronScheduler(name);
 
-    // Wire Slack control plane if agent has Slack credentials
-    this.slackCP.init(name, agentDir, checker, config, log, this.ctxRoot).catch((err) => {
-      log(`Slack control plane init error: ${err.message || err}`);
-    });
+    // Wire the Slack channel adapter if the agent has Slack credentials.
+    // Routed through resolveAdapter so OFFICEOS_CHANNEL_ADAPTER=mock can swap
+    // the whole inbound path in tests.
+    if (config.slack_polling !== false) {
+      const stateDir = join(this.ctxRoot, 'state', name);
+      try {
+        const adapter = resolveAdapter('slack', { agentDir, stateDir, forInbound: true, log });
+        if (adapter) {
+          this.channelAdapters.set(name, adapter);
+          adapter.start(makeChannelHandlers(checker, stateDir, log)).catch((err) => {
+            log(`Channel adapter start error: ${err.message || err}`);
+          });
+        }
+      } catch (err: any) {
+        log(`Channel adapter init error: ${err.message || err}`);
+      }
+    }
 
     // Start fast checker in background
     checker.start().catch(err => {
@@ -861,7 +876,8 @@ export class AgentManager {
     if (entry.poller) entry.poller.stop();
     if (entry.activityPoller) entry.activityPoller.stop();
     entry.checker.stop();
-    this.slackCP.cleanup(name).catch(() => {}); // non-blocking, best-effort
+    const adapter = this.channelAdapters.get(name);
+    if (adapter) { adapter.stop().catch(() => {}); this.channelAdapters.delete(name); } // non-blocking, best-effort
     await entry.process.stop();
     this.agents.delete(name);
 

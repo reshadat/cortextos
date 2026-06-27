@@ -6,7 +6,7 @@
  * so a spawned `officeos onboard` runs with zero network.
  */
 import type { AdapterContext, ChannelAdapter } from './adapter.js';
-import { SlackAdapter } from './slack/slack-adapter.js';
+import { SlackAdapter, readSlackInboundConfig } from './slack/slack-adapter.js';
 import { MockAdapter } from './mock/mock-adapter.js';
 
 export type ChannelKind = 'slack' | 'mock';
@@ -14,7 +14,7 @@ export type ChannelKind = 'slack' | 'mock';
 /** Channels with a concrete adapter today. Telegram is accommodated but not yet built. */
 export const SUPPORTED_CHANNELS: ChannelKind[] = ['slack', 'mock'];
 
-export function resolveAdapter(kind: string, ctx: AdapterContext = {}): ChannelAdapter {
+export function resolveAdapter(kind: string, ctx: AdapterContext = {}): ChannelAdapter | null {
   // Global test override — wins over the requested kind.
   if (process.env.OFFICEOS_CHANNEL_ADAPTER === 'mock') {
     return new MockAdapter();
@@ -24,6 +24,13 @@ export function resolveAdapter(kind: string, ctx: AdapterContext = {}): ChannelA
     case 'mock':
       return new MockAdapter();
     case 'slack': {
+      // Inbound: build the full gate config from the agent's Slack env.
+      if (ctx.forInbound && ctx.agentDir && ctx.stateDir) {
+        const parsed = readSlackInboundConfig(ctx.agentDir, ctx.stateDir, ctx.log);
+        if (!parsed) return null; // agent isn't Slack-enabled — daemon skips it
+        return new SlackAdapter(parsed.botToken, parsed.config);
+      }
+      // Outbound / validation only.
       const botToken =
         ctx.botToken ?? ctx.env?.SLACK_BOT_TOKEN ?? process.env.SLACK_BOT_TOKEN;
       if (!botToken) {
