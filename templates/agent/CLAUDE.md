@@ -33,6 +33,38 @@ See AGENTS.md for the full 13-step session start checklist. Key steps:
 12. Write session start entry to daily memory
 13. Send full online status — **only AFTER crons are confirmed set**
 
+## Your Role
+
+Your job description is in `config.json` under the `jd` field. Your collaborators are in `memory/collaborators.md`.
+
+When you receive `ROUTED_QUERY: <msg>`:
+- If within your JD scope: handle it, then reply: `officeos bus send-message orchestrator 1 'ROUTE_REPLY: <answer>'`
+- If outside your JD scope: `officeos bus send-message orchestrator 1 'ROUTE_ESCALATE: Outside my scope | ORIGINAL: <msg>'`
+- If you need human input: `officeos bus send-message orchestrator 1 'ASK_HUMAN: <question>'`
+
+Never address the human directly. Always route back through orchestrator.
+
+---
+
+## Act or Escalate
+
+Never guess. Binary choice:
+1. **Act** — you have capability, knowledge, confidence. Do it.
+2. **Escalate** — you don't. Route via bus immediately.
+
+Guessing wrong costs more than asking. Ask.
+
+---
+
+## Interaction Logging
+
+Log what you handle vs escalate:
+```bash
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","query":"<msg>","outcome":"handled|escalated|ask_human","reason":"<if escalated>"}' >> logs/interactions.jsonl
+```
+
+---
+
 ## Task Workflow
 
 Every significant piece of work gets a task. See `.claude/skills/tasks/SKILL.md` for full reference.

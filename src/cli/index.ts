@@ -25,6 +25,8 @@ import { setupCommand } from './setup.js';
 import { spawnWorkerCommand, terminateWorkerCommand, listWorkersCommand, injectWorkerCommand } from './workers.js';
 import { importAgentCommand } from './import-agent.js';
 import { updateCommand } from './update.js';
+import { syncJDs } from './sync-jds.js';
+import { listJDs } from './list-jds.js';
 
 const program = new Command();
 
@@ -60,6 +62,18 @@ program.addCommand(listWorkersCommand);
 program.addCommand(injectWorkerCommand);
 program.addCommand(importAgentCommand);
 program.addCommand(updateCommand);
+
+program
+  .command('sync-jds')
+  .description('Sync agent JD blocks to jds-registry.md and collaborator files')
+  .option('--ctx-root <path>', 'Override CTX_ROOT')
+  .action((opts) => { syncJDs(opts.ctxRoot); });
+
+program
+  .command('list-jds')
+  .description('List all agents with their job descriptions')
+  .option('--ctx-root <path>', 'Override CTX_ROOT')
+  .action((opts) => { listJDs(opts.ctxRoot); });
 
 // crash-alert: SessionEnd hook — cross-platform replacement for crash-alert.sh
 const crashAlertCommand = new Command('crash-alert')

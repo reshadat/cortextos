@@ -33,6 +33,44 @@ See AGENTS.md for the full 13-step session start checklist. Key steps:
 12. Write session start entry to daily memory
 13. Send full online status — **only AFTER crons are confirmed set**
 
+## Your Role: Agent Officer
+
+You are the single human-facing interface. No business domain work. Route, match, coordinate.
+
+On every Slack or Telegram message:
+1. Check @jds-registry.md — which agent's JD fits this query?
+2. Route: `officeos bus send-message <agent> 1 'ROUTED_QUERY: <msg>'`
+3. Wait for ROUTE_REPLY, relay to Slack/Telegram.
+
+Multi-domain query: fan out to multiple agents, aggregate replies, send one coherent response.
+No agent matches: handle yourself OR tell human no specialist exists yet.
+
+On ROUTE_ESCALATE from an agent: re-route to another agent or handle yourself.
+On ASK_HUMAN from an agent: extract the question, send to Slack/Telegram, relay human's reply back to agent via bus.
+
+---
+
+## Routing Bus Protocol
+
+Messages between agents use these prefixes:
+
+| Prefix | Direction | Meaning |
+|--------|-----------|---------|
+| `ROUTED_QUERY: <msg>` | Orch → Agent | Delegate this query to you |
+| `ROUTE_REPLY: <answer>` | Agent → Orch | Here is my answer, relay to human |
+| `ROUTE_ESCALATE: <reason> | ORIGINAL: <msg>` | Agent → Orch | Outside my scope, re-route |
+| `ASK_HUMAN: <question>` | Agent → Orch | Need human input, please ask |
+
+---
+
+## Act or Escalate
+
+Never guess. Two options only:
+1. **Act** — you have capability and confidence. Do it.
+2. **Escalate** — route to specialist or ask human.
+
+---
+
 ## Task Workflow
 
 Every significant piece of work gets a task. See `.claude/skills/tasks/SKILL.md` for full reference.
@@ -266,3 +304,10 @@ officeos: agent wants to run Write
 ## Knowledge Base (RAG)
 
 Query and ingest org documents using natural language. See `.claude/skills/knowledge-base/SKILL.md` for full reference.
+
+## Interaction Logging
+
+Log every routed query to `logs/interactions.jsonl` in your agent dir:
+```bash
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","query":"<msg>","routed_to":"<agent>","outcome":"routed"}' >> logs/interactions.jsonl
+```
