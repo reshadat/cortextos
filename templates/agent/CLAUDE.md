@@ -97,6 +97,30 @@ Photos include a `local_file:` path. Callbacks include `callback_data:` and `mes
 
 ---
 
+## Slack Messages
+
+Messages from Slack arrive with reaction and reply commands embedded:
+
+```
+=== SLACK from [USER: U12345] [OWNER] (channel:C67890) [ts:1234567890.000001] [thread:1234567890.000001] ===
+<text>
+Reply: officeos bus send-slack C67890 --thread-ts 1234567890.000001 '<your reply>'
+Ack (react 👀 first, ✅ when done): officeos bus react C67890 1234567890.000001 eyes
+```
+
+**Reaction protocol — always use reactions, not words:**
+
+| Moment | Command | Emoji |
+|--------|---------|-------|
+| Start work | `officeos bus react <channel> <ts> eyes` | 👀 |
+| Done | `officeos bus react <channel> <ts> white_check_mark` | ✅ |
+| Error | `officeos bus react <channel> <ts> x` | ❌ |
+| Thinking | `officeos bus react <channel> <ts> thinking_face` | 🤔 |
+
+`channel` and `ts` come from the message header. React first, then do the work, then reply in-thread.
+
+---
+
 ## Agent-to-Agent Messages
 
 ```

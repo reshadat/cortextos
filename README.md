@@ -86,11 +86,27 @@ pm2 start ecosystem.config.js && pm2 save && pm2 startup
 ## Slack App Setup
 
 1. [api.slack.com/apps](https://api.slack.com/apps) → Create App → **Enable Socket Mode** → generate App-Level Token (`xapp-...`) with scope `connections:write`
-2. **Bot Token Scopes:** `channels:history`, `chat:write`, `chat:write.public`, `groups:history`, `im:history`, `im:read`, `im:write`, `channels:read`, `mpim:write`
+2. **Bot Token Scopes:** `channels:history`, `chat:write`, `chat:write.public`, `groups:history`, `im:history`, `im:read`, `im:write`, `channels:read`, `mpim:write`, `reactions:write`
 3. **Event Subscriptions → Bot events:** `message.channels`, `message.groups`, `message.im`, `member_joined_channel`
 4. Install to workspace → copy Bot Token (`xoxb-...`)
 5. Your **User ID**: Profile → More → Copy Member ID (`U...`)
 6. **Channel ID**: Right-click channel → Copy link → extract `C...` segment
+
+### Threaded Replies
+
+officeOs replies in the same Slack thread as the message it's responding to. When you reply in a thread, the agent receives the full thread context (up to 20 messages) before your latest message. No configuration needed — thread tracking is automatic.
+
+### Emoji Reactions
+
+Agents acknowledge messages with emoji reactions instead of words:
+
+- 👀 `:eyes` — "I saw this and I'm working on it"
+- ✅ `:white_check_mark` — done
+- ❌ `:x` — error
+
+Agents react via: `officeos bus react <channel-id> <message-ts> <emoji-name>`
+
+The `reactions:write` scope (step 2 above) enables this. If you omit it, reactions fail silently — agents fall back to text replies.
 
 ---
 
