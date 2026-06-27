@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'fs';
 import { platform } from 'os';
 import type { AgentConfig, CtxEnv } from '../types/index.js';
 import { OutputBuffer } from './output-buffer.js';
+import { applyHeadroom } from './headroom.js';
 
 // node-pty types
 interface IPty {
@@ -143,12 +144,20 @@ export class AgentPTY {
     const claudeArgs = this.buildClaudeArgs(mode, prompt);
     const claudeCmd = this.getBinaryName();
 
-    this.pty = this.spawnFn!(claudeCmd, claudeArgs, {
+    const { cmd: finalCmd, env: finalEnv } = await applyHeadroom(
+      [claudeCmd, ...claudeArgs],
+      ptyEnv,
+      this.config,
+      'claude-code',
+    );
+    const [spawnCmd, ...spawnArgs] = finalCmd;
+
+    this.pty = this.spawnFn!(spawnCmd, spawnArgs, {
       name: 'xterm-256color',
       cols: 200,
       rows: 50,
       cwd,
-      env: ptyEnv,
+      env: finalEnv as Record<string, string>,
     });
 
     this._alive = true;

@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
 RUN npm install -g \
     @anthropic-ai/claude-code \
     @openai/codex
+RUN npm install -g headroom || true
 
 WORKDIR /officeos
 

@@ -10,6 +10,10 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       # Optional: fallback for Claude Code if not using interactive login
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # Headroom token compression (optional binary — disabled if not installed)
+      - HEADROOM_ENABLED=${HEADROOM_ENABLED:-true}
+      - HEADROOM_MODE=${HEADROOM_MODE:-wrap}
+      - HEADROOM_PORT=${HEADROOM_PORT:-8787}
 
     volumes:
       # Claude Code OAuth session (persist across restarts)
