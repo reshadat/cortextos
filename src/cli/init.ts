@@ -10,12 +10,12 @@ import type { OrgContext } from '../types/index.js';
 export const initCommand = new Command('init')
   .argument('<org-name>', 'Organization name')
   .option('--instance <id>', 'Instance ID', 'default')
-  .description('Create a new cortextOS organization')
+  .description('Create a new officeOs organization')
   .action(async (orgName: string, options: { instance: string }) => {
     // Validate the org name BEFORE creating anything on disk.
     // Without this, mixed-case names like 'teamStupid' pass through `init`,
     // get written to disk, and then fail every dashboard add-agent and every
-    // `cortextos bus *` invocation at runtime because `src/utils/env.ts` and
+    // `officeos bus *` invocation at runtime because `src/utils/env.ts` and
     // the dashboard API both call `validateOrgName()` strictly. Mirrors the
     // BUG-041 fix for `validateAgentName()` in src/cli/add-agent.ts.
     try {
@@ -28,7 +28,7 @@ export const initCommand = new Command('init')
     }
 
     const instanceId = options.instance;
-    const ctxRoot = join(homedir(), '.cortextos', instanceId);
+    const ctxRoot = join(homedir(), '.officeos', instanceId);
     const projectRoot = process.cwd();
 
     // Check if org already exists
@@ -38,7 +38,7 @@ export const initCommand = new Command('init')
       console.log('  Existing files will NOT be overwritten. Only missing files will be created.\n');
     }
 
-    console.log(`\nInitializing cortextOS organization: ${orgName}`);
+    console.log(`\nInitializing officeOs organization: ${orgName}`);
     console.log(`  Instance: ${instanceId}`);
     console.log(`  State: ${ctxRoot}`);
     console.log(`  Project: ${projectRoot}\n`);
@@ -90,7 +90,7 @@ export const initCommand = new Command('init')
       // Fill in any missing fields (handles upgrades from older context.json without new fields)
       try {
         // stripBom: see src/utils/strip-bom.ts. Skipping this would make
-        // every re-run of `cortextos init` silently fall through to the
+        // every re-run of `officeos init` silently fall through to the
         // catch block, leaving context.json un-upgraded.
         const ctx = JSON.parse(stripBom(readFileSync(contextPath, 'utf-8')));
         if (!ctx.timezone) ctx.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -120,7 +120,7 @@ export const initCommand = new Command('init')
     const secretsPath = join(orgDir, 'secrets.env');
     if (!existsSync(secretsPath)) {
       writeFileSync(secretsPath, [
-        '# cortextOS secrets for ' + orgName,
+        '# officeOs secrets for ' + orgName,
         '# Add your Telegram bot token and other secrets here',
         'BOT_TOKEN=',
         'CHAT_ID=',
@@ -148,7 +148,7 @@ export const initCommand = new Command('init')
       writeFileSync(knowledgePath, `# ${orgName} - Shared Knowledge\n\nShared facts, metrics, and corrections for all agents.\n`, 'utf-8');
     }
 
-    // Regenerate SYSTEM.md for all existing agents (handles cortextos init upgrades).
+    // Regenerate SYSTEM.md for all existing agents (handles officeos init upgrades).
     // Reads the now-current context.json and rewrites each agent's SYSTEM.md so that
     // dashboard_url, orchestrator, timezone, etc. stay in sync after context changes.
     if (existsSync(agentsDir)) {
@@ -178,7 +178,7 @@ export const initCommand = new Command('init')
               `**Dashboard:** ${ctx.dashboard_url || '(not configured)'}`,
               `**Communication Style:** ${ctx.communication_style || 'casual'}`,
               `**Day Mode:** ${ctx.day_mode_start || '08:00'} - ${ctx.day_mode_end || '00:00'}`,
-              '**Framework:** cortextOS Node.js',
+              '**Framework:** officeOs Node.js',
               '',
               '---',
               '',
@@ -186,21 +186,21 @@ export const initCommand = new Command('init')
               '',
               '> This section is populated during onboarding. For the live roster:',
               '```bash',
-              'cortextos list-agents',
+              'officeos list-agents',
               '```',
               '',
               '## Agent Health',
               '',
               '```bash',
-              'cortextos bus read-all-heartbeats',
+              'officeos bus read-all-heartbeats',
               '```',
               '',
               '## Communication',
               '',
-              '- Agent-to-agent: `cortextos bus send-message <agent> <priority> "<text>"`',
-              '- Telegram to user: `cortextos bus send-telegram <chat_id> "<text>"`',
-              '- React to a Telegram message (single emoji ack, no verbal noise): `cortextos bus react-telegram <chat_id> <message_id> 👍`',
-              '- Check inbox: `cortextos bus check-inbox`',
+              '- Agent-to-agent: `officeos bus send-message <agent> <priority> "<text>"`',
+              '- Telegram to user: `officeos bus send-telegram <chat_id> "<text>"`',
+              '- React to a Telegram message (single emoji ack, no verbal noise): `officeos bus react-telegram <chat_id> <message_id> 👍`',
+              '- Check inbox: `officeos bus check-inbox`',
               '',
             ].join('\n');
             writeFileSync(systemMdPath, systemMd, 'utf-8');
@@ -216,8 +216,8 @@ export const initCommand = new Command('init')
     console.log(`\n  Organization "${orgName}" initialized.`);
     console.log(`\n  Next steps:`);
     console.log(`    1. Add your Telegram bot token to orgs/${orgName}/secrets.env`);
-    console.log(`    2. Add an agent: cortextos add-agent <name> --template orchestrator`);
-    console.log(`    3. Start: cortextos start\n`);
+    console.log(`    2. Add an agent: officeos add-agent <name> --template orchestrator`);
+    console.log(`    3. Start: officeos start\n`);
   });
 
 function findOrgTemplateDir(projectRoot: string): string | null {

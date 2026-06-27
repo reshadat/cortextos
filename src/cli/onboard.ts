@@ -274,11 +274,11 @@ export function wireSlackHooks(agentDir: string, projectRoot: string): boolean {
       { hooks: [{ type: 'command', command: slack('hook-permission-slack.js'), timeout: 1860 }] },
     ],
     PreToolUse: [
-      { hooks: [{ type: 'command', command: 'cortextos bus hook-loop-detector', timeout: 5 }] },
+      { hooks: [{ type: 'command', command: 'officeos bus hook-loop-detector', timeout: 5 }] },
       { matcher: 'AskUserQuestion', hooks: [{ type: 'command', command: slack('hook-ask-slack.js'), timeout: 10 }] },
     ],
     SessionEnd: [
-      { hooks: [{ type: 'command', command: 'cortextos crash-alert', timeout: 10 }] },
+      { hooks: [{ type: 'command', command: 'officeos crash-alert', timeout: 10 }] },
       { hooks: [{ type: 'command', command: slack('hook-crash-alert-slack.js'), timeout: 10 }] },
     ],
     PreCompact: [
@@ -329,7 +329,7 @@ export const onboardCommand = new Command('onboard')
     const noStart = options.start === false || process.env.OFFICEOS_ONBOARD_NO_START === '1';
     const skipEnable = options.skipEnable || process.env.OFFICEOS_ONBOARD_SKIP_ENABLE === '1';
     const projectRoot = findProjectRoot();
-    const ctxRoot = join(homedir(), '.cortextos', instanceId);
+    const ctxRoot = join(homedir(), '.officeos', instanceId);
     const iface = rl();
 
     console.log('\n  Welcome to officeOs onboarding\n');

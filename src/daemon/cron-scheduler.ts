@@ -352,7 +352,7 @@ export class CronScheduler {
     // Resolve stateDir from CTX_ROOT so test sandboxes (which override CTX_ROOT
     // but not homedir) don't accidentally read production state.
     const ctxRoot = process.env.CTX_ROOT ||
-      join(homedir(), '.cortextos', process.env.CTX_INSTANCE_ID || 'default');
+      join(homedir(), '.officeos', process.env.CTX_INSTANCE_ID || 'default');
     const stateDir = join(ctxRoot, 'state', this.agentName);
     let stateLastFireByName = new Map<string, string>();
     try {

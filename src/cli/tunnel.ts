@@ -5,8 +5,8 @@ import { join } from 'path';
 import { homedir } from 'os';
 import { stripBom } from '../utils/strip-bom.js';
 
-const TUNNEL_NAME = 'cortextos';
-const PLIST_LABEL = 'com.cortextos.tunnel';
+const TUNNEL_NAME = 'officeos';
+const PLIST_LABEL = 'com.officeos.tunnel';
 const PLIST_PATH = join(homedir(), 'Library', 'LaunchAgents', `${PLIST_LABEL}.plist`);
 const CLOUDFLARED_CERT = join(homedir(), '.cloudflared', 'cert.pem');
 const CLOUDFLARED_CONFIG = join(homedir(), '.cloudflared', 'config.yaml');
@@ -20,7 +20,7 @@ interface TunnelConfig {
 }
 
 function getTunnelConfigPath(instance: string): string {
-  return join(homedir(), '.cortextos', instance, 'tunnel.json');
+  return join(homedir(), '.officeos', instance, 'tunnel.json');
 }
 
 function readTunnelConfig(instance: string): TunnelConfig {
@@ -34,14 +34,14 @@ function readTunnelConfig(instance: string): TunnelConfig {
 
 function writeTunnelConfig(instance: string, config: TunnelConfig): void {
   const configPath = getTunnelConfigPath(instance);
-  mkdirSync(join(homedir(), '.cortextos', instance), { recursive: true });
+  mkdirSync(join(homedir(), '.officeos', instance), { recursive: true });
   writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
 }
 
 function checkPlatform(): void {
   if (process.platform !== 'darwin') {
-    console.error('  cortextos tunnel requires macOS (uses launchd for persistence).');
-    console.error('  On Linux/Windows, run cloudflared manually: cloudflared tunnel run cortextos');
+    console.error('  officeos tunnel requires macOS (uses launchd for persistence).');
+    console.error('  On Linux/Windows, run cloudflared manually: cloudflared tunnel run officeos');
     process.exit(1);
   }
 }
@@ -61,7 +61,7 @@ function checkAuth(): void {
   if (!existsSync(CLOUDFLARED_CERT)) {
     console.error('  Not authenticated with Cloudflare.');
     console.error('  Run: cloudflared login');
-    console.error('  Then re-run: cortextos tunnel start');
+    console.error('  Then re-run: officeos tunnel start');
     process.exit(1);
   }
 }
@@ -179,8 +179,8 @@ function writePlist(instance: string, port: number): void {
   const cfPath = getCloudflaredPath();
   const nodeBinDir = detectNodePath();
   const cfBinDir = detectCloudflaredPath();
-  const logDir = join(homedir(), '.cortextos', instance, 'logs', 'tunnel');
-  const ctxRoot = join(homedir(), '.cortextos', instance);
+  const logDir = join(homedir(), '.officeos', instance, 'logs', 'tunnel');
+  const ctxRoot = join(homedir(), '.officeos', instance);
 
   mkdirSync(logDir, { recursive: true });
 
@@ -307,7 +307,7 @@ const startCommand = new Command('start')
     const port = parseInt(options.port, 10);
 
     checkPlatform();
-    console.log('\ncortextOS Tunnel\n');
+    console.log('\nofficeOs Tunnel\n');
 
     // 1. Check cloudflared installed
     const version = checkCloudflared();
@@ -379,7 +379,7 @@ const startCommand = new Command('start')
     console.log(`\n  Dashboard URL: ${tunnelUrl}`);
     console.log(`  TUNNEL_URL saved to: ${getTunnelConfigPath(options.instance)}\n`);
     console.log(`  The tunnel will restart automatically after reboot.`);
-    console.log(`  Start the dashboard with: cortextos dashboard\n`);
+    console.log(`  Start the dashboard with: officeos dashboard\n`);
   });
 
 const stopCommand = new Command('stop')
@@ -389,7 +389,7 @@ const stopCommand = new Command('stop')
     checkPlatform();
 
     if (!existsSync(PLIST_PATH)) {
-      console.log('  Tunnel service is not installed. Run: cortextos tunnel start');
+      console.log('  Tunnel service is not installed. Run: officeos tunnel start');
       return;
     }
 
@@ -400,7 +400,7 @@ const stopCommand = new Command('stop')
 
     unloadService();
     console.log('  Tunnel service stopped.');
-    console.log('  (The tunnel config is preserved — run `cortextos tunnel start` to restart)\n');
+    console.log('  (The tunnel config is preserved — run `officeos tunnel start` to restart)\n');
   });
 
 const statusCommand = new Command('status')
@@ -408,7 +408,7 @@ const statusCommand = new Command('status')
   .description('Show tunnel URL and running status')
   .action(async (options: { instance: string }) => {
     checkPlatform();
-    console.log('\ncortextOS Tunnel Status\n');
+    console.log('\nofficeOs Tunnel Status\n');
 
     // cloudflared installed?
     let cfVersion = 'not installed';
@@ -433,7 +433,7 @@ const statusCommand = new Command('status')
     if (config.tunnelUrl) {
       console.log(`  Dashboard URL: ${config.tunnelUrl}`);
     } else {
-      console.log(`  Dashboard URL: not set (run: cortextos tunnel start)`);
+      console.log(`  Dashboard URL: not set (run: officeos tunnel start)`);
     }
 
     if (config.createdAt) {
@@ -449,7 +449,7 @@ const urlCommand = new Command('url')
   .action(async (options: { instance: string }) => {
     const config = readTunnelConfig(options.instance);
     if (!config.tunnelUrl) {
-      console.error('No tunnel URL found. Run: cortextos tunnel start');
+      console.error('No tunnel URL found. Run: officeos tunnel start');
       process.exit(1);
     }
     process.stdout.write(config.tunnelUrl + '\n');
@@ -464,7 +464,7 @@ export const tunnelCommand = new Command('tunnel')
   .addCommand(statusCommand)
   .addCommand(urlCommand);
 
-// Default action: run start when `cortextos tunnel` is called with no subcommand
+// Default action: run start when `officeos tunnel` is called with no subcommand
 tunnelCommand.action(async () => {
   await startCommand.parseAsync([], { from: 'user' });
 });

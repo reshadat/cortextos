@@ -70,7 +70,7 @@ describe('onboard helpers', () => {
           { hooks: [{ type: 'command', command: 'cortextos bus hook-permission-telegram', timeout: 1860 }] },
         ],
         PreToolUse: [
-          { hooks: [{ type: 'command', command: 'cortextos bus hook-loop-detector', timeout: 5 }] },
+          { hooks: [{ type: 'command', command: 'officeos bus hook-loop-detector', timeout: 5 }] },
           { matcher: 'AskUserQuestion', hooks: [{ type: 'command', command: 'cortextos bus hook-ask-telegram', timeout: 10 }] },
         ],
       },
@@ -97,8 +97,8 @@ describe('onboard helpers', () => {
       expect(flat).toContain('/proj/dist/hooks/hook-compact-slack.js');
       expect(flat).toContain('/proj/dist/hooks/hook-crash-alert-slack.js');
       // loop-detector + crash-alert (channel-agnostic) survive
-      expect(flat).toContain('cortextos bus hook-loop-detector');
-      expect(flat).toContain('cortextos crash-alert');
+      expect(flat).toContain('officeos bus hook-loop-detector');
+      expect(flat).toContain('officeos crash-alert');
     });
 
     it('returns false when settings.json is missing', () => {

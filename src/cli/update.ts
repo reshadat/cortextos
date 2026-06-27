@@ -1,7 +1,7 @@
 /**
- * `cortextos update` — customer-friendly opt-in update mechanism MVP.
+ * `officeos update` — customer-friendly opt-in update mechanism MVP.
  *
- * Wraps the existing `cortextos bus check-upstream` machinery with a
+ * Wraps the existing `officeos bus check-upstream` machinery with a
  * confirmation prompt before applying. Per David's directive (locked
  * 2026-05): the customer must opt in to each apply; updates do NOT run
  * automatically. The daily 06:23 ET cron only CHECKS (no --apply); this
@@ -121,7 +121,7 @@ async function runUpdate(opts: UpdateOptions): Promise<void> {
   }
   if (applied.status === 'applied') {
     console.log('');
-    console.log('Updates applied. You may need to: cortextos stop && cortextos start');
+    console.log('Updates applied. You may need to: officeos stop && officeos start');
   }
 }
 

@@ -3,7 +3,7 @@
  *
  * The SessionEnd crash-alert hook (src/hooks/hook-crash-alert.ts) decides
  * whether an agent's exit was a crash by checking for marker files in
- * ~/.cortextos/<inst>/state/<agent>/. If no marker is found, it defaults
+ * ~/.officeos/<inst>/state/<agent>/. If no marker is found, it defaults
  * to "crash" and fires a 🚨 CRASH alarm via Telegram.
  *
  * Before this fix, `cortextos disable` and `cortextos stop` did not write
@@ -24,7 +24,7 @@ import { writeStopMarker } from '../../../src/cli/stop';
 
 describe('BUG-036: lifecycle marker writes', () => {
   // The helpers write under homedir() — point HOME at a temp dir for the test
-  // so we don't pollute the user's real ~/.cortextos.
+  // so we don't pollute the user's real ~/.officeos.
   let tmpHome: string;
   const origHome = process.env.HOME;
 
@@ -43,7 +43,7 @@ describe('BUG-036: lifecycle marker writes', () => {
     it('writes .user-disable at the correct path with the given reason', () => {
       writeDisableMarker('default', 'commander', 'disabled via cortextos disable');
 
-      const expectedPath = join(homedir(), '.cortextos', 'default', 'state', 'commander', '.user-disable');
+      const expectedPath = join(homedir(), '.officeos', 'default', 'state', 'commander', '.user-disable');
       expect(existsSync(expectedPath)).toBe(true);
       expect(readFileSync(expectedPath, 'utf-8')).toBe('disabled via cortextos disable');
     });
@@ -52,7 +52,7 @@ describe('BUG-036: lifecycle marker writes', () => {
       // The state dir does not exist yet — helper must mkdirSync it
       writeDisableMarker('cortextos1', 'analyst', 'test reason');
 
-      const stateDir = join(homedir(), '.cortextos', 'cortextos1', 'state', 'analyst');
+      const stateDir = join(homedir(), '.officeos', 'cortextos1', 'state', 'analyst');
       expect(existsSync(stateDir)).toBe(true);
     });
 
@@ -71,7 +71,7 @@ describe('BUG-036: lifecycle marker writes', () => {
     it('writes .user-stop at the correct path with the given reason', () => {
       writeStopMarker('default', 'commander', 'stopped via cortextos stop');
 
-      const expectedPath = join(homedir(), '.cortextos', 'default', 'state', 'commander', '.user-stop');
+      const expectedPath = join(homedir(), '.officeos', 'default', 'state', 'commander', '.user-stop');
       expect(existsSync(expectedPath)).toBe(true);
       expect(readFileSync(expectedPath, 'utf-8')).toBe('stopped via cortextos stop');
     });
@@ -79,7 +79,7 @@ describe('BUG-036: lifecycle marker writes', () => {
     it('creates the state directory if it does not exist', () => {
       writeStopMarker('cortextos1', 'analyst', 'test reason');
 
-      const stateDir = join(homedir(), '.cortextos', 'cortextos1', 'state', 'analyst');
+      const stateDir = join(homedir(), '.officeos', 'cortextos1', 'state', 'analyst');
       expect(existsSync(stateDir)).toBe(true);
     });
 
@@ -96,7 +96,7 @@ describe('BUG-036: lifecycle marker writes', () => {
       writeDisableMarker('default', 'commander', 'disable');
       writeStopMarker('default', 'commander', 'stop');
 
-      const stateDir = join(homedir(), '.cortextos', 'default', 'state', 'commander');
+      const stateDir = join(homedir(), '.officeos', 'default', 'state', 'commander');
       expect(existsSync(join(stateDir, '.user-disable'))).toBe(true);
       expect(existsSync(join(stateDir, '.user-stop'))).toBe(true);
     });

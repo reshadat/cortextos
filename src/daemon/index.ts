@@ -226,7 +226,7 @@ class Daemon {
   constructor() {
     this.instanceId = process.env.CTX_INSTANCE_ID || 'default';
     // Always derive ctxRoot from instanceId to avoid inheriting a parent cortextOS's CTX_ROOT
-    this.ctxRoot = join(homedir(), '.cortextos', this.instanceId);
+    this.ctxRoot = join(homedir(), '.officeos', this.instanceId);
   }
 
   async start(): Promise<void> {

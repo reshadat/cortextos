@@ -24,7 +24,7 @@ const DEFAULT_TIMEOUT_MS = 60_000;
 
 function resolveModelPath(): string {
   if (process.env.CTX_WHISPER_MODEL) return process.env.CTX_WHISPER_MODEL;
-  return path.join(os.homedir(), '.cortextos', 'models', 'ggml-tiny.en.bin');
+  return path.join(os.homedir(), '.officeos', 'models', 'ggml-tiny.en.bin');
 }
 
 function resolveBin(envVar: string, fallback: string): string {

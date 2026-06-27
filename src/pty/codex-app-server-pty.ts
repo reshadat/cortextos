@@ -86,7 +86,7 @@ const SLASH_REWRITE_RE = /^\/([a-z][a-z0-9_-]*)(?:\s+([\s\S]*))?$/i;
 const LOCAL_SLASH_COMMANDS = new Set(['goal']);
 
 /**
- * Codex app-server PTY adapter for cortextOS.
+ * Codex app-server PTY adapter for officeOs.
  *
  * Uses a persistent `codex app-server` process and speaks JSON-RPC over the
  * app-server's WebSocket-framed Unix socket transport. The approved default
@@ -471,7 +471,7 @@ export class CodexAppServerPTY {
     await this.request('initialize', {
       clientInfo: {
         name: 'cortextos',
-        title: 'cortextOS',
+        title: 'officeOs',
         version: this.getPackageVersion(),
       },
       capabilities: { experimentalApi: true },

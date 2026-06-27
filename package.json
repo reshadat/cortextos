@@ -4,8 +4,7 @@
   "description": "Persistent 24/7 Claude Code agents with multi-agent orchestration, Slack control plane",
   "main": "dist/daemon.js",
   "bin": {
-    "officeos": "dist/cli.js",
-    "cortextos": "dist/cli.js"
+    "officeos": "dist/cli.js"
   },
   "scripts": {
     "build": "tsup",

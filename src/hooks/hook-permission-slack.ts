@@ -11,7 +11,7 @@ async function main(): Promise<void> {
   const { tool_name, tool_input } = parseHookInput(input);
 
   const agentName = process.env.CTX_AGENT_NAME || 'agent';
-  const ctxRoot = process.env.CTX_ROOT || join(require('os').homedir(), '.cortextos', 'default');
+  const ctxRoot = process.env.CTX_ROOT || join(require('os').homedir(), '.officeos', 'default');
   const agentDir = process.env.CTX_AGENT_DIR || '';
   const stateDir = join(ctxRoot, 'state', agentName);
 

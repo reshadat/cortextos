@@ -7,7 +7,7 @@
  * and injects a gap-nudge when a cron has been silent for >2x its interval.
  *
  * Lifecycle:
- *   1. Agent calls `cortextos bus update-cron-fire <name> --interval <interval>`
+ *   1. Agent calls `officeos bus update-cron-fire <name> --interval <interval>`
  *      at the end of each cron prompt execution.
  *   2. Daemon gap-detection loop reads cron-state.json every 10 minutes.
  *   3. If last_fire is >2x interval ago, daemon injects a nudge into the agent PTY.
@@ -52,7 +52,7 @@ export function readCronState(stateDir: string): CronStateFile {
 
 /**
  * Record that a cron just fired. Creates or updates the entry for `cronName`.
- * Called by agents via `cortextos bus update-cron-fire <name> --interval <interval>`.
+ * Called by agents via `officeos bus update-cron-fire <name> --interval <interval>`.
  */
 export function updateCronFire(
   stateDir: string,

@@ -177,7 +177,7 @@ describe('Task Management', () => {
  * needs to update and complete it from their own agent session.
  *
  * These tests build a REAL nested filesystem layout (matching the
- * production shape at ~/.cortextos/<instance>/orgs/<org>/tasks/) so they
+ * production shape at ~/.officeos/<instance>/orgs/<org>/tasks/) so they
  * cover the actual cross-org path resolution, not a mocked shortcut.
  */
 describe('Cross-org task lifecycle', () => {

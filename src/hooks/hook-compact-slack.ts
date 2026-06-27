@@ -4,7 +4,7 @@ import { sendToReplyTarget } from '../channels/send.js';
 async function main(): Promise<void> {
   const agentName = process.env.CTX_AGENT_NAME || 'agent';
   const agentDir = process.env.CTX_AGENT_DIR || '';
-  const ctxRoot = process.env.CTX_ROOT || join(require('os').homedir(), '.cortextos', 'default');
+  const ctxRoot = process.env.CTX_ROOT || join(require('os').homedir(), '.officeos', 'default');
   const stateDir = join(ctxRoot, 'state', agentName);
 
   const message = `[Context] *${agentName}* is compacting context (context window near limit).`;

@@ -63,7 +63,7 @@ function checkDeliverableRequirement(taskId: string, frameworkRoot: string, org:
   }
 
   if (!task.outputs || task.outputs.length === 0) {
-    return `Cannot submit task ${taskId}: require_deliverables is enabled but this task has no file deliverables attached. Use "cortextos bus save-output ${taskId} <file>" to attach a deliverable first.`;
+    return `Cannot submit task ${taskId}: require_deliverables is enabled but this task has no file deliverables attached. Use "officeos bus save-output ${taskId} <file>" to attach a deliverable first.`;
   }
 
   return null;
@@ -610,7 +610,7 @@ busCommand
     const reason = opts.reason || 'self-restart requested';
 
     // Write .user-restart marker (same as soft-restart)
-    const ctxRoot = require('path').join(require('os').homedir(), '.cortextos', env.instanceId);
+    const ctxRoot = require('path').join(require('os').homedir(), '.officeos', env.instanceId);
     const stateDir = join(ctxRoot, 'state', env.agentName);
     mkdirSync(stateDir, { recursive: true });
     writeFileSync(join(stateDir, '.user-restart'), reason);
@@ -622,7 +622,7 @@ busCommand
     const ipc = new IPCClient(env.instanceId);
     const daemonRunning = await ipc.isDaemonRunning();
     if (daemonRunning) {
-      const resp = await ipc.send({ type: 'restart-agent', agent: env.agentName, source: 'cortextos bus self-restart' });
+      const resp = await ipc.send({ type: 'restart-agent', agent: env.agentName, source: 'officeos bus self-restart' });
       if (resp.success) {
         console.log(`Restarting ${env.agentName} via daemon IPC`);
       } else {
@@ -630,7 +630,7 @@ busCommand
         process.exit(1);
       }
     } else {
-      console.error('ERROR: Node daemon is not running. Start it with: cortextos start');
+      console.error('ERROR: Node daemon is not running. Start it with: officeos start');
       process.exit(1);
     }
   });
@@ -655,7 +655,7 @@ busCommand
     const ipc = new IPCClient(env.instanceId);
     const daemonRunning = await ipc.isDaemonRunning();
     if (daemonRunning) {
-      const resp = await ipc.send({ type: 'restart-agent', agent: env.agentName, source: 'cortextos bus hard-restart' });
+      const resp = await ipc.send({ type: 'restart-agent', agent: env.agentName, source: 'officeos bus hard-restart' });
       if (resp.success) {
         console.log(`Hard restart triggered for ${env.agentName} — fresh session incoming`);
       } else {
@@ -1349,7 +1349,7 @@ busCommand
 
     const frameworkRoot = env.frameworkRoot || process.cwd();
     const instanceId = env.instanceId;
-    const kbRoot = pjoin(hdir(), '.cortextos', instanceId, 'orgs', org, 'knowledge-base');
+    const kbRoot = pjoin(hdir(), '.officeos', instanceId, 'orgs', org, 'knowledge-base');
     const chromaDir = pjoin(kbRoot, 'chromadb');
     const isWin = process.platform === 'win32';
     const venvBin = isWin ? 'Scripts' : 'bin';
@@ -1508,7 +1508,7 @@ busCommand
     const { existsSync, readdirSync, readFileSync } = require('fs');
     const { join } = require('path');
     const env = resolveEnv();
-    const ctxRoot = require('path').join(require('os').homedir(), '.cortextos', env.instanceId);
+    const ctxRoot = require('path').join(require('os').homedir(), '.officeos', env.instanceId);
     const frameworkRoot = env.frameworkRoot || process.cwd();
 
     // Collect agents from enabled-agents.json + filesystem scan
@@ -1540,7 +1540,7 @@ busCommand
     const runningAgents = new Set<string>();
     const ipc = new IPCClient(env.instanceId);
     try {
-      const resp = await ipc.send({ type: 'status', source: 'cortextos bus' });
+      const resp = await ipc.send({ type: 'status', source: 'officeos bus' });
       if (resp.success && Array.isArray(resp.data)) {
         for (const a of resp.data as Array<{ name: string; status: string }>) {
           if (a.status === 'running') runningAgents.add(a.name);
@@ -1692,7 +1692,7 @@ busCommand
     const { join } = require('path');
     const env = resolveEnv();
     const paths = resolvePaths(env.agentName, env.instanceId, env.org);
-    const ctxRoot = require('path').join(require('os').homedir(), '.cortextos', env.instanceId);
+    const ctxRoot = require('path').join(require('os').homedir(), '.officeos', env.instanceId);
 
     // Write urgent signal file that fast-checker checks on every poll
     const signalDir = join(ctxRoot, 'state', targetAgent);
@@ -1721,7 +1721,7 @@ busCommand
     const { mkdirSync, writeFileSync } = require('fs');
     const { join } = require('path');
     const env = resolveEnv();
-    const ctxRoot = require('path').join(require('os').homedir(), '.cortextos', env.instanceId);
+    const ctxRoot = require('path').join(require('os').homedir(), '.officeos', env.instanceId);
 
     // Step 1: Write .user-restart marker BEFORE triggering exit
     const stateDir = join(ctxRoot, 'state', targetAgent);
@@ -1734,7 +1734,7 @@ busCommand
     const daemonRunning = await ipc.isDaemonRunning();
 
     if (daemonRunning) {
-      const resp = await ipc.send({ type: 'restart-agent', agent: targetAgent, source: 'cortextos bus soft-restart' });
+      const resp = await ipc.send({ type: 'restart-agent', agent: targetAgent, source: 'officeos bus soft-restart' });
       if (resp.success) {
         console.log(`Restarted ${targetAgent} via daemon IPC`);
       } else {
@@ -1742,7 +1742,7 @@ busCommand
         process.exit(1);
       }
     } else {
-      console.error('ERROR: Node daemon is not running. Start it with: cortextos start');
+      console.error('ERROR: Node daemon is not running. Start it with: officeos start');
       process.exit(1);
     }
   });
@@ -1756,7 +1756,7 @@ busCommand
     const { mkdirSync, writeFileSync, readFileSync, existsSync } = require('fs');
     const { join } = require('path');
     const env = resolveEnv();
-    const ctxRoot = require('path').join(require('os').homedir(), '.cortextos', env.instanceId);
+    const ctxRoot = require('path').join(require('os').homedir(), '.officeos', env.instanceId);
     const staggerMs = parseInt(opts.stagger, 10) * 1000;
 
     // Read enabled agents from config
@@ -1782,7 +1782,7 @@ busCommand
     const ipc = new IPCClient(env.instanceId);
     const daemonRunning = await ipc.isDaemonRunning();
     if (!daemonRunning) {
-      console.error('ERROR: Node daemon is not running. Start it with: cortextos start');
+      console.error('ERROR: Node daemon is not running. Start it with: officeos start');
       process.exit(1);
     }
 
@@ -1799,7 +1799,7 @@ busCommand
       writeFileSync(join(stateDir, '.user-restart'), opts.reason);
 
       // Send IPC restart signal
-      const resp = await ipc.send({ type: 'restart-agent', agent, source: 'cortextos bus soft-restart-all' });
+      const resp = await ipc.send({ type: 'restart-agent', agent, source: 'officeos bus soft-restart-all' });
       if (resp.success) {
         console.log(`[${i + 1}/${targets.length}] Restarted ${agent}`);
       } else {
@@ -1822,7 +1822,7 @@ busCommand
     const { mkdirSync, appendFileSync } = require('fs');
     const { join } = require('path');
     const env = resolveEnv();
-    const ctxRoot = require('path').join(require('os').homedir(), '.cortextos', env.instanceId);
+    const ctxRoot = require('path').join(require('os').homedir(), '.officeos', env.instanceId);
 
     // Write to outbound-messages.jsonl so iOS app chat history picks it up
     const logDir = join(ctxRoot, 'logs', agent);
@@ -1865,7 +1865,7 @@ busCommand
 
     if (opts.allOrgs) {
       // Scan every org directory under CTX_ROOT — mirrors dashboard syncAll() behaviour
-      const ctxRoot = join(homedir(), '.cortextos', env.instanceId);
+      const ctxRoot = join(homedir(), '.officeos', env.instanceId);
       const orgsDir = join(ctxRoot, 'orgs');
       const orgs: string[] = existsSync(orgsDir)
         ? readdirSync(orgsDir, { withFileTypes: true })
@@ -2046,7 +2046,7 @@ function fmtTs(iso: string | undefined): string {
 async function signalCronReload(agentName: string, instanceId: string): Promise<void> {
   try {
     const ipc = new IPCClient(instanceId);
-    await ipc.send({ type: 'reload-crons', agent: agentName, source: 'cortextos bus cron-cmd' });
+    await ipc.send({ type: 'reload-crons', agent: agentName, source: 'officeos bus cron-cmd' });
   } catch { /* non-fatal — scheduler picks up file change on next 30s tick */ }
 }
 
@@ -2266,7 +2266,7 @@ busCommand
 
     const daemonRunning = await ipc.isDaemonRunning();
     if (!daemonRunning) {
-      console.error('Error: daemon is not running. Start it with: cortextos start');
+      console.error('Error: daemon is not running. Start it with: officeos start');
       process.exit(1);
     }
 
@@ -2274,7 +2274,7 @@ busCommand
       type: 'fire-cron',
       agent,
       data: { name: cron.name, prompt: cron.prompt },
-      source: 'cortextos bus test-cron-fire',
+      source: 'officeos bus test-cron-fire',
     });
 
     if (!resp.success) {
@@ -2841,7 +2841,7 @@ busCommand
     ];
     const STATUS_LINE = {
       type: 'command',
-      command: 'cortextos bus hook-context-status',
+      command: 'officeos bus hook-context-status',
       refreshInterval: 5,
       timeout: 2,
     };
@@ -2899,7 +2899,7 @@ busCommand
     console.log(`\n${verb} ${patched} agent(s). ${skipped} already up to date or skipped.`);
     if (!opts.dryRun && patched > 0) {
       console.log('\nRestart affected agents to apply the new settings:');
-      console.log('  cortextos restart <agent-name>');
+      console.log('  officeos restart <agent-name>');
     }
   });
 

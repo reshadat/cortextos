@@ -81,12 +81,12 @@ function tryInstallFfmpeg(): boolean {
 
 export const installCommand = new Command('install')
   .option('--instance <id>', 'Instance ID', 'default')
-  .description('Install cortextOS — create state directories, check and install dependencies')
+  .description('Install officeOs — create state directories, check and install dependencies')
   .action(async (options: { instance: string }) => {
     const instanceId = options.instance;
-    const ctxRoot = join(homedir(), '.cortextos', instanceId);
+    const ctxRoot = join(homedir(), '.officeos', instanceId);
 
-    console.log('\ncortextOS Installation\n');
+    console.log('\nofficeOs Installation\n');
 
     // ─── Dependency checks & auto-install ────────────────────────────────────
 
@@ -172,7 +172,7 @@ export const installCommand = new Command('install')
       } else {
         console.error('    Install build tools: sudo apt-get install -y build-essential python3');
       }
-      console.error('    Then run: npm install (in the cortextOS directory)');
+      console.error('    Then run: npm install (in the officeOs directory)');
       process.exit(1);
     }
 
@@ -423,15 +423,15 @@ export const installCommand = new Command('install')
     try { chmodSync(dashEnvPath, 0o600); } catch { /* ignore on Windows */ }
     console.log(`  Generated dashboard credentials at ${dashEnvPath}`);
 
-    // Register cortextos CLI globally so agent PTY sessions can find it
-    console.log('Registering cortextos CLI globally...');
+    // Register officeos CLI globally so agent PTY sessions can find it
+    console.log('Registering officeos CLI globally...');
     const linkResult = IS_WINDOWS
       ? spawnSync('npm link', { stdio: 'pipe', cwd: process.cwd(), timeout: 30000, shell: true })
       : spawnSync('npm', ['link'], { stdio: 'pipe', cwd: process.cwd(), timeout: 30000 });
     if (linkResult.status === 0) {
-      console.log('  ✓ cortextos registered globally (npm link)');
+      console.log('  ✓ officeos registered globally (npm link)');
     } else {
-      console.log('  ! npm link failed. Run manually: npm link (from the cortextOS directory)');
+      console.log('  ! npm link failed. Run manually: npm link (from the officeOs directory)');
       console.log('    Without this, agents cannot use bus commands in PTY sessions.');
     }
 
@@ -442,10 +442,10 @@ export const installCommand = new Command('install')
     console.log(`    Admin credentials saved to: ${dashEnvPath}`);
     console.log(`    (View password with: cat ${dashEnvPath})`);
     console.log('\n  Next steps:');
-    console.log('    1. cortextos init <org-name>');
-    console.log('    2. cortextos add-agent <name> --template orchestrator');
-    console.log('    3. cortextos ecosystem && pm2 start ecosystem.config.js');
-    console.log('    4. cortextos dashboard\n');
+    console.log('    1. officeos init <org-name>');
+    console.log('    2. officeos add-agent <name> --template orchestrator');
+    console.log('    3. officeos ecosystem && pm2 start ecosystem.config.js');
+    console.log('    4. officeos dashboard\n');
   });
 
 /**

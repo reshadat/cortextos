@@ -35,7 +35,7 @@ function makePaths(agent: string): BusPaths {
 
 beforeEach(() => {
   testDir = mkdtempSync(join(tmpdir(), 'codex-bus-roundtrip-'));
-  ctxRoot = join(testDir, '.cortextos', 'test');
+  ctxRoot = join(testDir, '.officeos', 'test');
   mkdirSync(ctxRoot, { recursive: true });
 });
 

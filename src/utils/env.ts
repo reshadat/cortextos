@@ -30,7 +30,7 @@ export function resolveEnv(overrides?: Partial<CtxEnv>): CtxEnv {
     overrides?.ctxRoot ||
     process.env.CTX_ROOT ||
     envFile.CTX_ROOT ||
-    join(homedir(), '.cortextos', instanceId);
+    join(homedir(), '.officeos', instanceId);
 
   const frameworkRoot =
     overrides?.frameworkRoot ||

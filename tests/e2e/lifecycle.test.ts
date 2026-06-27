@@ -34,7 +34,7 @@ describe('E2E Lifecycle', () => {
 
   beforeEach(() => {
     testDir = mkdtempSync(join(tmpdir(), 'cortextos-e2e-'));
-    ctxRoot = join(testDir, '.cortextos', 'test');
+    ctxRoot = join(testDir, '.officeos', 'test');
     mkdirSync(ctxRoot, { recursive: true });
   });
 

@@ -6,15 +6,15 @@ import { IPCClient } from '../daemon/ipc-server.js';
 import { TelegramAPI, formatValidateError } from '../telegram/api.js';
 
 /**
- * BUG-035 fix: discover the cortextOS framework root without depending on
+ * BUG-035 fix: discover the officeOs framework root without depending on
  * `process.cwd()`. Order of precedence:
  *   1. CTX_FRAMEWORK_ROOT env var (explicit, set by ecosystem.config.js)
  *   2. CTX_PROJECT_ROOT env var (legacy alias)
  *   3. ~/cortextos/ (the canonical install location from install.mjs)
  *   4. process.cwd() (last-resort legacy fallback)
  *
- * Without this, `cortextos enable` and similar CLI commands silently fail
- * outside ~/cortextos with a misleading "no .env found" error, even when
+ * Without this, `officeos enable` and similar CLI commands silently fail
+ * outside ~/officeos with a misleading "no .env found" error, even when
  * the .env exists at the canonical location. The error message is then
  * misleading because it doesn't list the paths that were checked.
  */
@@ -47,7 +47,7 @@ function parseEnvFile(path: string): Record<string, string> {
 }
 
 function getEnabledAgentsPath(instanceId: string): string {
-  return join(homedir(), '.cortextos', instanceId, 'config', 'enabled-agents.json');
+  return join(homedir(), '.officeos', instanceId, 'config', 'enabled-agents.json');
 }
 
 /**
@@ -105,7 +105,7 @@ export function readEnabledAgents(instanceId: string): Record<string, any> {
  */
 export function writeDisableMarker(instanceId: string, agent: string, reason: string): void {
   try {
-    const ctxRoot = join(homedir(), '.cortextos', instanceId);
+    const ctxRoot = join(homedir(), '.officeos', instanceId);
     const stateDir = join(ctxRoot, 'state', agent);
     mkdirSync(stateDir, { recursive: true });
     writeFileSync(join(stateDir, '.user-disable'), reason);
@@ -114,7 +114,7 @@ export function writeDisableMarker(instanceId: string, agent: string, reason: st
 
 function writeEnabledAgents(instanceId: string, agents: Record<string, any>): void {
   const path = getEnabledAgentsPath(instanceId);
-  const dir = join(homedir(), '.cortextos', instanceId, 'config');
+  const dir = join(homedir(), '.officeos', instanceId, 'config');
   mkdirSync(dir, { recursive: true });
   writeFileSync(path, JSON.stringify(agents, null, 2) + '\n', 'utf-8');
 }
@@ -209,7 +209,7 @@ export const enableAgentCommand = new Command('enable')
       } else {
         console.error(`Error: Telegram credentials for agent "${agent}" failed validation.`);
         console.error(`  ${formatValidateError(validation)}`);
-        console.error(`  Edit ${agentEnvPath} and re-run: cortextos enable ${agent}`);
+        console.error(`  Edit ${agentEnvPath} and re-run: officeos enable ${agent}`);
         process.exit(1);
       }
     } catch (err) {
@@ -229,7 +229,7 @@ export const enableAgentCommand = new Command('enable')
     writeEnabledAgents(options.instance, agents);
 
     // Create per-agent state directories
-    const ctxRoot = join(homedir(), '.cortextos', options.instance);
+    const ctxRoot = join(homedir(), '.officeos', options.instance);
     const agentDirs = [
       join(ctxRoot, 'inbox', agent),
       join(ctxRoot, 'inflight', agent),
@@ -248,12 +248,12 @@ export const enableAgentCommand = new Command('enable')
     const ipc = new IPCClient(options.instance);
     const running = await ipc.isDaemonRunning();
     if (running) {
-      const response = await ipc.send({ type: 'start-agent', agent, source: 'cortextos enable' });
+      const response = await ipc.send({ type: 'start-agent', agent, source: 'officeos enable' });
       if (response.success) {
         console.log(`  Started via daemon: ${response.data}`);
       }
     } else {
-      console.log('  Daemon not running. Start with: cortextos start');
+      console.log('  Daemon not running. Start with: officeos start');
     }
   });
 
@@ -277,9 +277,9 @@ export const disableAgentCommand = new Command('disable')
       // this was an intentional disable and not a crash. Without this,
       // the hook defaults to "crash" and the user gets a false 🚨 CRASH alarm.
       // Pattern matches src/cli/bus.ts:1285-1289.
-      writeDisableMarker(options.instance, agent, 'disabled via cortextos disable');
+      writeDisableMarker(options.instance, agent, 'disabled via officeos disable');
 
-      const response = await ipc.send({ type: 'stop-agent', agent, source: 'cortextos disable' });
+      const response = await ipc.send({ type: 'stop-agent', agent, source: 'officeos disable' });
       if (response.success) {
         console.log(`Agent "${agent}" disabled and stopped.`);
       } else {

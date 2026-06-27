@@ -7,9 +7,9 @@
  * that survives any restart type and is injected into the agent boot prompt.
  *
  * Lifecycle:
- *   1. Agent calls `cortextos bus create-reminder <fire-at> <prompt>`
+ *   1. Agent calls `officeos bus create-reminder <fire-at> <prompt>`
  *   2. Daemon boot prompt includes any overdue pending reminders
- *   3. Agent processes the reminder, calls `cortextos bus ack-reminder <id>`
+ *   3. Agent processes the reminder, calls `officeos bus ack-reminder <id>`
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';

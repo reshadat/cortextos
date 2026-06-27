@@ -66,7 +66,7 @@ describe('BUG-035 + BUG-013: enable-agent validation', () => {
 
   describe('readEnabledAgents (BUG-013)', () => {
     function setupConfigFile(instanceId: string, content: string): string {
-      const configDir = join(tmpHome, '.cortextos', instanceId, 'config');
+      const configDir = join(tmpHome, '.officeos', instanceId, 'config');
       mkdirSync(configDir, { recursive: true });
       const path = join(configDir, 'enabled-agents.json');
       writeFileSync(path, content);
@@ -90,7 +90,7 @@ describe('BUG-035 + BUG-013: enable-agent validation', () => {
       expect(result).toEqual({});
 
       // The corrupt file should be backed up, not destroyed
-      const backups = readdirSync(join(tmpHome, '.cortextos', 'default', 'config'))
+      const backups = readdirSync(join(tmpHome, '.officeos', 'default', 'config'))
         .filter(f => f.startsWith('enabled-agents.json.broken-'));
       expect(backups.length).toBeGreaterThan(0);
 
@@ -103,7 +103,7 @@ describe('BUG-035 + BUG-013: enable-agent validation', () => {
       const result = readEnabledAgents('default');
       expect(result).toEqual({});
 
-      const backups = readdirSync(join(tmpHome, '.cortextos', 'default', 'config'))
+      const backups = readdirSync(join(tmpHome, '.officeos', 'default', 'config'))
         .filter(f => f.startsWith('enabled-agents.json.broken-'));
       expect(backups.length).toBeGreaterThan(0);
     });
@@ -113,7 +113,7 @@ describe('BUG-035 + BUG-013: enable-agent validation', () => {
       const result = readEnabledAgents('default');
       expect(result).toEqual({});
 
-      const backups = readdirSync(join(tmpHome, '.cortextos', 'default', 'config'))
+      const backups = readdirSync(join(tmpHome, '.officeos', 'default', 'config'))
         .filter(f => f.startsWith('enabled-agents.json.broken-'));
       expect(backups.length).toBeGreaterThan(0);
     });
@@ -123,7 +123,7 @@ describe('BUG-035 + BUG-013: enable-agent validation', () => {
       const result = readEnabledAgents('default');
       expect(result).toEqual({});
 
-      const backups = readdirSync(join(tmpHome, '.cortextos', 'default', 'config'))
+      const backups = readdirSync(join(tmpHome, '.officeos', 'default', 'config'))
         .filter(f => f.startsWith('enabled-agents.json.broken-'));
       expect(backups.length).toBeGreaterThan(0);
     });
@@ -132,7 +132,7 @@ describe('BUG-035 + BUG-013: enable-agent validation', () => {
       setupConfigFile('default', '{}');
       readEnabledAgents('default');
 
-      const backups = readdirSync(join(tmpHome, '.cortextos', 'default', 'config'))
+      const backups = readdirSync(join(tmpHome, '.officeos', 'default', 'config'))
         .filter(f => f.startsWith('enabled-agents.json.broken-'));
       expect(backups.length).toBe(0);
     });

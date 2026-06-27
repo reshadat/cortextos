@@ -24,7 +24,7 @@ export const importAgentCommand = new Command('import-agent')
   .option('--name <name>', 'Override the agent name from the export manifest')
   .option('--instance <id>', 'Instance ID', 'default')
   .option('--no-start', 'Import files only — do not start the agent')
-  .description('Import a cortextos-single agent export into full cortextOS')
+  .description('Import a cortextos-single agent export into full officeOs')
   .action(async (tarball: string, options: { org?: string; name?: string; instance: string; start: boolean }) => {
     const projectRoot = process.env.CTX_FRAMEWORK_ROOT || process.env.CTX_PROJECT_ROOT || process.cwd();
 
@@ -107,7 +107,7 @@ export const importAgentCommand = new Command('import-agent')
       }
     }
 
-    // Write a clean config.json for the full cortextOS agent
+    // Write a clean config.json for the full officeOs agent
     const importedConfig = readAgentConfig(agentDir);
     const fullConfig = {
       agent_name: agentName,
@@ -134,7 +134,7 @@ export const importAgentCommand = new Command('import-agent')
     // Copy state (tasks, memory) from export if present
     const exportedStateDir = join(tmpDir, 'state');
     if (existsSync(exportedStateDir)) {
-      const ctxRoot = join(homedir(), '.cortextos', options.instance);
+      const ctxRoot = join(homedir(), '.officeos', options.instance);
       const paths = resolvePaths(agentName, options.instance, org);
 
       // Tasks
@@ -155,7 +155,7 @@ export const importAgentCommand = new Command('import-agent')
     }
 
     // Register in enabled-agents.json
-    const ctxRoot = join(homedir(), '.cortextos', options.instance);
+    const ctxRoot = join(homedir(), '.officeos', options.instance);
     const enabledPath = join(ctxRoot, 'config', 'enabled-agents.json');
     let enabledAgents: Record<string, any> = {};
     try {
@@ -191,14 +191,14 @@ export const importAgentCommand = new Command('import-agent')
           console.log(`  ${agentName}: started\n`);
         } else {
           console.log(`  Could not auto-start: ${response.error}`);
-          console.log(`  Run: cortextos start ${agentName}\n`);
+          console.log(`  Run: officeos start ${agentName}\n`);
         }
       } else {
-        console.log(`\n  Daemon not running. Start it first: cortextos start`);
-        console.log(`  Then: cortextos start ${agentName}\n`);
+        console.log(`\n  Daemon not running. Start it first: officeos start`);
+        console.log(`  Then: officeos start ${agentName}\n`);
       }
     } else {
-      console.log(`\n  To start: cortextos start ${agentName}\n`);
+      console.log(`\n  To start: officeos start ${agentName}\n`);
     }
   });
 

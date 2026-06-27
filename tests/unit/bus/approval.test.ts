@@ -55,7 +55,7 @@ beforeEach(() => {
   // Distinct framework root so the path-resolution regression test can
   // verify postActivity receives the FRAMEWORK path, not the runtime
   // state (ctxRoot) path. In production these are separate directories
-  // (~/cortextOS/ vs ~/.cortextos/default/) and the approval bug shipped
+  // (~/cortextOS/ vs ~/.officeos/default/) and the approval bug shipped
   // because the original code conflated them.
   frameworkRoot = mkdtempSync(join(tmpdir(), 'cortextos-framework-test-'));
   paths = mkPaths(testDir);

@@ -29,7 +29,7 @@ export function resolvePaths(
   org?: string,
 ): BusPaths {
   validateInstanceId(instanceId);
-  const ctxRoot = join(homedir(), '.cortextos', instanceId);
+  const ctxRoot = join(homedir(), '.officeos', instanceId);
 
   // Org-scoped paths for tasks, approvals, analytics
   const orgBase = org ? join(ctxRoot, 'orgs', org) : ctxRoot;
@@ -57,5 +57,5 @@ export function getIpcPath(instanceId: string = 'default'): string {
   if (process.platform === 'win32') {
     return `\\\\.\\pipe\\cortextos-${instanceId}`;
   }
-  return join(homedir(), '.cortextos', instanceId, 'daemon.sock');
+  return join(homedir(), '.officeos', instanceId, 'daemon.sock');
 }
