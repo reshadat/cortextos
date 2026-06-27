@@ -203,23 +203,6 @@ export class SlackAdapter implements ChannelAdapter {
 
       const text = (event.text || '').trim();
 
-      // Gate 3.5: channel engagement. Treat a channel like a room you only speak
-      // in when addressed; a DM like a 1:1 with a colleague.
-      //   - DM            → always engage.
-      //   - Channel       → engage only if @-mentioned OR already in this thread.
-      //   - Engaged thread + "stop" → disengage; ignore further messages until
-      //     the bot is @-mentioned again.
-      if (!isDM) {
-        const mentionsBot = !!botUserId && text.includes(`<@${botUserId}>`);
-        const engaged = !!event.thread_ts && getRequestIdForThread(cfg.stateDir, event.channel, event.thread_ts) !== null;
-        if (engaged && STOP_RE.test(text.replace(/<@[^>]+>/g, '').trim())) {
-          clearThread(cfg.stateDir, event.channel, event.thread_ts!);
-          log(`Slack: disengaged thread ${event.thread_ts} in ${event.channel} ("stop")`);
-          return;
-        }
-        if (!mentionsBot && !engaged) return; // not addressed, not in an active thread
-      }
-
       // Gate 4: rate limit — READONLY only
       if (isReadonly && !rateLimiter.check(userId)) {
         log(`Slack: rate-limited ${userId} (readonly) — exceeded ${rateLimiter.summary()}`);
@@ -235,6 +218,23 @@ export class SlackAdapter implements ChannelAdapter {
       } else if (ALLOW_RE.test(text) || DENY_RE.test(text)) {
         log(`Slack: ${userId} (readonly) attempted approval — blocked`);
         return;
+      }
+
+      // Gate 6: channel engagement (AFTER approvals, so owner allow/deny in a
+      // channel always works). Treat a channel like a room you speak in only when
+      // addressed; a DM like a 1:1 with a colleague.
+      //   - DM            → always engage.
+      //   - Channel       → engage only if @-mentioned OR already in this thread.
+      //   - Engaged thread + "stop" → disengage until @-mentioned again.
+      if (!isDM) {
+        const mentionsBot = !!botUserId && text.includes(`<@${botUserId}>`);
+        const engaged = !!event.thread_ts && getRequestIdForThread(cfg.stateDir, event.channel, event.thread_ts) !== null;
+        if (engaged && STOP_RE.test(text.replace(/<@[^>]+>/g, '').trim())) {
+          clearThread(cfg.stateDir, event.channel, event.thread_ts!);
+          log(`Slack: disengaged thread ${event.thread_ts} in ${event.channel} ("stop")`);
+          return;
+        }
+        if (!mentionsBot && !engaged) return; // not addressed, not in an active thread
       }
 
       // Render the PTY injection block (Slack-flavoured).

@@ -308,5 +308,13 @@ describe('SlackAdapter auto-eject (member_joined_channel)', () => {
       await fire({ user: 'UOWNER', text: 'just chatting, like a colleague' });
       expect(c.messages).toHaveLength(1);
     });
+
+    it('owner approval in a channel works WITHOUT a mention (approvals bypass engagement)', async () => {
+      const { h, c } = handlers();
+      await new SlackAdapter('xoxb', makeConfig({}, dir)).start(h);
+      await fireChannel({ user: 'UOWNER', text: 'allow a1b2c3' });
+      expect(c.approvals).toEqual([{ decision: 'allow', shortId: 'a1b2c3', role: 'owner' }]);
+      expect(c.messages).toHaveLength(0);
+    });
   });
 });
