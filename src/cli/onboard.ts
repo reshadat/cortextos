@@ -18,7 +18,7 @@
 import { Command } from 'commander';
 import { createInterface, type Interface } from 'readline';
 import { existsSync, writeFileSync, readFileSync, chmodSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { spawnSync } from 'child_process';
 import { resolveAdapter } from '../channels/registry.js';
@@ -85,11 +85,23 @@ async function askValidName(
 
 // ─── CLI delegation ─────────────────────────────────────────────────────────
 
+/** The cli.js entry for the same officeOs install that's currently running. */
+function cliEntry(projectRoot: string): string {
+  const inRoot = join(projectRoot, 'dist', 'cli.js');
+  if (existsSync(inRoot)) return inRoot;
+  // Fall back to the actually-running script (handles odd install layouts).
+  return process.argv[1] || inRoot;
+}
+
 function runCli(cwd: string, args: string[], label: string): boolean {
-  const cliPath = join(cwd, 'dist', 'cli.js');
   // stdin is 'ignore' so a sub-CLI never drains the wizard's own stdin (the
-  // readline answer stream). Sub-commands are non-interactive.
-  const result = spawnSync(process.execPath, [cliPath, ...args], { cwd, stdio: ['ignore', 'inherit', 'inherit'], env: process.env });
+  // readline answer stream). Sub-commands are non-interactive. CTX_FRAMEWORK_ROOT
+  // is set so init/add-agent create orgs under the resolved root, not the cwd.
+  const result = spawnSync(process.execPath, [cliEntry(cwd), ...args], {
+    cwd,
+    stdio: ['ignore', 'inherit', 'inherit'],
+    env: { ...process.env, CTX_FRAMEWORK_ROOT: cwd },
+  });
   if (result.status !== 0) {
     console.error(`\n  Error during: ${label}`);
     return false;
@@ -98,9 +110,20 @@ function runCli(cwd: string, args: string[], label: string): boolean {
 }
 
 function findProjectRoot(): string {
+  // 1. Explicit override.
   if (process.env.CTX_FRAMEWORK_ROOT && existsSync(join(process.env.CTX_FRAMEWORK_ROOT, 'dist', 'cli.js'))) {
     return process.env.CTX_FRAMEWORK_ROOT;
   }
+  // 2. Derive from the running bundle. This file is bundled into <root>/dist/cli.js,
+  //    so __dirname is <root>/dist. This is what makes `officeos onboard` work when
+  //    the global bin is launched from an arbitrary cwd (e.g. the user's home dir).
+  try {
+    const fromBundle = dirname(__dirname);
+    if (existsSync(join(fromBundle, 'dist', 'cli.js')) && existsSync(join(fromBundle, 'templates'))) {
+      return fromBundle;
+    }
+  } catch { /* __dirname may be absent under some bundlers */ }
+  // 3. cwd / walk up (running from inside the repo during dev).
   const cwd = process.cwd();
   if (existsSync(join(cwd, 'dist', 'cli.js'))) return cwd;
   let dir = cwd;
@@ -109,7 +132,7 @@ function findProjectRoot(): string {
     if (existsSync(pkg)) {
       try {
         const { name } = JSON.parse(readFileSync(pkg, 'utf-8'));
-        if (name === 'cortextos' && existsSync(join(dir, 'dist', 'cli.js'))) return dir;
+        if ((name === 'officeos' || name === 'cortextos') && existsSync(join(dir, 'dist', 'cli.js'))) return dir;
       } catch { /* ignore */ }
     }
     const parent = join(dir, '..');
@@ -414,8 +437,8 @@ export const onboardCommand = new Command('onboard')
     } else {
       console.log('  Step 4: Generating ecosystem config and starting the daemon...\n');
       const firstOrg = teams[0]?.org ?? '';
-      const ecoEnv = { ...process.env, CTX_INSTANCE_ID: instanceId, CTX_ORG: firstOrg };
-      const eco = spawnSync(process.execPath, [join(projectRoot, 'dist', 'cli.js'), 'ecosystem', '--instance', instanceId], {
+      const ecoEnv = { ...process.env, CTX_INSTANCE_ID: instanceId, CTX_ORG: firstOrg, CTX_FRAMEWORK_ROOT: projectRoot };
+      const eco = spawnSync(process.execPath, [cliEntry(projectRoot), 'ecosystem', '--instance', instanceId], {
         cwd: projectRoot, stdio: 'inherit', env: ecoEnv,
       });
       if (eco.status !== 0) {
