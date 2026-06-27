@@ -117,11 +117,16 @@ describe.skipIf(!distPresent)('officeos onboard — black-box CLI E2E', () => {
     specName: /Specialist name:/,
     title: /One-line title/,
     desc: /What does it handle/,
+    resp: /Key responsibilities/,
+    keywords: /Routing keywords/,
+    oos: /Out of scope/,
     share: /Share this agent across all teams/,
     reuse: /Reuse the same Slack app/,
     moreTeams: /Add another team/,
   };
   const step = (expect: RegExp, answer: string): Step => ({ expect, answer });
+  // The 3 JD prompts after title/description — accept the sensible defaults (Enter).
+  const jdDefaults = (): Step[] => [step(P.resp, ''), step(P.keywords, ''), step(P.oos, '')];
 
   it('builds a one-team office: Slack .env, swapped hooks, shared JD, registry', async () => {
     const { code, stdout } = await driveWizard(tempRoot, tempHome, [
@@ -129,7 +134,7 @@ describe.skipIf(!distPresent)('officeos onboard — black-box CLI E2E', () => {
       step(P.bot, 'xoxb-test'), step(P.app, 'xapp-test'),
       step(P.user, 'U01OWNER23'), step(P.chan, 'C01DOCS234'), step(P.domain, 'n'),
       step(P.addSpec, 'y'), step(P.specName, 'doc-writer'),
-      step(P.title, 'Documentation Specialist'), step(P.desc, 'Writes and edits internal docs'),
+      step(P.title, 'Documentation Specialist'), step(P.desc, 'Writes and edits internal docs'), ...jdDefaults(),
       step(P.share, 'y'), step(P.addSpec, 'n'), step(P.moreTeams, 'n'),
     ]);
     expect(code, stdout).toBe(0);
@@ -159,8 +164,8 @@ describe.skipIf(!distPresent)('officeos onboard — black-box CLI E2E', () => {
       step(P.org, 'docs'), step(P.orch, 'docs-orch'),
       step(P.bot, 'xoxb-test'), step(P.app, 'xapp-test'),
       step(P.user, 'U01OWNER23'), step(P.chan, 'C01DOCS234'), step(P.domain, 'n'),
-      step(P.addSpec, 'y'), step(P.specName, 'codebase'), step(P.title, 'Codebase Expert'), step(P.desc, 'Explains internal code'), step(P.share, 'y'),
-      step(P.addSpec, 'y'), step(P.specName, 'doc-writer'), step(P.title, 'Doc Specialist'), step(P.desc, 'Writes docs'), step(P.share, 'n'),
+      step(P.addSpec, 'y'), step(P.specName, 'codebase'), step(P.title, 'Codebase Expert'), step(P.desc, 'Explains internal code'), ...jdDefaults(), step(P.share, 'y'),
+      step(P.addSpec, 'y'), step(P.specName, 'doc-writer'), step(P.title, 'Doc Specialist'), step(P.desc, 'Writes docs'), ...jdDefaults(), step(P.share, 'n'),
       step(P.addSpec, 'n'), step(P.moreTeams, 'y'),
       // team 2: marketing, reuse slack app, own channel
       step(P.org, 'marketing'), step(P.orch, 'marketing-orch'),
@@ -183,7 +188,7 @@ describe.skipIf(!distPresent)('officeos onboard — black-box CLI E2E', () => {
       step(P.addSpec, 'y'),
       step(P.specName, 'docs-orch'),  // duplicate of the orchestrator — rejected
       step(P.specName, 'doc-writer'), // valid retry
-      step(P.title, 'Doc Specialist'), step(P.desc, 'Writes docs'), step(P.share, 'n'),
+      step(P.title, 'Doc Specialist'), step(P.desc, 'Writes docs'), ...jdDefaults(), step(P.share, 'n'),
       step(P.addSpec, 'n'), step(P.moreTeams, 'n'),
     ]);
     expect(code, stdout).toBe(0);

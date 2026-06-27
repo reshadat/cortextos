@@ -307,8 +307,17 @@ export function wireSlackHooks(agentDir: string, projectRoot: string): boolean {
   return true;
 }
 
-/** Patch the empty jd placeholder in an agent's config.json. */
-export function patchJD(agentDir: string, title: string, description: string, shared: boolean): void {
+export interface JDInput {
+  title: string;
+  description: string;
+  shared: boolean;
+  responsibilities?: string[];
+  keywords?: string[];
+  out_of_scope?: string[];
+}
+
+/** Patch the jd placeholder in an agent's config.json from the wizard answers. */
+export function patchJD(agentDir: string, jd: JDInput): void {
   const configPath = join(agentDir, 'config.json');
   if (!existsSync(configPath)) return;
   let config: any;
@@ -319,16 +328,27 @@ export function patchJD(agentDir: string, title: string, description: string, sh
   }
   config.jd = {
     ...(config.jd ?? {}),
-    title,
-    description,
-    responsibilities: config.jd?.responsibilities ?? [],
+    title: jd.title,
+    description: jd.description,
+    responsibilities: jd.responsibilities ?? config.jd?.responsibilities ?? [],
     provides: config.jd?.provides ?? [],
     needs: config.jd?.needs ?? [],
-    keywords: config.jd?.keywords ?? [],
-    out_of_scope: config.jd?.out_of_scope ?? [],
-    ...(shared ? { shared: true } : {}),
+    keywords: jd.keywords ?? config.jd?.keywords ?? [],
+    out_of_scope: jd.out_of_scope ?? config.jd?.out_of_scope ?? [],
+    ...(jd.shared ? { shared: true } : {}),
   };
   writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+}
+
+/** Split a comma-separated wizard answer into a trimmed, non-empty list. */
+function splitList(s: string): string[] {
+  return s.split(',').map((x) => x.trim()).filter(Boolean);
+}
+
+/** Sensible default routing keywords derived from the agent name + title. */
+function defaultKeywords(name: string, title: string): string {
+  const words = `${name} ${title}`.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2);
+  return [...new Set(words)].join(', ');
 }
 
 // ─── Wizard ─────────────────────────────────────────────────────────────────
@@ -409,7 +429,7 @@ export const onboardCommand = new Command('onboard')
       writeSlackEnv(orchDir, creds);
       console.log(`  Wrote Slack .env for ${orchName}`);
       wireSlackHooks(orchDir, projectRoot);
-      patchJD(orchDir, `${org} orchestrator`, `Routes ${org} team requests to the right specialist.`, false);
+      patchJD(orchDir, { title: `${org} orchestrator`, description: `Routes ${org} team requests to the right specialist.`, shared: false });
       if (!skipEnable) runCli(projectRoot, ['enable', orchName, '--org', org, '--instance', instanceId], `enable ${orchName}`);
       allAgentNames.push(orchName);
 
@@ -423,6 +443,11 @@ export const onboardCommand = new Command('onboard')
         const template = 'agent';
         const title = await askRequired(iface, '  One-line title (e.g. "Documentation Specialist"): ', 'Title helps routing.');
         const description = await askRequired(iface, '  What does it handle? (one sentence): ', 'A description helps the orchestrator route to it.');
+        // Full job description — every field asked, but with sensible defaults you
+        // can accept with Enter. These drive how the orchestrator routes to it.
+        const responsibilities = splitList(await askDefault(iface, '  Key responsibilities (comma-separated)', description));
+        const keywords = splitList(await askDefault(iface, '  Routing keywords (comma-separated)', defaultKeywords(name, title)));
+        const outOfScope = splitList(await askDefault(iface, '  Out of scope (comma-separated, blank = none)', ''));
         const shared = await askYN(iface, '  Share this agent across all teams? (other orchestrators can route to it)', false);
 
         if (!runCli(projectRoot, ['add-agent', name, '--template', template, '--org', org, '--instance', instanceId], `add-agent ${name}`)) {
@@ -430,7 +455,7 @@ export const onboardCommand = new Command('onboard')
           continue;
         }
         const dir = join(projectRoot, 'orgs', org, 'agents', name);
-        patchJD(dir, title, description, shared);
+        patchJD(dir, { title, description, shared, responsibilities, keywords, out_of_scope: outOfScope });
         if (!skipEnable) runCli(projectRoot, ['enable', name, '--org', org, '--instance', instanceId], `enable ${name}`);
         specialists.push(name);
         allAgentNames.push(name);

@@ -18,7 +18,7 @@ describe('onboard helpers', () => {
   describe('patchJD', () => {
     it('fills title/description and preserves empty arrays, no shared by default', () => {
       writeFileSync(join(dir, 'config.json'), JSON.stringify({ agent_name: 'a', jd: { title: '', responsibilities: ['keep'] } }));
-      patchJD(dir, 'Doc Specialist', 'Writes docs', false);
+      patchJD(dir, { title: 'Doc Specialist', description: 'Writes docs', shared: false });
       const cfg = JSON.parse(readFileSync(join(dir, 'config.json'), 'utf-8'));
       expect(cfg.jd.title).toBe('Doc Specialist');
       expect(cfg.jd.description).toBe('Writes docs');
@@ -28,13 +28,13 @@ describe('onboard helpers', () => {
 
     it('sets shared:true when requested', () => {
       writeFileSync(join(dir, 'config.json'), JSON.stringify({ agent_name: 'a', jd: {} }));
-      patchJD(dir, 'Codebase', 'Reads code', true);
+      patchJD(dir, { title: 'Codebase', description: 'Reads code', shared: true });
       const cfg = JSON.parse(readFileSync(join(dir, 'config.json'), 'utf-8'));
       expect(cfg.jd.shared).toBe(true);
     });
 
     it('is a no-op when config.json is absent', () => {
-      expect(() => patchJD(dir, 't', 'd', false)).not.toThrow();
+      expect(() => patchJD(dir, { title: 't', description: 'd', shared: false })).not.toThrow();
     });
   });
 
