@@ -1,0 +1,59 @@
+<svg width="340" height="340" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg">
+  <!-- dark background pill -->
+  <rect width="340" height="340" rx="24" fill="#0d1117"/>
+
+  <!-- office building facade -->
+  <rect x="80" y="60" width="180" height="160" rx="6" fill="none" stroke="#e6edf3" stroke-width="3"/>
+
+  <!-- roof line / top edge -->
+  <line x1="80" y1="92" x2="260" y2="92" stroke="#e6edf3" stroke-width="2"/>
+
+  <!-- building columns -->
+  <line x1="140" y1="92" x2="140" y2="220" stroke="#e6edf3" stroke-width="1.5" opacity="0.4"/>
+  <line x1="200" y1="92" x2="200" y2="220" stroke="#e6edf3" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- floor lines -->
+  <line x1="80" y1="133" x2="260" y2="133" stroke="#e6edf3" stroke-width="1.5" opacity="0.4"/>
+  <line x1="80" y1="174" x2="260" y2="174" stroke="#e6edf3" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- dark windows (all off) -->
+  <rect x="92"  y="104" width="34" height="18" rx="2" fill="#161b22"/>
+  <rect x="152" y="104" width="34" height="18" rx="2" fill="#161b22"/>
+  <rect x="214" y="104" width="34" height="18" rx="2" fill="#161b22"/>
+
+  <rect x="92"  y="145" width="34" height="18" rx="2" fill="#161b22"/>
+  <rect x="214" y="145" width="34" height="18" rx="2" fill="#161b22"/>
+
+  <rect x="92"  y="186" width="34" height="18" rx="2" fill="#161b22"/>
+  <rect x="214" y="186" width="34" height="18" rx="2" fill="#161b22"/>
+
+  <!-- ONE window lit up — 3am, someone's still working -->
+  <rect x="152" y="145" width="34" height="18" rx="2" fill="#22c55e" opacity="0.9"/>
+  <!-- terminal cursor blink inside lit window -->
+  <rect x="159" y="150" width="6" height="7" rx="1" fill="#0d1117" opacity="0.8"/>
+  <rect x="168" y="150" width="12" height="2" rx="1" fill="#0d1117" opacity="0.5"/>
+  <rect x="168" y="155" width="9"  height="2" rx="1" fill="#0d1117" opacity="0.5"/>
+
+  <!-- door -->
+  <rect x="152" y="186" width="36" height="34" rx="3" fill="none" stroke="#e6edf3" stroke-width="2"/>
+  <circle cx="182" cy="203" r="2.5" fill="#e6edf3"/>
+
+  <!-- ground -->
+  <line x1="60" y1="220" x2="280" y2="220" stroke="#e6edf3" stroke-width="2.5"/>
+
+  <!-- stars — it's 3am -->
+  <circle cx="44"  cy="48"  r="1.5" fill="#e6edf3" opacity="0.6"/>
+  <circle cx="72"  cy="32"  r="1"   fill="#e6edf3" opacity="0.5"/>
+  <circle cx="290" cy="44"  r="1.5" fill="#e6edf3" opacity="0.6"/>
+  <circle cx="308" cy="28"  r="1"   fill="#e6edf3" opacity="0.5"/>
+  <circle cx="170" cy="24"  r="1"   fill="#e6edf3" opacity="0.4"/>
+  <circle cx="52"  cy="70"  r="1"   fill="#e6edf3" opacity="0.3"/>
+  <circle cx="300" cy="68"  r="1"   fill="#e6edf3" opacity="0.3"/>
+
+  <!-- moon -->
+  <path d="M316 55 Q304 68 316 81 Q296 74 296 68 Q296 62 316 55Z" fill="#e6edf3" opacity="0.7"/>
+
+  <!-- label -->
+  <text x="170" y="264" font-family="ui-monospace, SFMono-Regular, monospace" font-size="15" font-weight="600" fill="#e6edf3" text-anchor="middle" letter-spacing="4">officeOs</text>
+  <text x="170" y="285" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#8b949e" text-anchor="middle" letter-spacing="1">one light always on</text>
+</svg>

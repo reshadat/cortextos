@@ -1,14 +1,6 @@
-<p align="center"><pre>
-  ┌─────────────────────────────────┐
-  │  ▓▓  analyst   codebase  ▓▓▓  │
-  │  ▓▓  ·······   ········  ▓▓▓  │
-  │                                 │
-  │       orchestrator              │
-  │       ─────────────             │
-  │       you → Slack → ✓           │
-  └─────────────────────────────────┘
-         o  f  f  i  c  e  O  s
-</pre></p>
+<p align="center">
+  <img src="assets/logo.svg" width="260" alt="officeOs — one light always on">
+</p>
 
 <h1 align="center">officeOs</h1>
 
@@ -26,11 +18,13 @@
 
 ---
 
-Think about the best engineering team you've ever worked with. Someone who knows the codebase cold. Someone who monitors the dashboards so you don't have to. Someone who handles the overnight jobs, writes the status updates, routes questions to whoever knows best — and only wakes you when a decision actually needs a human.
+You are the on-call, the router, the person colleagues Slack when they don't know who else to ask. You know the codebase better than anyone because you've been paged about it at every hour. You handle the overnight jobs because nobody else has context. You write the status updates. You approve the deploys.
 
-Now imagine that team works 24/7, costs almost nothing, lives on your own servers, and talks to you in Slack.
+officeOs builds you a team to handle that.
 
-That's officeOs. Not a chatbot. Not a single Claude session. An operating system for a team of AI agents — each with a job title, a knowledge base, a set of responsibilities, and colleagues they hand off to when a query isn't theirs. The orchestrator is your chief of staff. The analyst watches your systems. Specialists handle the domain work. You make the calls that actually need you.
+An orchestrator who reads every agent's job description and routes without asking you. An analyst who watches your systems so you stop waking up to surprises. Specialists who know their domain, hand off what isn't theirs, and surface only the decisions that actually need a human.
+
+They live on your infra. They talk through your Slack. The keys stay with you.
 
 ```
 You:    What shipped overnight?
@@ -69,31 +63,9 @@ Your team, your infra. Agents run on your machine, talk through your Slack, and 
 
 ## How it works
 
-Not a chatbot. Not a wrapper. A persistent agent team — each member has a job description, knows what it handles, and routes everything else to the right specialist.
+Every agent declares a job description — what it handles, what it provides, what's out of scope. The orchestrator reads all of them on every query and routes by intent, not keywords. "How does the auth module work?" reaches the codebase agent because its responsibility is explaining internal code, not because "auth" appears in a lookup table.
 
-```
-You → Slack → Orchestrator (Officer: routes only, never does domain work)
-                 └─ reads who handles what
-                 └─ routes to the right specialist
-                 └─ relays answer back to you
-
-Specialists (you build these):
-  Analyst        — metrics, system health, weekly improvement proposals
-  Codebase       — questions about your repo
-  (add any agent with a JD)
-```
-
-Every agent declares what it does. No keyword matching — the orchestrator reads intent.
-
-```
-You:   How does the rate limiter work?
-
-Boss:  Routing to codebase agent.
-       Rate limiter is token-bucket, configured in src/middleware/rate-limit.ts.
-       Defaults: 10 req/60s per user, 100 req/60s global.
-```
-
-When the right agent doesn't exist yet, the orchestrator handles it or tells you.
+When no specialist fits, the orchestrator handles it directly or tells you one doesn't exist yet.
 
 ## Install
 
