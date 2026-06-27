@@ -54,6 +54,6 @@
   <path d="M316 55 Q304 68 316 81 Q296 74 296 68 Q296 62 316 55Z" fill="#e6edf3" opacity="0.7"/>
 
   <!-- label -->
-  <text x="170" y="264" font-family="ui-monospace, SFMono-Regular, monospace" font-size="15" font-weight="600" fill="#e6edf3" text-anchor="middle" letter-spacing="4">officeOs</text>
-  <text x="170" y="285" font-family="ui-monospace, SFMono-Regular, monospace" font-size="10" fill="#8b949e" text-anchor="middle" letter-spacing="1">one light always on</text>
+  <text x="170" y="268" font-family="ui-monospace, SFMono-Regular, monospace" font-size="22" font-weight="700" fill="#e6edf3" text-anchor="middle" letter-spacing="5">officeOs</text>
+  <text x="170" y="292" font-family="ui-monospace, SFMono-Regular, monospace" font-size="11" fill="#8b949e" text-anchor="middle" letter-spacing="2">one light always on</text>
 </svg>

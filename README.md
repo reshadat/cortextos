@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="assets/logo.svg" width="260" alt="officeOs — one light always on">
+  <img src="assets/logo.svg" width="280" alt="officeOs — one light always on">
 </p>
-
-<h1 align="center">officeOs</h1>
 
 <p align="center">
   <em>An office of AI agents. Your infra. Your Slack. Your rules.</em>
