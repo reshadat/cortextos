@@ -35,10 +35,13 @@ export const uninstallCommand = new Command('uninstall')
       });
       if (pm2Result.status === 0 && pm2Result.stdout) {
         const processes = JSON.parse(pm2Result.stdout);
-        const cortextosProcesses = processes.filter((p: { name: string }) =>
-          p.name.startsWith('cortextos-') || p.name.startsWith(`ctx-${instanceId}`),
+        // Only officeOs PM2 entries — NEVER 'cortextos-*' (a separate, possibly
+        // co-installed product). Matching the old prefix here would let
+        // `officeos uninstall` delete an unrelated cortextos daemon.
+        const officeosProcesses = processes.filter((p: { name: string }) =>
+          p.name.startsWith('officeos-') || p.name.startsWith(`ctx-${instanceId}`),
         );
-        for (const p of cortextosProcesses) {
+        for (const p of officeosProcesses) {
           const del = spawnSync('pm2', ['delete', p.name], { timeout: 5000, stdio: 'pipe' });
           if (del.status === 0) {
             console.log(`  Stopped PM2 process: ${p.name}`);
