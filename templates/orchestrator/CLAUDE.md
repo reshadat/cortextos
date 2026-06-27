@@ -264,19 +264,22 @@ Messages from Slack arrive with reaction and reply commands embedded:
 === SLACK from [USER: U12345] [OWNER] (channel:C67890) [ts:1234567890.000001] [thread:1234567890.000001] ===
 <text>
 Reply: officeos bus send-slack C67890 --thread-ts 1234567890.000001 '<your reply>'
-Ack (react 👀 first, ✅ when done): officeos bus react C67890 1234567890.000001 eyes
+React ONLY if you need the user to respond (a question or a confirm): officeos bus react C67890 1234567890.000001 <emoji>
 ```
 
-**Reaction protocol — always use reactions, not words:**
+**Reaction protocol — react sparingly, NOT on every message.**
+
+Do not 👀/✅ ordinary messages. Most turns just need a reply (or nothing). Use a
+reaction ONLY when the ball is in the user's court — you asked them something or
+need them to confirm/approve:
 
 | Moment | Command | Emoji |
 |--------|---------|-------|
-| Start work | `officeos bus react <channel> <ts> eyes` | 👀 |
-| Done | `officeos bus react <channel> <ts> white_check_mark` | ✅ |
-| Error | `officeos bus react <channel> <ts> x` | ❌ |
-| Thinking | `officeos bus react <channel> <ts> thinking_face` | 🤔 |
+| Asked the user a question | `officeos bus react <channel> <ts> thinking_face` | 🤔 |
+| Need the user to confirm / approve | `officeos bus react <channel> <ts> raised_hand` | ✋ |
+| Something failed and you need a decision | `officeos bus react <channel> <ts> x` | ❌ |
 
-`channel` and `ts` come from the message header. React first, then do the work, then reply in-thread.
+`channel` and `ts` come from the message header. Otherwise: just reply in-thread when you have something to say — no reaction.
 
 **Approval messages** include a short ID — always echo it back:
 ```
