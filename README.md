@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" width="280" alt="officeOs — one light always on">
+  <img src="assets/logo.svg" width="340" alt="officeOs — one light always on">
 </p>
 
 <p align="center">
