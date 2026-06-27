@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, readFileSync } from 'fs';
+import { mkdtempSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { getTarget, activeConversations } from '../../../src/channels/reply-targets.js';
 
 // Capture both handlers SlackAdapter registers on the socket so the test can
 // fire message AND member_joined_channel events through the real gate logic.
@@ -213,12 +214,15 @@ describe('SlackAdapter inbound gates', () => {
     expect(inj).not.toMatch(/Thread context][\s\S]*follow up[\s\S]*\[End thread/); // current msg excluded from context
   });
 
-  it('persists slack-thread.json with channel + threadTs for hook reply targeting', async () => {
-    const { h } = handlers();
+  it('records a per-request reply target for hook/agent reply routing', async () => {
+    const { h, c } = handlers();
     await new SlackAdapter('xoxb', makeConfig({}, dir)).start(h);
     await fire({ user: 'UOWNER', text: 'hi', channel: 'CALLOWED', ts: '1700.9', thread_ts: '1700.3' });
-    const persisted = JSON.parse(readFileSync(join(dir, 'slack-thread.json'), 'utf-8'));
-    expect(persisted).toEqual({ channel: 'CALLOWED', threadTs: '1700.3', msgTs: '1700.9' });
+    // The adapter minted a request_id (also on the emitted message) and stored its target.
+    const reqId = c.messages[0].requestId;
+    expect(reqId).toBeTruthy();
+    expect(getTarget(dir, reqId)).toMatchObject({ conversationId: 'CALLOWED', threadId: '1700.3' });
+    expect([...activeConversations(dir)]).toEqual(['CALLOWED']);
   });
 });
 

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { recordTarget } from '../../../src/channels/reply-targets.js';
 
 // Control SlackAPI behavior without touching the network.
 const getBotUserId = vi.fn();
@@ -65,14 +66,16 @@ describe('SlackAdapter', () => {
     expect(res).toBeNull();
   });
 
-  it('resolveReplyTarget reads slack-thread.json', () => {
-    writeFileSync(join(dir, 'slack-thread.json'), JSON.stringify({ channel: 'C9', threadTs: '1700.5', msgTs: '1700.6' }));
-    const t = new SlackAdapter('xoxb-x').resolveReplyTarget(dir);
-    expect(t).toEqual({ conversationId: 'C9', threadId: '1700.5' });
+  it('resolveReplyTarget reads the per-request store (by id and most-recent)', () => {
+    recordTarget(dir, 'req-9', { conversationId: 'C9', threadId: '1700.5' });
+    const a = new SlackAdapter('xoxb-x');
+    expect(a.resolveReplyTarget(dir, 'req-9')).toEqual({ conversationId: 'C9', threadId: '1700.5' });
+    expect(a.resolveReplyTarget(dir)).toEqual({ conversationId: 'C9', threadId: '1700.5' }); // most recent
   });
 
-  it('resolveReplyTarget returns null when no state file', () => {
+  it('resolveReplyTarget returns null when no target recorded', () => {
     expect(new SlackAdapter('xoxb-x').resolveReplyTarget(dir)).toBeNull();
+    expect(new SlackAdapter('xoxb-x').resolveReplyTarget(dir, 'nope')).toBeNull();
   });
 
   it('start throws when constructed outbound-only (no inbound config)', async () => {

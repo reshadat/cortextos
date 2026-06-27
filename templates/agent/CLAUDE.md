@@ -37,12 +37,14 @@ See AGENTS.md for the full 13-step session start checklist. Key steps:
 
 Your job description is in `config.json` under the `jd` field. Your collaborators are in `memory/collaborators.md`.
 
-When you receive `ROUTED_QUERY: <msg>`:
-- If within your JD scope: handle it, then reply: `officeos bus send-message orchestrator 1 'ROUTE_REPLY: <answer>'`
-- If outside your JD scope: `officeos bus send-message orchestrator 1 'ROUTE_ESCALATE: Outside my scope | ORIGINAL: <msg>'`
-- If you need human input: `officeos bus send-message orchestrator 1 'ASK_HUMAN: <question>'`
+A `ROUTED_QUERY` carries a `[req:<id>]` correlation tag. **Echo it back** in every reply so the orchestrator relays your answer to the right human (multiple users may be active at once).
 
-Never address the human directly. Always route back through orchestrator.
+When you receive `ROUTED_QUERY: [req:<id>] <msg>`:
+- Within your JD scope: handle it, then reply with the tag — `officeos bus send-message <sender> 1 --request-id <id> 'ROUTE_REPLY: [req:<id>] <answer>'`
+- Outside your JD scope: `officeos bus send-message <sender> 1 --request-id <id> 'ROUTE_ESCALATE: [req:<id>] Outside my scope | ORIGINAL: <msg>'`
+- Need human input: `officeos bus send-message <sender> 1 --request-id <id> 'ASK_HUMAN: [req:<id>] <question>'`
+
+`<sender>` is the agent that routed to you — use the `Reply using:` command from the message header, never a hard-coded name. Never address the human directly; always route back through whoever sent you the query.
 
 ---
 

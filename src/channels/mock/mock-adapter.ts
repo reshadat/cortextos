@@ -8,7 +8,7 @@
  * a parent test process can assert on what was "sent".
  */
 import { appendFileSync, existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { getTarget, mostRecentTarget } from '../reply-targets.js';
 import type {
   ChannelAdapter,
   InboundHandlers,
@@ -36,19 +36,14 @@ export class MockAdapter implements ChannelAdapter {
     this.record({ op: 'addReaction', target, messageId, emoji });
   }
 
-  resolveReplyTarget(stateDir?: string): OutboundTarget | null {
+  resolveReplyTarget(stateDir?: string, requestId?: string): OutboundTarget | null {
     // Lets a test exercise a caller's "no reply target" fallback path.
     if (process.env.OFFICEOS_MOCK_NO_TARGET === '1') return null;
-    // Behave like the real adapter: read the persisted thread when present so
+    // Behave like the real adapter: read the per-request store when present so
     // callers' channel/thread-matching logic can be tested through the mock.
     if (stateDir) {
-      const p = join(stateDir, 'slack-thread.json');
-      if (existsSync(p)) {
-        try {
-          const { channel, threadTs } = JSON.parse(readFileSync(p, 'utf-8'));
-          if (channel) return { conversationId: channel, threadId: threadTs || undefined };
-        } catch { /* fall through */ }
-      }
+      const t = requestId ? getTarget(stateDir, requestId) : mostRecentTarget(stateDir);
+      if (t) return { conversationId: t.conversationId, threadId: t.threadId || undefined };
     }
     return { conversationId: 'C_MOCK', threadId: undefined };
   }

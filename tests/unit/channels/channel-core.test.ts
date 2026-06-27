@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync, readdirSync, utimesSync } from 'fs';
+import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { makeChannelHandlers, writeApprovalResponse, type ChannelInjector } from '../../../src/daemon/channel-core.js';
@@ -68,19 +68,21 @@ describe('writeApprovalResponse', () => {
     expect(existsSync(join(dir, 'tool-approval-aaa111.json'))).toBe(false);
   });
 
-  it('no shortId resolves the latest-mtime pending file', () => {
-    // Two pending files with distinct mtimes — the newer one must win.
-    const older = join(dir, 'hook-response-older.pending');
-    const newer = join(dir, 'hook-response-newer.pending');
-    writeFileSync(older, JSON.stringify({ uniqueId: 'older' }));
-    writeFileSync(newer, JSON.stringify({ uniqueId: 'newer' }));
-    // Force older to be genuinely older regardless of write granularity.
-    const past = new Date(Date.now() - 60_000);
-    utimesSync(older, past, past);
-
+  it('no shortId resolves the single pending file', () => {
+    writeFileSync(join(dir, 'hook-response-only1.pending'), JSON.stringify({ uniqueId: 'only1' }));
     writeApprovalResponse(dir, 'allow', () => {});
-    expect(existsSync(join(dir, 'hook-response-newer.json'))).toBe(true);
-    expect(existsSync(join(dir, 'hook-response-older.json'))).toBe(false);
+    expect(existsSync(join(dir, 'hook-response-only1.json'))).toBe(true);
+  });
+
+  it('bare decision with MULTIPLE pending refuses — never approves the wrong one', () => {
+    writeFileSync(join(dir, 'hook-response-aaa.pending'), JSON.stringify({ uniqueId: 'aaa' }));
+    writeFileSync(join(dir, 'hook-response-bbb.pending'), JSON.stringify({ uniqueId: 'bbb' }));
+    let logged = '';
+    writeApprovalResponse(dir, 'allow', (m) => { logged += m; });
+    // Neither resolved; owner is told to specify an id.
+    expect(existsSync(join(dir, 'hook-response-aaa.json'))).toBe(false);
+    expect(existsSync(join(dir, 'hook-response-bbb.json'))).toBe(false);
+    expect(logged).toMatch(/specify an id/);
   });
 
   it('no pending files is a safe no-op', () => {

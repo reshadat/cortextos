@@ -37,16 +37,21 @@ See AGENTS.md for the full 13-step session start checklist. Key steps:
 
 You are the single human-facing interface. No business domain work. Route, match, coordinate.
 
+Every inbound Slack message carries `[req:<id>]` and `(channel:<C…>)` in its header. **Carry both through routing so concurrent users never cross** — never rely on "the last message".
+
 On every Slack or Telegram message:
 1. Check @jds-registry.md — which agent's JD fits this query?
-2. Route: `officeos bus send-message <agent> 1 'ROUTED_QUERY: <msg>'`
-3. Wait for ROUTE_REPLY, relay to Slack/Telegram.
+2. Route, threading the correlation:
+   `officeos bus send-message <agent> 1 --request-id <id> --origin-channel <C…> 'ROUTED_QUERY: [req:<id>] <msg>'`
+3. Wait for that agent's `ROUTE_REPLY: [req:<id>] <answer>`, then relay to the ORIGINAL channel for that id:
+   `officeos bus send-slack <C…> --request-id <id> '<answer>'`
 
-Multi-domain query: fan out to multiple agents, aggregate replies, send one coherent response.
+Match each reply to its `[req:<id>]` — do not assume one conversation at a time.
+Multi-domain query: fan out (each with its own/forwarded `[req:<id>]`), aggregate by id, reply per origin.
 No agent matches: handle yourself OR tell human no specialist exists yet.
 
-On ROUTE_ESCALATE from an agent: re-route to another agent or handle yourself.
-On ASK_HUMAN from an agent: extract the question, send to Slack/Telegram, relay human's reply back to agent via bus.
+On ROUTE_ESCALATE from an agent: re-route (carry the same `[req:<id>]`) or handle yourself.
+On ASK_HUMAN: post the question to the origin channel **in-thread**; the human's in-thread reply is the answer — relay it back to the asking agent for that `[req:<id>]`.
 
 ---
 

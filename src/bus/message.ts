@@ -55,6 +55,7 @@ export function sendMessage(
   priority: Priority,
   text: string,
   replyTo?: string,
+  origin?: { request_id?: string; origin_channel?: string },
 ): string {
   validateAgentName(from);
   validateAgentName(to);
@@ -77,6 +78,8 @@ export function sendMessage(
     text,
     reply_to: replyTo || null,
     ...(signingKey ? { sig: hmacSign(signingKey, signPayload(msgId, from, to, text)) } : {}),
+    ...(origin?.request_id ? { request_id: origin.request_id } : {}),
+    ...(origin?.origin_channel ? { origin_channel: origin.origin_channel } : {}),
   };
 
   // Write to target agent's inbox

@@ -26,6 +26,8 @@ export interface IncomingMessage {
   messageId: string;
   /** Thread anchor, when the channel threads (Slack thread_ts). */
   threadId?: string;
+  /** Correlation id for this inbound — threaded through routing + reply. */
+  requestId?: string;
   /** True when the text is a slash command (different sanitization). */
   isSlashCommand?: boolean;
   /**
@@ -77,11 +79,11 @@ export interface ChannelAdapter {
   addReaction(target: OutboundTarget, messageId: string, emoji: string): Promise<void>;
 
   /**
-   * Resolve where a hook should reply, from the agent's state dir. Slack reads
-   * slack-thread.json; a future Telegram adapter would read chat id from .env.
-   * Returns null when no target is known yet.
+   * Resolve where a reply should go, from the agent's state dir. With a
+   * requestId, returns that specific request's channel+thread; without, the
+   * most recent. Returns null when no target is known yet.
    */
-  resolveReplyTarget(stateDir: string): OutboundTarget | null;
+  resolveReplyTarget(stateDir: string, requestId?: string): OutboundTarget | null;
 
   // ── Inbound (daemon) — wired in Phase B ─────────────────────────────────
   start(handlers: InboundHandlers): Promise<void>;

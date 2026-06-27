@@ -23,6 +23,11 @@ export interface InboxMessage {
   text: string;
   reply_to: string | null;
   sig?: string; // Security (H10): HMAC-SHA256 signature — optional for backwards compat
+  // Correlation: the human-conversation a routed query/reply ultimately belongs
+  // to, so the orchestrator relays a specialist's reply to the right channel
+  // even with multiple concurrent users. Threaded agent→agent.
+  request_id?: string;
+  origin_channel?: string;
 }
 
 // Task Types

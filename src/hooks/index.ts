@@ -379,8 +379,11 @@ export function buildAskMultiSelectKeyboard(
 /**
  * Build ask-state structure from questions array.
  */
-export function buildAskState(questions: any[]): object {
+export function buildAskState(questions: any[], askId?: string): object {
   return {
+    // Correlation id so concurrent asks (e.g. two specialists asking at once)
+    // stay distinguishable; the human's reply is matched in-thread on Slack.
+    ask_id: askId || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
     questions: questions.map((q) => ({
       question: q.question,
       header: q.header || '',

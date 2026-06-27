@@ -26,6 +26,7 @@ import { TelegramAPI } from '../telegram/api.js';
 import { logOutboundMessage, cacheLastSent } from '../telegram/logging.js';
 import { logOutboundSlackMessage, cacheLastSentSlack } from '../slack/logging.js';
 import { resolveAdapter } from '../channels/registry.js';
+import { activeConversations, getTarget } from '../channels/reply-targets.js';
 import { stripBom } from '../utils/strip-bom.js';
 import type { Priority, Task, TaskStatus, EventCategory, EventSeverity, ApprovalCategory, ApprovalStatus, OrgContext, CronDefinition } from '../types/index.js';
 
@@ -78,7 +79,9 @@ busCommand
   .argument('<text>', 'Message text')
   .argument('[reply-to]', 'Reply to message ID (optional positional form)')
   .option('--reply-to <id>', 'Reply to message ID')
-  .action((to: string, priority: string, text: string, replyToArg: string | undefined, opts: { replyTo?: string }) => {
+  .option('--request-id <id>', 'Human-conversation correlation id (threaded through routing)')
+  .option('--origin-channel <ch>', 'Origin Slack channel of the human conversation (threaded through routing)')
+  .action((to: string, priority: string, text: string, replyToArg: string | undefined, opts: { replyTo?: string; requestId?: string; originChannel?: string }) => {
     // Accept reply-to as either positional arg or --reply-to flag (P2 fix #9)
     const effectiveReplyTo = opts.replyTo ?? replyToArg;
     const validPriorities: Priority[] = ['urgent', 'high', 'normal', 'low'];
@@ -118,7 +121,8 @@ busCommand
       console.error(`Warning: agent '${to}' not found in project. Message will be queued but may never be read.`);
     }
 
-    const msgId = sendMessage(paths, env.agentName, to, priority as Priority, text, effectiveReplyTo);
+    const msgId = sendMessage(paths, env.agentName, to, priority as Priority, text, effectiveReplyTo,
+      (opts.requestId || opts.originChannel) ? { request_id: opts.requestId, origin_channel: opts.originChannel } : undefined);
     try {
       logEvent(paths, env.agentName, env.org, 'message', 'agent_message_sent', 'info', JSON.stringify({ to, priority, msg_id: msgId, reply_to: effectiveReplyTo ?? null }));
     } catch { /* non-fatal */ }
@@ -1034,7 +1038,8 @@ busCommand
   .argument('<channel-id>', 'Slack channel ID (C...)')
   .argument('<message>', 'Message text (Slack mrkdwn)')
   .option('--thread-ts <ts>', 'Reply in a thread (parent message timestamp)')
-  .action(async (channelId: string, message: string, opts: { threadTs?: string }) => {
+  .option('--request-id <id>', 'Correlation id of the inbound message being replied to')
+  .action(async (channelId: string, message: string, opts: { threadTs?: string; requestId?: string }) => {
     message = message.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
 
     const env = resolveEnv();
@@ -1055,24 +1060,30 @@ busCommand
       process.exit(1);
     }
 
-    // Channel restriction: only post to the origin channel unless SLACK_OUTBOUND_CHANNELS is set.
-    // Prevents compromised agents from exfiltrating data to arbitrary channels.
+    // Conversation restriction: post only to a conversation this agent has an
+    // ACTIVE reply target for (any recent inbound), or one in SLACK_OUTBOUND_CHANNELS.
+    // Prevents exfiltration to arbitrary channels, but — unlike the old single
+    // last-thread file — does NOT block a reply to user A just because user B
+    // messaged a different channel a moment later (the BLOCKER).
     if (env.agentName && env.ctxRoot) {
-      let originChannel: string | undefined;
-      try {
-        const threadState = JSON.parse(readFileSync(join(env.ctxRoot, 'state', env.agentName, 'slack-thread.json'), 'utf-8'));
-        originChannel = threadState.channel;
-      } catch { /* no active thread — unrestricted */ }
-
+      const stateDir = join(env.ctxRoot, 'state', env.agentName);
+      const active = activeConversations(stateDir);
       const outboundAllowlist = (process.env.SLACK_OUTBOUND_CHANNELS || '')
         .split(',').map((s: string) => s.trim()).filter(Boolean);
 
-      if (originChannel || outboundAllowlist.length > 0) {
-        const allowed = outboundAllowlist.length > 0 ? outboundAllowlist : (originChannel ? [originChannel] : []);
-        if (!allowed.includes(channelId)) {
-          console.error(`send-slack: channel ${channelId} not in allowlist. Origin: ${originChannel ?? 'none'}. Set SLACK_OUTBOUND_CHANNELS to override.`);
+      if (active.size > 0 || outboundAllowlist.length > 0) {
+        const allowed = new Set<string>([...active, ...outboundAllowlist]);
+        if (!allowed.has(channelId)) {
+          console.error(`send-slack: channel ${channelId} not in active conversations or SLACK_OUTBOUND_CHANNELS.`);
           process.exit(1);
         }
+      }
+
+      // If the agent passed --request-id but no explicit thread, recover the
+      // thread from that request's stored target.
+      if (opts.requestId && !opts.threadTs) {
+        const t = getTarget(stateDir, opts.requestId);
+        if (t?.threadId) opts.threadTs = t.threadId;
       }
     }
 

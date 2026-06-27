@@ -9,6 +9,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { resolveAdapter } from './registry.js';
+import { mostRecentTargetForRole } from './reply-targets.js';
 import { stripBom } from '../utils/strip-bom.js';
 
 /** Read one key out of an agent's .env (BOM-safe), falling back to process.env. */
@@ -50,9 +51,10 @@ export async function sendToReplyTarget(
   const channel = ownerChannel(agentDir);
   if (!channel) return null;
 
-  // Thread only if the last inbound thread belongs to the owner channel.
-  const last = adapter.resolveReplyTarget(stateDir);
-  const threadId = last && last.conversationId === channel ? last.threadId : undefined;
+  // Thread only off the latest OWNER message in the owner channel — never a
+  // readonly user's thread (a hook prompt is an owner-facing notification).
+  const lastOwner = mostRecentTargetForRole(stateDir, 'owner');
+  const threadId = lastOwner && lastOwner.conversationId === channel ? lastOwner.threadId : undefined;
 
   return adapter.sendMessage({ conversationId: channel, threadId }, text);
 }

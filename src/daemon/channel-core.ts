@@ -59,8 +59,14 @@ export function writeApprovalResponse(
   if (shortId) {
     chosen = candidates.find((c) => c.uniqueId.startsWith(shortId)) ?? null;
     if (!chosen) { log(`Channel: no pending file matches shortId "${shortId}" — ignoring`); return; }
+  } else if (candidates.length > 1) {
+    // Ambiguous: a bare allow/deny with several pending would approve the wrong
+    // one by mtime. Refuse and tell the owner which ids to target.
+    const ids = candidates.map((c) => c.uniqueId.slice(0, 6)).join(', ');
+    log(`Channel: bare "${decision}" but ${candidates.length} approvals pending — specify an id: ${decision} <id> (pending: ${ids})`);
+    return;
   } else {
-    chosen = candidates.reduce((a, b) => (b.mtime > a.mtime ? b : a));
+    chosen = candidates[0];
   }
 
   try {

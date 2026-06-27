@@ -20,6 +20,7 @@ import { makeChannelHandlers } from '../../src/daemon/channel-core.js';
 import { MockAdapter } from '../../src/channels/mock/mock-adapter.js';
 import { sendToReplyTarget } from '../../src/channels/send.js';
 import { sendMessage, checkInbox, ackInbox } from '../../src/bus/message.js';
+import { recordTarget, getTarget, activeConversations } from '../../src/channels/reply-targets.js';
 import type { IncomingMessage } from '../../src/channels/adapter.js';
 
 function mockAgent(name = 'orch') {
@@ -124,8 +125,8 @@ describe('channel message loop', () => {
   // ── OUTBOUND: agent reply → adapter → wire ─────────────────────────────────
   it('outbound: a hook reply lands on the owner channel, threaded to the last inbound', async () => {
     const paths = makePaths(ctxRoot, 'orch');
-    // inbound (in the owner channel) persisted this reply target:
-    wf(join(paths.stateDir, 'slack-thread.json'), JSON.stringify({ channel: 'C1', threadTs: '1700.1', msgTs: '1700.1' }));
+    // inbound (owner, in the owner channel) persisted this reply target:
+    recordTarget(paths.stateDir, 'req-1', { conversationId: 'C1', threadId: '1700.1', role: 'owner' });
 
     const outbox = join(ctxRoot, 'outbox.jsonl');
     process.env.OFFICEOS_CHANNEL_ADAPTER = 'mock';
@@ -163,5 +164,29 @@ describe('channel message loop', () => {
     // both inboxes drained
     expect(checkInbox(orch)).toHaveLength(0);
     expect(checkInbox(analyst)).toHaveLength(0);
+  });
+
+  // ── CONCURRENT USERS: the BLOCKER — A's reply survives B's later message ─────
+  it('two users in different channels: both reply targets stay resolvable (no overwrite)', () => {
+    const paths = makePaths(ctxRoot, 'orch');
+    recordTarget(paths.stateDir, 'reqA', { conversationId: 'C_A', threadId: 'tA' }, 1000);
+    recordTarget(paths.stateDir, 'reqB', { conversationId: 'C_B', threadId: 'tB' }, 1001); // B after A
+
+    // A still resolves to C_A even though B (C_B) arrived later.
+    expect(getTarget(paths.stateDir, 'reqA', 1002)).toMatchObject({ conversationId: 'C_A', threadId: 'tA' });
+    // The outbound gate would allow a reply to BOTH channels (the old single-file
+    // gate would have dropped A's reply once B overwrote it).
+    expect(activeConversations(paths.stateDir, 1002)).toEqual(new Set(['C_A', 'C_B']));
+  });
+
+  // ── CORRELATION: origin survives the agent→agent hop ────────────────────────
+  it('inter-agent: request_id + origin_channel round-trip through the bus', () => {
+    const orch = makePaths(ctxRoot, 'orch');
+    const analyst = makePaths(ctxRoot, 'analyst');
+    sendMessage(orch, 'orch', 'analyst', 'high', 'ROUTED_QUERY: [req:r1] check metrics', undefined,
+      { request_id: 'r1', origin_channel: 'C_A' });
+    const got = checkInbox(analyst);
+    expect(got[0].request_id).toBe('r1');
+    expect(got[0].origin_channel).toBe('C_A');
   });
 });

@@ -180,8 +180,12 @@ export class FastChecker {
       const channelMatch = formatted.match(/\(channel:([^)]+)\)/);
       const userMatch = formatted.match(/\[USER:\s+([^\]]+?)\]/);
       const roleMatch = formatted.match(/\[(OWNER|READONLY)\]/);
+      // Use the real correlation id from the header (the adapter minted it and
+      // wrote it into the reply-target store) so the daemon envelope id matches
+      // the conversation id. Fall back to a fresh id only if absent.
+      const headerReqId = formatted.match(/\[req:([^\]]+)\]/)?.[1];
       envelope = {
-        request_id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+        request_id: headerReqId || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
         origin_channel: channelMatch?.[1],
         origin_user: userMatch?.[1],
         origin_role: roleMatch?.[1]?.toLowerCase() as 'owner' | 'readonly' | undefined,
@@ -260,6 +264,13 @@ export class FastChecker {
    */
   private formatInboxMessage(msg: InboxMessage): string {
     const replyNote = msg.reply_to ? ` [reply_to: ${msg.reply_to}]` : '';
+    // Surface the human-conversation correlation so a relayed ROUTE_REPLY can be
+    // sent back to the right Slack channel even with concurrent users.
+    const corr = [
+      msg.request_id ? `[req:${msg.request_id}]` : '',
+      msg.origin_channel ? `[origin_channel:${msg.origin_channel}]` : '',
+    ].filter(Boolean).join(' ');
+    const corrNote = corr ? ` ${corr}` : '';
     // msg.text/from are externally influenced (a body can carry its own
     // fence/header markers; --body-stdin/--body-file made arbitrary bodies easy
     // to send). The body is wrapped with wrapFenceSafe — a dynamically-sized
@@ -267,9 +278,16 @@ export class FastChecker {
     // blocks stay readable. The inline `from` is collapse-sanitized (it sits in
     // the header line, not a fence).
     const safeFrom = sanitizeForPtyInjection(msg.from);
-    return `=== AGENT MESSAGE from ${safeFrom}${replyNote} [msg_id: ${msg.id}] ===
+    // Bake the correlation into the reply command so it survives even a sloppy
+    // agent — the answer routes back to the right human conversation.
+    const corrFlags = [
+      msg.request_id ? `--request-id ${msg.request_id}` : '',
+      msg.origin_channel ? `--origin-channel ${msg.origin_channel}` : '',
+    ].filter(Boolean).join(' ');
+    const replyTail = corrFlags ? ` ${corrFlags}` : '';
+    return `=== AGENT MESSAGE from ${safeFrom}${replyNote}${corrNote} [msg_id: ${msg.id}] ===
 ${wrapFenceSafe(msg.text)}
-Reply using: cortextos bus send-message ${safeFrom} normal '<your reply>' ${msg.id}
+Reply using: cortextos bus send-message ${safeFrom} normal '<your reply>' ${msg.id}${replyTail}
 
 `;
   }

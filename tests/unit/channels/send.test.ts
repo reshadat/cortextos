@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync } from 'fs
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { sendToReplyTarget } from '../../../src/channels/send.js';
+import { recordTarget } from '../../../src/channels/reply-targets.js';
 
 describe('sendToReplyTarget — hooks reply to the OWNER channel', () => {
   let agentDir: string;
@@ -28,8 +29,8 @@ describe('sendToReplyTarget — hooks reply to the OWNER channel', () => {
   });
 
   const writeEnv = (body: string) => writeFileSync(join(agentDir, '.env'), body);
-  const writeThread = (channel: string, threadTs: string) =>
-    writeFileSync(join(stateDir, 'slack-thread.json'), JSON.stringify({ channel, threadTs, msgTs: threadTs }));
+  const writeThread = (channel: string, threadTs: string, role: 'owner' | 'readonly' = 'owner') =>
+    recordTarget(stateDir, `req-${channel}`, { conversationId: channel, threadId: threadTs, role });
   const lastSend = () => JSON.parse(readFileSync(outbox, 'utf-8').trim().split('\n').pop()!);
 
   it('sends to SLACK_CHANNEL_ID', async () => {
@@ -56,7 +57,7 @@ describe('sendToReplyTarget — hooks reply to the OWNER channel', () => {
     // Regression: the last inbound was a readonly user in a different channel.
     // The hook prompt must still land in the OWNER channel, not the readonly thread.
     writeEnv('SLACK_BOT_TOKEN=xoxb-1\nSLACK_CHANNEL_ID=C_OWNER\n');
-    writeThread('C_READONLY', '1700.9');
+    writeThread('C_READONLY', '1700.9', 'readonly');
     await sendToReplyTarget(agentDir, stateDir, 'permission?');
     expect(lastSend().target).toEqual({ conversationId: 'C_OWNER', threadId: undefined });
   });
