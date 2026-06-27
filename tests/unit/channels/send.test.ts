@@ -46,11 +46,14 @@ describe('sendToReplyTarget — hooks reply to the OWNER channel', () => {
     expect(lastSend().target.conversationId).toBe('C_FIRST');
   });
 
-  it('threads the reply when the last inbound was in the owner channel', async () => {
+  it('posts UNTHREADED to the owner channel — never into a conversation thread', async () => {
+    // A hook prompt has no reliable request_id; it must land top-level in the
+    // owner channel, never threaded (even into an owner thread), to avoid the
+    // wrong-thread class entirely.
     writeEnv('SLACK_BOT_TOKEN=xoxb-1\nSLACK_CHANNEL_ID=C_OWNER\n');
     writeThread('C_OWNER', '1700.5');
     await sendToReplyTarget(agentDir, stateDir, 'hi');
-    expect(lastSend().target).toEqual({ conversationId: 'C_OWNER', threadId: '1700.5' });
+    expect(lastSend().target).toEqual({ conversationId: 'C_OWNER', threadId: undefined });
   });
 
   it('does NOT thread into a readonly user\'s channel — posts to owner channel untreaded', async () => {

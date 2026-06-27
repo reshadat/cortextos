@@ -123,9 +123,8 @@ describe('channel message loop', () => {
   });
 
   // ── OUTBOUND: agent reply → adapter → wire ─────────────────────────────────
-  it('outbound: a hook reply lands on the owner channel, threaded to the last inbound', async () => {
+  it('outbound: a hook reply lands UNTHREADED on the owner channel', async () => {
     const paths = makePaths(ctxRoot, 'orch');
-    // inbound (owner, in the owner channel) persisted this reply target:
     recordTarget(paths.stateDir, 'req-1', { conversationId: 'C1', threadId: '1700.1', role: 'owner' });
 
     const outbox = join(ctxRoot, 'outbox.jsonl');
@@ -138,7 +137,11 @@ describe('channel message loop', () => {
     const res = await sendToReplyTarget(agentDir, paths.stateDir, 'all green');
     expect(res).toEqual({ messageId: 'mock-ts-1' });
     const sent = JSON.parse(readFileSync(outbox, 'utf-8').trim());
-    expect(sent).toMatchObject({ op: 'sendMessage', text: 'all green', target: { conversationId: 'C1', threadId: '1700.1' } });
+    // Hook prompt posts top-level to the owner channel — never into a thread.
+    expect(sent.op).toBe('sendMessage');
+    expect(sent.text).toBe('all green');
+    expect(sent.target.conversationId).toBe('C1');
+    expect(sent.target.threadId).toBeUndefined();
   });
 
   // ── INTER-AGENT: ROUTED_QUERY → ROUTE_REPLY over the file bus ───────────────
