@@ -222,6 +222,24 @@ export interface AgentConfig {
    * actually needed (on-demand orchestrator pattern).
    */
   auto_start?: boolean;
+  /** Token compression via headroom binary. Auto-detected when binary present. */
+  headroom?: {
+    enabled?: boolean;
+    mode?: 'proxy' | 'wrap';
+    port?: number;
+  };
+  /** Agent Job Description — used by sync-jds for routing registry. */
+  jd?: AgentJD;
+}
+
+export interface AgentJD {
+  title: string;
+  description: string;
+  responsibilities: string[];
+  provides: string[];
+  needs: string[];
+  keywords: string[];
+  out_of_scope?: string[];
 }
 
 export interface CronEntry {
@@ -487,6 +505,17 @@ export interface SlackMessageEvent {
   ts: string;
   thread_ts?: string;
   bot_id?: string;
+}
+
+export interface BusEnvelope {
+  p: number;
+  message: string;
+  request_id?: string;
+  origin_user?: string;
+  origin_role?: string;
+  origin_channel?: string;
+  routed_from?: string;
+  hop_count?: number;
 }
 
 // Telegram Types
