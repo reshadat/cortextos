@@ -6,7 +6,7 @@ import { homedir } from 'os';
 
 interface Check {
   name: string;
-  status: 'pass' | 'fail' | 'warn';
+  status: 'pass' | 'fail' | 'warn' | 'optional';
   message: string;
   fix?: string;
 }
@@ -61,6 +61,19 @@ export const doctorCommand = new Command('doctor')
         message: 'Not found',
         fix: 'Install Claude Code: npm install -g @anthropic-ai/claude-code',
       });
+    }
+
+    // Check headroom (optional token compression binary)
+    try {
+      const hrPath = execSync('which headroom', { encoding: 'utf-8', stdio: 'pipe', timeout: 5000 }).trim();
+      if (hrPath) {
+        const hrVer = execSync('headroom --version', { encoding: 'utf-8', stdio: 'pipe', timeout: 5000 }).trim();
+        checks.push({ name: 'headroom', status: 'pass', message: hrVer || 'installed' });
+      } else {
+        checks.push({ name: 'headroom', status: 'optional', message: 'not installed — token compression disabled (npm install -g headroom)' });
+      }
+    } catch {
+      checks.push({ name: 'headroom', status: 'optional', message: 'not installed — token compression disabled' });
     }
 
     // Check node-pty
@@ -433,7 +446,7 @@ export const doctorCommand = new Command('doctor')
     // Display results
     let hasFailures = false;
     for (const check of checks) {
-      const icon = check.status === 'pass' ? 'OK' : check.status === 'warn' ? 'WARN' : 'FAIL';
+      const icon = check.status === 'pass' ? 'OK' : check.status === 'warn' ? 'WARN' : check.status === 'optional' ? 'OPT' : 'FAIL';
       const prefix = `  [${icon}]`;
       console.log(`${prefix.padEnd(10)} ${check.name}: ${check.message}`);
       if (check.fix) {

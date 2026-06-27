@@ -7,6 +7,7 @@ const execAsync = promisify(exec);
 let headroomPath: string | null | undefined = undefined;
 
 export async function resolveHeadroom(): Promise<string | null> {
+  // Check HEADROOM_ENABLED env override
   if (process.env.HEADROOM_ENABLED === 'false') return null;
   if (headroomPath !== undefined) return headroomPath;
   try {
@@ -31,6 +32,7 @@ export async function applyHeadroom(
   if (mode === 'wrap') {
     return { cmd: [bin, 'wrap', '--', ...cmd], env };
   }
+  // proxy mode
   const port = config.headroom?.port ?? 8787;
   return {
     cmd,
