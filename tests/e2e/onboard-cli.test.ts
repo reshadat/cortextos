@@ -26,15 +26,17 @@ const realCli = join(repoRoot, 'dist', 'cli.js');
 const distPresent = existsSync(realCli);
 
 interface WizardResult { code: number | null; stdout: string; stderr: string; }
+/** One scripted turn: wait for `expect` in stdout, then send `answer`. */
+interface Step { expect: RegExp; answer: string }
 
 /**
- * Drive an interactive CLI by dripping answers. Sub-commands use blocking
- * spawnSync (freezing the event loop), so feeding all answers + closing stdin
- * up front races readline to EOF. Instead: send the next answer only when the
- * wizard's stdout has gone idle (it's sitting at a prompt). Close stdin after
- * the last answer's idle so a hung prompt can't deadlock the test.
+ * Drive the interactive wizard deterministically: send each answer only once
+ * its prompt has actually appeared in stdout (matched past the last consumed
+ * offset), never on a timer. This eliminates the race where a slow sub-command
+ * (blocking spawnSync) would let a fixed delay fire before the prompt is shown.
+ * A safety timeout rejects if an expected prompt never arrives.
  */
-function runWizard(tempRoot: string, tempHome: string, answers: string[], extraEnv: Record<string, string> = {}): Promise<WizardResult> {
+function driveWizard(tempRoot: string, tempHome: string, steps: Step[], extraEnv: Record<string, string> = {}): Promise<WizardResult> {
   return new Promise((resolve, reject) => {
     const env: NodeJS.ProcessEnv = {
       ...process.env,
@@ -52,28 +54,29 @@ function runWizard(tempRoot: string, tempHome: string, answers: string[], extraE
     });
     let stdout = '';
     let stderr = '';
-    const queue = [...answers];
-    const IDLE_MS = 250;
-    let timer: NodeJS.Timeout | null = null;
+    let consumed = 0;   // offset in stdout up to which prompts are answered
+    let i = 0;          // current step
 
-    const onIdle = () => {
-      if (queue.length > 0) {
-        child.stdin.write(queue.shift()! + '\n');
-        arm();
-      } else {
-        child.stdin.end();
+    const safety = setTimeout(() => {
+      child.kill('SIGKILL');
+      reject(new Error(`wizard stalled waiting for step ${i} (${steps[i]?.expect}). stdout so far:\n${stdout}`));
+    }, 45000);
+
+    const pump = () => {
+      while (i < steps.length) {
+        const m = steps[i].expect.exec(stdout.slice(consumed));
+        if (!m) return; // prompt not shown yet
+        consumed += m.index + m[0].length;
+        child.stdin.write(steps[i].answer + '\n');
+        i++;
       }
-    };
-    const arm = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(onIdle, IDLE_MS);
+      child.stdin.end(); // all answers sent
     };
 
-    child.stdout.on('data', d => { stdout += d.toString(); arm(); });
-    child.stderr.on('data', d => { stderr += d.toString(); arm(); });
-    child.on('error', reject);
-    child.on('close', code => { if (timer) clearTimeout(timer); resolve({ code, stdout, stderr }); });
-    arm(); // kick the first drip once the banner settles
+    child.stdout.on('data', d => { stdout += d.toString(); pump(); });
+    child.stderr.on('data', d => { stderr += d.toString(); });
+    child.on('error', err => { clearTimeout(safety); reject(err); });
+    child.on('close', code => { clearTimeout(safety); resolve({ code, stdout, stderr }); });
   });
 }
 
@@ -100,24 +103,35 @@ describe.skipIf(!distPresent)('officeos onboard — black-box CLI E2E', () => {
     rmSync(tempHome, { recursive: true, force: true });
   });
 
+  // Prompt markers — used to drive each turn deterministically.
+  const P = {
+    org: /Team \/ org name:/,
+    orch: /Orchestrator name/,
+    bot: /Bot token \(xoxb/,
+    app: /App-level token/,
+    user: /Your Slack user id/,
+    chan: /Channel id for this team/,
+    domain: /Restrict to a company email domain/,
+    domainVal: /Allowed domain\(s\)/,
+    addSpec: /Add a specialist to this team/,
+    specName: /Specialist name:/,
+    title: /One-line title/,
+    desc: /What does it handle/,
+    share: /Share this agent across all teams/,
+    reuse: /Reuse the same Slack app/,
+    moreTeams: /Add another team/,
+  };
+  const step = (expect: RegExp, answer: string): Step => ({ expect, answer });
+
   it('builds a one-team office: Slack .env, swapped hooks, shared JD, registry', async () => {
-    const answers = [
-      'docs',                            // team / org name
-      'docs-orch',                       // orchestrator name
-      'xoxb-test',                       // bot token
-      'xapp-test',                       // app token
-      'U01OWNER23',                      // owner user id (!= mock bot id)
-      'C01DOCS234',                      // channel id
-      'n',                               // restrict domain?
-      'y',                               // add a specialist?
-      'doc-writer',                      // specialist name
-      'Documentation Specialist',        // title
-      'Writes and edits internal docs',  // description
-      'y',                               // share across teams?
-      'n',                               // add another specialist?
-      'n',                               // add another team?
-    ];
-    const { code, stdout } = await runWizard(tempRoot, tempHome, answers);
+    const { code, stdout } = await driveWizard(tempRoot, tempHome, [
+      step(P.org, 'docs'), step(P.orch, 'docs-orch'),
+      step(P.bot, 'xoxb-test'), step(P.app, 'xapp-test'),
+      step(P.user, 'U01OWNER23'), step(P.chan, 'C01DOCS234'), step(P.domain, 'n'),
+      step(P.addSpec, 'y'), step(P.specName, 'doc-writer'),
+      step(P.title, 'Documentation Specialist'), step(P.desc, 'Writes and edits internal docs'),
+      step(P.share, 'y'), step(P.addSpec, 'n'), step(P.moreTeams, 'n'),
+    ]);
     expect(code, stdout).toBe(0);
     expect(stdout).toMatch(/Onboarding complete/);
 
@@ -140,48 +154,73 @@ describe.skipIf(!distPresent)('officeos onboard — black-box CLI E2E', () => {
   }, 60000);
 
   it('shared agent crosses orgs; team-internal does not', async () => {
-    const answers = [
+    const { code, stdout } = await driveWizard(tempRoot, tempHome, [
       // team 1: docs with a SHARED codebase agent + a PRIVATE doc-writer
-      'docs', 'docs-orch',
-      'xoxb-test', 'xapp-test', 'U01OWNER23', 'C01DOCS234', 'n',
-      'y', 'codebase', 'Codebase Expert', 'Explains internal code', 'y',     // shared
-      'y', 'doc-writer', 'Doc Specialist', 'Writes docs', 'n',              // private
-      'n',                                                                   // no more specialists
-      'y',                                                                   // add another team
+      step(P.org, 'docs'), step(P.orch, 'docs-orch'),
+      step(P.bot, 'xoxb-test'), step(P.app, 'xapp-test'),
+      step(P.user, 'U01OWNER23'), step(P.chan, 'C01DOCS234'), step(P.domain, 'n'),
+      step(P.addSpec, 'y'), step(P.specName, 'codebase'), step(P.title, 'Codebase Expert'), step(P.desc, 'Explains internal code'), step(P.share, 'y'),
+      step(P.addSpec, 'y'), step(P.specName, 'doc-writer'), step(P.title, 'Doc Specialist'), step(P.desc, 'Writes docs'), step(P.share, 'n'),
+      step(P.addSpec, 'n'), step(P.moreTeams, 'y'),
       // team 2: marketing, reuse slack app, own channel
-      'marketing', 'marketing-orch',
-      'y',                 // reuse bot/app
-      '',                  // owner id — accept default (reused)
-      'C02MKTG567',        // new channel
-      'n',                 // restrict domain?
-      'n',                 // add a specialist?
-      'n',                 // add another team?
-    ];
-    const { code, stdout } = await runWizard(tempRoot, tempHome, answers);
+      step(P.org, 'marketing'), step(P.orch, 'marketing-orch'),
+      step(P.reuse, 'y'), step(P.user, ''), step(P.chan, 'C02MKTG567'), step(P.domain, 'n'),
+      step(P.addSpec, 'n'), step(P.moreTeams, 'n'),
+    ]);
     expect(code, stdout).toBe(0);
 
     const mktgRegistry = readFileSync(
       join(tempRoot, 'orgs', 'marketing', 'agents', 'marketing-orch', 'jds-registry.md'), 'utf-8');
-    // shared codebase agent visible to marketing; private doc-writer is not
-    expect(mktgRegistry).toContain('codebase');
-    expect(mktgRegistry).not.toContain('doc-writer');
+    expect(mktgRegistry).toContain('codebase');       // shared → visible
+    expect(mktgRegistry).not.toContain('doc-writer'); // private → hidden
   }, 60000);
 
   it('blocks a duplicate agent name and re-prompts', async () => {
-    const answers = [
-      'docs', 'docs-orch',
-      'xoxb-test', 'xapp-test', 'U01OWNER23', 'C01DOCS234', 'n',
-      'y',
-      'docs-orch',     // duplicate of the orchestrator — must be rejected
-      'doc-writer',    // valid retry
-      'Doc Specialist', 'Writes docs', 'n',
-      'n',             // no more specialists
-      'n',             // no more teams
-    ];
-    const { code, stdout } = await runWizard(tempRoot, tempHome, answers);
+    const { code, stdout } = await driveWizard(tempRoot, tempHome, [
+      step(P.org, 'docs'), step(P.orch, 'docs-orch'),
+      step(P.bot, 'xoxb-test'), step(P.app, 'xapp-test'),
+      step(P.user, 'U01OWNER23'), step(P.chan, 'C01DOCS234'), step(P.domain, 'n'),
+      step(P.addSpec, 'y'),
+      step(P.specName, 'docs-orch'),  // duplicate of the orchestrator — rejected
+      step(P.specName, 'doc-writer'), // valid retry
+      step(P.title, 'Doc Specialist'), step(P.desc, 'Writes docs'), step(P.share, 'n'),
+      step(P.addSpec, 'n'), step(P.moreTeams, 'n'),
+    ]);
     expect(code, stdout).toBe(0);
     expect(stdout).toMatch(/already taken/i);
     expect(existsSync(join(tempRoot, 'orgs', 'docs', 'agents', 'doc-writer'))).toBe(true);
+  }, 60000);
+
+  it('re-prompts when owner id is the bot id, and on a malformed channel id', async () => {
+    const { code, stdout } = await driveWizard(tempRoot, tempHome, [
+      step(P.org, 'docs'), step(P.orch, 'docs-orch'),
+      step(P.bot, 'xoxb-test'), step(P.app, 'xapp-test'),
+      step(P.user, 'UBOTMOCK01'),  // the mock bot's own id — rejected
+      step(P.user, 'U01OWNER23'),  // real owner
+      step(P.chan, 'badchan'),     // malformed — rejected
+      step(P.chan, 'C01DOCS234'),  // valid
+      step(P.domain, 'n'),
+      step(P.addSpec, 'n'), step(P.moreTeams, 'n'),
+    ]);
+    expect(code, stdout).toBe(0);
+    expect(stdout).toMatch(/bot's own user id/i);
+    expect(stdout).toMatch(/does not look like a Slack channel id/i);
+    const env = readFileSync(join(tempRoot, 'orgs', 'docs', 'agents', 'docs-orch', '.env'), 'utf-8');
+    expect(env).toContain('SLACK_USER_ID=U01OWNER23');
+    expect(env).toContain('SLACK_CHANNEL_ID=C01DOCS234');
+  }, 60000);
+
+  it('collects an allowed email domain and writes SLACK_ALLOWED_DOMAINS', async () => {
+    const { code, stdout } = await driveWizard(tempRoot, tempHome, [
+      step(P.org, 'docs'), step(P.orch, 'docs-orch'),
+      step(P.bot, 'xoxb-test'), step(P.app, 'xapp-test'),
+      step(P.user, 'U01OWNER23'), step(P.chan, 'C01DOCS234'),
+      step(P.domain, 'y'), step(P.domainVal, 'acme.com'),
+      step(P.addSpec, 'n'), step(P.moreTeams, 'n'),
+    ]);
+    expect(code, stdout).toBe(0);
+    const env = readFileSync(join(tempRoot, 'orgs', 'docs', 'agents', 'docs-orch', '.env'), 'utf-8');
+    expect(env).toContain('SLACK_ALLOWED_DOMAINS=acme.com');
   }, 60000);
 });
 
@@ -207,9 +246,18 @@ describe.runIf(process.env.OFFICEOS_E2E_LIVE_SLACK === '1' && distPresent)('offi
     const appToken = process.env.SLACK_APP_TOKEN || 'xapp-unused';
     const userId = process.env.SLACK_USER_ID || 'U00000000';
     const channelId = process.env.SLACK_CHANNEL_ID || 'C00000000';
-    const answers = ['docs', 'docs-orch', botToken, appToken, userId, channelId, 'n', 'n', 'n'];
     // No OFFICEOS_CHANNEL_ADAPTER override → real Slack adapter.
-    const { code, stdout } = await runWizard(tempRoot, tempHome, answers, { OFFICEOS_CHANNEL_ADAPTER: '' });
+    const { code, stdout } = await driveWizard(tempRoot, tempHome, [
+      { expect: /Team \/ org name:/, answer: 'docs' },
+      { expect: /Orchestrator name/, answer: 'docs-orch' },
+      { expect: /Bot token \(xoxb/, answer: botToken },
+      { expect: /App-level token/, answer: appToken },
+      { expect: /Your Slack user id/, answer: userId },
+      { expect: /Channel id for this team/, answer: channelId },
+      { expect: /Restrict to a company email domain/, answer: 'n' },
+      { expect: /Add a specialist to this team/, answer: 'n' },
+      { expect: /Add another team/, answer: 'n' },
+    ], { OFFICEOS_CHANNEL_ADAPTER: '' });
     expect(code, stdout).toBe(0);
     expect(stdout).toMatch(/Validated bot token/);
   }, 60000);

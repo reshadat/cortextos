@@ -1,26 +1,34 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, rmSync } from 'fs';
+import { mkdtempSync, rmSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
-// Capture the handlers SlackAdapter registers on the socket so the test can
-// fire inbound events through the real gate logic.
+// Capture both handlers SlackAdapter registers on the socket so the test can
+// fire message AND member_joined_channel events through the real gate logic.
 let messageHandler: ((event: any) => Promise<void> | void) | undefined;
+let eventHandlers: Record<string, (ev: any) => Promise<void> | void> = {};
 vi.mock('../../../src/slack/socket-client.js', () => ({
   SlackSocketClient: class {
     constructor(_t: string) {}
     onMessage(h: any) { messageHandler = h; }
-    onEvent(_t: string, _h: any) {}
+    onEvent(t: string, h: any) { eventHandlers[t] = h; }
     start() { return Promise.resolve(); }
     stop() { return Promise.resolve(); }
   },
 }));
-// Avoid any real Slack client construction / network.
+
+// Controllable SlackAPI — no network.
+const getBotUserId = vi.fn(async () => 'UBOT');
+const getThreadReplies = vi.fn(async () => [] as any[]);
+const leaveChannel = vi.fn(async () => {});
+const dmUser = vi.fn(async () => {});
 vi.mock('../../../src/slack/api.js', () => ({
   SlackAPI: class {
     constructor(_t: string) {}
-    getBotUserId() { return Promise.resolve('UBOT'); }
-    getThreadReplies() { return Promise.resolve([]); }
+    getBotUserId = getBotUserId;
+    getThreadReplies = getThreadReplies;
+    leaveChannel = leaveChannel;
+    dmUser = dmUser;
   },
 }));
 
@@ -61,10 +69,15 @@ describe('SlackAdapter inbound gates', () => {
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'slack-inbound-'));
     messageHandler = undefined;
+    eventHandlers = {};
+    getBotUserId.mockClear();
+    getThreadReplies.mockClear().mockResolvedValue([]);
+    leaveChannel.mockClear();
+    dmUser.mockClear();
   });
   afterEach(() => {
     rmSync(dir, { recursive: true, force: true });
-    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('owner message is injected with OWNER tag', async () => {
@@ -91,12 +104,37 @@ describe('SlackAdapter inbound gates', () => {
     expect(c.messages).toHaveLength(0);
   });
 
-  it('owner approval routes to onApproval with shortId, not onMessage (gate 5)', async () => {
+  it('accepts an owner DM even when no channel is configured (gate 2)', async () => {
+    const { h, c } = handlers();
+    await new SlackAdapter('xoxb', makeConfig({ allowedChannels: new Set() }, dir)).start(h);
+    await fire({ user: 'UOWNER', text: 'hi', channel: 'D1', channel_type: 'im' });
+    expect(c.messages).toHaveLength(1);
+  });
+
+  it('accepts a readonly DM (gate 2)', async () => {
+    const { h, c } = handlers();
+    await new SlackAdapter('xoxb', makeConfig({ readonlyIds: new Set(['URO']) }, dir)).start(h);
+    await fire({ user: 'URO', text: 'status?', channel: 'D2', channel_type: 'im' });
+    expect(c.messages).toHaveLength(1);
+  });
+
+  it('owner approval routes allow + deny with shortId, not onMessage (gate 5)', async () => {
     const { h, c } = handlers();
     await new SlackAdapter('xoxb', makeConfig({}, dir)).start(h);
     await fire({ user: 'UOWNER', text: 'allow a1b2c3' });
+    await fire({ user: 'UOWNER', text: 'deny f00d' });
     expect(c.messages).toHaveLength(0);
-    expect(c.approvals).toEqual([{ decision: 'allow', shortId: 'a1b2c3', role: 'owner' }]);
+    expect(c.approvals).toEqual([
+      { decision: 'allow', shortId: 'a1b2c3', role: 'owner' },
+      { decision: 'deny', shortId: 'f00d', role: 'owner' },
+    ]);
+  });
+
+  it('bare allow (no id) routes with undefined shortId', async () => {
+    const { h, c } = handlers();
+    await new SlackAdapter('xoxb', makeConfig({}, dir)).start(h);
+    await fire({ user: 'UOWNER', text: 'allow' });
+    expect(c.approvals).toEqual([{ decision: 'allow', shortId: undefined, role: 'owner' }]);
   });
 
   it('readonly attempting approval is blocked (no inject, no approval)', async () => {
@@ -111,7 +149,6 @@ describe('SlackAdapter inbound gates', () => {
     const { h, c } = handlers();
     await new SlackAdapter('xoxb', makeConfig({ readonlyIds: new Set(['URO']) }, dir)).start(h);
     await fire({ user: 'URO', text: 'status?' });
-    expect(c.messages).toHaveLength(1);
     expect(c.messages[0].senderRole).toBe('readonly');
     expect(c.messages[0].injection).toContain('READONLY USER');
   });
@@ -121,10 +158,10 @@ describe('SlackAdapter inbound gates', () => {
     await new SlackAdapter('xoxb', makeConfig({ readonlyIds: new Set(['URO']), rateLimitSpec: '1/60' }, dir)).start(h);
     await fire({ user: 'URO', text: 'one' });
     await fire({ user: 'URO', text: 'two' });
-    expect(c.messages).toHaveLength(1); // second dropped
+    expect(c.messages).toHaveLength(1);
   });
 
-  it('enforces the email domain allowlist (gate 3)', async () => {
+  it('enforces the email domain allowlist and caches the lookup (gate 3)', async () => {
     const fetchMock = vi.fn(async (url: string) => {
       const isEvil = url.includes('UEVIL');
       return { json: async () => ({ user: { profile: { email: isEvil ? 'x@evil.com' : 'x@acme.com' } } }) } as any;
@@ -137,15 +174,80 @@ describe('SlackAdapter inbound gates', () => {
     }, dir)).start(h);
     await fire({ user: 'UEVIL', text: 'hi' });
     await fire({ user: 'UGOOD', text: 'hi' });
-    expect(c.messages.map((m) => m.senderId)).toEqual(['UGOOD']);
+    await fire({ user: 'UGOOD', text: 'again' }); // second from same user must hit cache
+    expect(c.messages.map((m) => m.senderId)).toEqual(['UGOOD', 'UGOOD']);
+    expect(fetchMock).toHaveBeenCalledTimes(2); // one per distinct user, not per message
   });
 
-  it('persists slack-thread.json for hook reply targeting', async () => {
+  it('denies (and caches) when the domain lookup throws (gate 3)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('network down'); }));
+    const { h, c } = handlers();
+    await new SlackAdapter('xoxb', makeConfig({
+      readonlyIds: new Set(['URO']), allowedDomains: new Set(['acme.com']),
+    }, dir)).start(h);
+    await fire({ user: 'URO', text: 'hi' });
+    expect(c.messages).toHaveLength(0);
+  });
+
+  it('injects thread context for a reply in an existing thread', async () => {
+    getThreadReplies.mockResolvedValue([
+      { user: 'UOWNER', text: 'first question', ts: '1699.0' },
+      { bot_id: 'B1', text: 'agent answer', ts: '1699.5' },
+      { user: 'UOWNER', text: 'follow up', ts: '1700.2' },
+    ]);
+    const { h, c } = handlers();
+    await new SlackAdapter('xoxb', makeConfig({}, dir)).start(h);
+    await fire({ user: 'UOWNER', text: 'follow up', ts: '1700.2', thread_ts: '1699.0' });
+    expect(getThreadReplies).toHaveBeenCalledWith('CALLOWED', '1699.0');
+    const inj = c.messages[0].injection;
+    expect(inj).toContain('[Thread context]');
+    expect(inj).toContain('first question');
+    expect(inj).toContain('Agent: agent answer'); // bot_id → Agent label
+    expect(inj).not.toMatch(/Thread context][\s\S]*follow up[\s\S]*\[End thread/); // current msg excluded from context
+  });
+
+  it('persists slack-thread.json with channel + threadTs for hook reply targeting', async () => {
     const { h } = handlers();
     await new SlackAdapter('xoxb', makeConfig({}, dir)).start(h);
-    await fire({ user: 'UOWNER', text: 'hi', channel: 'CALLOWED', ts: '1700.9' });
-    const { readFileSync } = await import('fs');
+    await fire({ user: 'UOWNER', text: 'hi', channel: 'CALLOWED', ts: '1700.9', thread_ts: '1700.3' });
     const persisted = JSON.parse(readFileSync(join(dir, 'slack-thread.json'), 'utf-8'));
-    expect(persisted).toMatchObject({ channel: 'CALLOWED', msgTs: '1700.9' });
+    expect(persisted).toEqual({ channel: 'CALLOWED', threadTs: '1700.3', msgTs: '1700.9' });
+  });
+});
+
+describe('SlackAdapter auto-eject (member_joined_channel)', () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'slack-eject-'));
+    messageHandler = undefined; eventHandlers = {};
+    getBotUserId.mockClear().mockResolvedValue('UBOT');
+    leaveChannel.mockClear(); dmUser.mockClear();
+  });
+  afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
+
+  it('ejects + DMs the owner when a non-owner invites the bot', async () => {
+    const { h } = handlers();
+    await new SlackAdapter('xoxb', makeConfig({}, dir)).start(h);
+    await eventHandlers['member_joined_channel']!({ user: 'UBOT', inviter: 'USTRANGER', channel: 'CNEW' });
+    expect(leaveChannel).toHaveBeenCalledWith('CNEW');
+    expect(dmUser).toHaveBeenCalledWith('UOWNER', expect.stringContaining('CNEW'));
+  });
+
+  it('adds the channel to the allowlist when the owner invites the bot', async () => {
+    const { h, c } = handlers();
+    const cfg = makeConfig({ allowedChannels: new Set() }, dir);
+    await new SlackAdapter('xoxb', cfg).start(h);
+    await eventHandlers['member_joined_channel']!({ user: 'UBOT', inviter: 'UOWNER', channel: 'CNEW' });
+    expect(leaveChannel).not.toHaveBeenCalled();
+    // proof: a non-DM message in the newly-allowed channel now passes gate 2
+    await fire({ user: 'UOWNER', text: 'hi', channel: 'CNEW' });
+    expect(c.messages).toHaveLength(1);
+  });
+
+  it('ignores joins by users other than the bot', async () => {
+    const { h } = handlers();
+    await new SlackAdapter('xoxb', makeConfig({}, dir)).start(h);
+    await eventHandlers['member_joined_channel']!({ user: 'USOMEONE', inviter: 'USTRANGER', channel: 'CNEW' });
+    expect(leaveChannel).not.toHaveBeenCalled();
   });
 });
