@@ -1052,6 +1052,27 @@ busCommand
       process.exit(1);
     }
 
+    // Channel restriction: only post to the origin channel unless SLACK_OUTBOUND_CHANNELS is set.
+    // Prevents compromised agents from exfiltrating data to arbitrary channels.
+    if (env.agentName && env.ctxRoot) {
+      let originChannel: string | undefined;
+      try {
+        const threadState = JSON.parse(readFileSync(join(env.ctxRoot, 'state', env.agentName, 'slack-thread.json'), 'utf-8'));
+        originChannel = threadState.channel;
+      } catch { /* no active thread — unrestricted */ }
+
+      const outboundAllowlist = (process.env.SLACK_OUTBOUND_CHANNELS || '')
+        .split(',').map((s: string) => s.trim()).filter(Boolean);
+
+      if (originChannel || outboundAllowlist.length > 0) {
+        const allowed = outboundAllowlist.length > 0 ? outboundAllowlist : (originChannel ? [originChannel] : []);
+        if (!allowed.includes(channelId)) {
+          console.error(`send-slack: channel ${channelId} not in allowlist. Origin: ${originChannel ?? 'none'}. Set SLACK_OUTBOUND_CHANNELS to override.`);
+          process.exit(1);
+        }
+      }
+    }
+
     try {
       const payload: Record<string, unknown> = { channel: channelId, text: message, mrkdwn: true };
       if (opts.threadTs) payload.thread_ts = opts.threadTs;
