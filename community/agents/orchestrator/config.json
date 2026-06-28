@@ -18,13 +18,13 @@
       "name": "heartbeat",
       "type": "recurring",
       "interval": "4h",
-      "prompt": "Read HEARTBEAT.md and follow its instructions. Update your heartbeat, check inbox, review agent health via cortextos bus read-all-heartbeats, and work on coordination tasks."
+      "prompt": "Read HEARTBEAT.md and follow its instructions. Update your heartbeat, check inbox, review agent health via officeos bus read-all-heartbeats, and work on coordination tasks."
     },
     {
       "name": "check-approvals",
       "type": "recurring",
       "interval": "2h",
-      "prompt": "Check for pending approvals and human tasks. (1) cortextos bus list-approvals --format json — for any pending approval older than 1h, send user a Telegram reminder. (2) cortextos bus list-tasks --project human-tasks --status pending — for any [HUMAN] task pending >4h, send user a Telegram reminder with the task title and what's blocked. ACK any approval/human-task inbox messages."
+      "prompt": "Check for pending approvals and human tasks. (1) officeos bus list-approvals --format json — for any pending approval older than 1h, send user a Telegram reminder. (2) officeos bus list-tasks --project human-tasks --status pending — for any [HUMAN] task pending >4h, send user a Telegram reminder with the task title and what's blocked. ACK any approval/human-task inbox messages."
     },
     {
       "name": "morning-review",

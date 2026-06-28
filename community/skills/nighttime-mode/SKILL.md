@@ -41,18 +41,18 @@ external_calls: []
 ## Quick Start Loop
 
 ```
-1. CHECK: cortextos bus list-tasks --status in_progress
+1. CHECK: officeos bus list-tasks --status in_progress
    → Any overnight tasks dispatched?
 
 2. IF tasks are running:
-   a. Check agent heartbeats: cortextos bus read-all-heartbeats
-   b. Check inbox for completion reports: cortextos bus check-inbox
+   a. Check agent heartbeats: officeos bus read-all-heartbeats
+   b. Check inbox for completion reports: officeos bus check-inbox
    c. Process completions, dispatch next tasks if queue has more
    d. GOTO step 1
 
 3. IF no tasks pending:
    a. Begin preparing morning briefing data
-   b. Update heartbeat: cortextos bus update-heartbeat "preparing morning briefing"
+   b. Update heartbeat: officeos bus update-heartbeat "preparing morning briefing"
 ```
 
 ---
@@ -62,18 +62,18 @@ external_calls: []
 ### Step 1: Check approved queue
 
 ```bash
-cortextos bus list-tasks --status in_progress
-cortextos bus read-all-heartbeats
+officeos bus list-tasks --status in_progress
+officeos bus read-all-heartbeats
 ```
 
 ### Step 2: Monitor agent progress
 
 ```bash
 # Check heartbeats regularly (every ~1h)
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 
 # Check inbox for completion reports
-cortextos bus check-inbox
+officeos bus check-inbox
 ```
 
 ### Step 3: Process completions
@@ -82,17 +82,17 @@ When an agent reports task completion:
 
 ```bash
 # 1. Complete the task in cortextOS
-cortextos bus complete-task "$TASK_ID" --result "<what was produced>"
+officeos bus complete-task "$TASK_ID" --result "<what was produced>"
 
 # 2. Log the event
-cortextos bus log-event task task_completed info --meta '{"task_id":"'$TASK_ID'","agent":"<completing_agent>"}'
+officeos bus log-event task task_completed info --meta '{"task_id":"'$TASK_ID'","agent":"<completing_agent>"}'
 
 # 3. Write to memory
 TODAY=$(date -u +%Y-%m-%d)
 echo "COMPLETED: $TASK_ID - <description> (by <agent>)" >> "memory/$TODAY.md"
 
 # 4. Dispatch next task if queue has more
-cortextos bus list-tasks --status pending
+officeos bus list-tasks --status pending
 ```
 
 ### Step 4: Handle blockers
@@ -105,7 +105,7 @@ TODAY=$(date -u +%Y-%m-%d)
 echo "BLOCKED: $TASK_ID - <reason> (agent: <name>)" >> "memory/$TODAY.md"
 
 # 2. Try to unblock if possible (provide info, reassign)
-cortextos bus send-message <agent> normal '<unblocking info or reassignment>'
+officeos bus send-message <agent> normal '<unblocking info or reassignment>'
 
 # 3. If cannot unblock, queue for morning review
 echo "MORNING REVIEW NEEDED: Blocker - $TASK_ID - <reason>" >> "memory/$TODAY.md"
@@ -118,7 +118,7 @@ echo "MORNING REVIEW NEEDED: Blocker - $TASK_ID - <reason>" >> "memory/$TODAY.md
 Update regularly to show overnight activity:
 
 ```bash
-cortextos bus update-heartbeat "nighttime mode - X/Y tasks complete, monitoring agents"
+officeos bus update-heartbeat "nighttime mode - X/Y tasks complete, monitoring agents"
 ```
 
 ---
@@ -152,7 +152,7 @@ cat >> "memory/$TODAY.md" << MEMEOF
 [list each agent: status, last heartbeat]
 MEMEOF
 
-cortextos bus update-heartbeat "morning briefing data ready - overnight complete"
+officeos bus update-heartbeat "morning briefing data ready - overnight complete"
 ```
 
 ---
@@ -161,13 +161,13 @@ cortextos bus update-heartbeat "morning briefing data ready - overnight complete
 
 ```bash
 # Starting nighttime mode
-cortextos bus log-event action nighttime_mode_start info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
+officeos bus log-event action nighttime_mode_start info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
 
 # Task completions
-cortextos bus log-event task task_completed info --meta '{"task_id":"<id>","agent":"<completing_agent>"}'
+officeos bus log-event task task_completed info --meta '{"task_id":"<id>","agent":"<completing_agent>"}'
 
 # Morning ready
-cortextos bus log-event action morning_briefing_ready info --meta '{"tasks_completed":"X","tasks_blocked":"Y"}'
+officeos bus log-event action morning_briefing_ready info --meta '{"tasks_completed":"X","tasks_blocked":"Y"}'
 ```
 
 ---

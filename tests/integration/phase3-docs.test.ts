@@ -102,7 +102,7 @@ describe('3.1 — templates/*/AGENTS.md External Persistent Crons section', () =
 
       it('contains example 1: heartbeat interval cron with bus add-cron', () => {
         content = readRequired(filePath);
-        expect(content).toMatch(/cortextos bus add-cron.*heartbeat.*[0-9]+h/);
+        expect(content).toMatch(/officeos bus add-cron.*heartbeat.*[0-9]+h/);
       });
 
       it('contains example 2: cron expression schedule', () => {
@@ -119,17 +119,17 @@ describe('3.1 — templates/*/AGENTS.md External Persistent Crons section', () =
 
       it('contains example 4: test-cron-fire command', () => {
         content = readRequired(filePath);
-        expect(content).toContain('cortextos bus test-cron-fire');
+        expect(content).toContain('officeos bus test-cron-fire');
       });
 
       it('contains "How to Verify" subsection with list-crons', () => {
         content = readRequired(filePath);
-        expect(content).toContain('cortextos bus list-crons');
+        expect(content).toContain('officeos bus list-crons');
       });
 
       it('contains get-cron-log command for execution history', () => {
         content = readRequired(filePath);
-        expect(content).toContain('cortextos bus get-cron-log');
+        expect(content).toContain('officeos bus get-cron-log');
       });
 
       it('cross-references cron-management skill', () => {
@@ -168,9 +168,9 @@ describe('3.2 — Onboarding docs contain persistent cron guidance', () => {
         expect(existsSync(path)).toBe(true);
       });
 
-      it('references cortextos bus add-cron for persistent scheduling', () => {
+      it('references officeos bus add-cron for persistent scheduling', () => {
         const content = read(path);
-        expect(content).toContain('cortextos bus add-cron');
+        expect(content).toContain('officeos bus add-cron');
       });
 
       it('does not use /loop for persistent cron creation (creation form only)', () => {
@@ -244,7 +244,7 @@ describe('3.3 — Skill documentation updates', () => {
 
     it('uses bus add-cron for experiment cron setup', () => {
       const content = read(autoresearchPath);
-      expect(content).toContain('cortextos bus add-cron');
+      expect(content).toContain('officeos bus add-cron');
     });
   });
 });
@@ -295,7 +295,7 @@ describe('3.4 — CRONS_MIGRATION_GUIDE.md', () => {
 
   it('provides manual migration command', () => {
     const content = readRequired(MIGRATION_GUIDE);
-    expect(content).toContain('cortextos bus migrate-crons');
+    expect(content).toContain('officeos bus migrate-crons');
   });
 
   it('provides --force flag for bypassing marker', () => {

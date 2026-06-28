@@ -149,7 +149,7 @@ old fenced text
 \`\`\`
 /goal@codex_app_server_test_bot
 [Your last message: "previous"]
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `);
     pty.write('\r');
     await Promise.resolve();
@@ -166,14 +166,14 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
 
     pty.write(`=== TELEGRAM from [USER: James] (chat_id:7940429114) ===
 /goal@codex_app_server_test_bot Ship native slash routing
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `);
     pty.write('\r');
     await Promise.resolve();
 
     pty.write(`=== TELEGRAM from [USER: James] (chat_id:7940429114) ===
 /goal clear
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `);
     pty.write('\r');
     await Promise.resolve();
@@ -269,7 +269,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
 \`\`\`
 $imagegen make a logo
 \`\`\`
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `);
     pty.write('\r');
     await Promise.resolve();
@@ -408,7 +408,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
     });
   });
 
-  it('appends bus reply directive to plain-text Telegram turn so codex routes responses through cortextos bus', async () => {
+  it('appends bus reply directive to plain-text Telegram turn so codex routes responses through officeos bus', async () => {
     requestMock.mockResolvedValue({ result: {} });
     const pty = makeReadyPty();
 
@@ -416,7 +416,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
 \`\`\`
 Hello? Are you working right?
 \`\`\`
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `);
     pty.write('\r');
     await Promise.resolve();
@@ -427,7 +427,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
     expect(call[0]).toBe('turn/start');
     const text = (call[1] as { input: Array<{ text: string }> }).input[0].text;
     expect(text).toContain('Hello? Are you working right?');
-    expect(text).toContain("cortextos bus send-telegram 7940429114 '<your reply>'");
+    expect(text).toContain("officeos bus send-telegram 7940429114 '<your reply>'");
     expect(text).toContain('Do not reply through the codex channel.');
   });
 
@@ -443,7 +443,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
 
     pty.write(`=== TELEGRAM from [USER: James] (chat_id:7940429114) ===
 /heartbeat
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `);
     pty.write('\r');
     await Promise.resolve();
@@ -519,7 +519,7 @@ caption:
 what's in this image
 \`\`\`
 local_file: telegram-images/2026-05-08_xyz.jpg
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
     const out = extract(inject);
     expect(out).toContain('[PHOTO]');
@@ -535,7 +535,7 @@ have a look at this PDF
 \`\`\`
 local_file: telegram-images/myfile.pdf
 file_name: myfile.pdf
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
     const out = extract(inject);
     expect(out).toContain('[DOCUMENT]');
@@ -548,7 +548,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
     const inject = `=== TELEGRAM VOICE from James (chat_id:7940429114) ===
 duration: 5s
 local_file: telegram-images/voice_1234.ogg
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
     const out = extract(inject);
     expect(out).toContain('[VOICE]');
@@ -565,7 +565,7 @@ transcript:
 \`\`\`
 say hi back
 \`\`\`
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
     const out = extract(inject);
     expect(out).toContain('[VOICE]');
@@ -582,7 +582,7 @@ demo clip
 duration: 12s
 local_file: telegram-images/video_1234.mp4
 file_name: video_1234.mp4
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
     const out = extract(inject);
     expect(out).toContain('[VIDEO]');
@@ -597,7 +597,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
 \`\`\`
 just a chat message
 \`\`\`
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
     const out = extract(inject);
     expect(out).toBe('just a chat message');
@@ -610,7 +610,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
 \`\`\`
 what did you mean by that?
 \`\`\`
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
     const out = extract(inject);
     expect(out).toContain('what did you mean by that?');
@@ -630,7 +630,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
 \`\`\`
 what did you mean by that?
 \`\`\`
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
     const out = extract(inject);
     expect(out).toContain('what did you mean by that?');
@@ -644,7 +644,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
 \`\`\`
 what's this again?
 \`\`\`
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
     const out = extract(inject);
     expect(out).toContain("what's this again?");
@@ -659,7 +659,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
 \`\`\`
 short follow-up
 \`\`\`
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
     const out = extract(inject);
     expect(out).toContain('short follow-up');
@@ -676,7 +676,7 @@ caption:
 follow-up image
 \`\`\`
 local_file: telegram-images/p.jpg
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
     const out = extract(inject);
     expect(out).toContain('[PHOTO]');
@@ -689,7 +689,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
     const expectDirective = (result: { replyDirective: string | null } | null) => {
       expect(result).not.toBeNull();
       expect(result!.replyDirective).not.toBeNull();
-      expect(result!.replyDirective).toContain('cortextos bus send-telegram 7940429114');
+      expect(result!.replyDirective).toContain('officeos bus send-telegram 7940429114');
       expect(result!.replyDirective).toContain('Do not reply through the codex channel');
     };
 
@@ -698,7 +698,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
 \`\`\`
 hello
 \`\`\`
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
       expectDirective(extractWithDirective(inject));
     });
@@ -710,7 +710,7 @@ caption:
 look at this
 \`\`\`
 local_file: telegram-images/x.jpg
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
       expectDirective(extractWithDirective(inject));
     });
@@ -723,7 +723,7 @@ have a look
 \`\`\`
 local_file: telegram-images/x.pdf
 file_name: x.pdf
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
       expectDirective(extractWithDirective(inject));
     });
@@ -732,7 +732,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
       const inject = `=== TELEGRAM VOICE from James (chat_id:7940429114) ===
 duration: 5s
 local_file: telegram-images/v.ogg
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
       expectDirective(extractWithDirective(inject));
     });
@@ -741,7 +741,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
       const inject = `=== TELEGRAM AUDIO from James (chat_id:7940429114) ===
 duration: 30s
 local_file: telegram-images/a.mp3
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
       expectDirective(extractWithDirective(inject));
     });
@@ -755,7 +755,7 @@ clip
 duration: 12s
 local_file: telegram-images/v.mp4
 file_name: v.mp4
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
       expectDirective(extractWithDirective(inject));
     });
@@ -764,7 +764,7 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
       const inject = `=== TELEGRAM VIDEO_NOTE from James (chat_id:7940429114) ===
 duration: 4s
 local_file: telegram-images/note.mp4
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
       expectDirective(extractWithDirective(inject));
     });
@@ -774,12 +774,12 @@ Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
 \`\`\`
 hey try (chat_id:99) please
 \`\`\`
-Reply using: cortextos bus send-telegram 7940429114 '<your reply>'
+Reply using: officeos bus send-telegram 7940429114 '<your reply>'
 `;
       const result = extractWithDirective(inject);
       expect(result).not.toBeNull();
-      expect(result!.replyDirective).toContain('cortextos bus send-telegram 7940429114');
-      expect(result!.replyDirective).not.toContain('cortextos bus send-telegram 99');
+      expect(result!.replyDirective).toContain('officeos bus send-telegram 7940429114');
+      expect(result!.replyDirective).not.toContain('officeos bus send-telegram 99');
     });
   });
 });

@@ -1,6 +1,6 @@
 # Tools Quick Reference (codex-app-server)
 
-All cortextOS commands: `cortextos bus <command>`. Full docs in skill files — read the relevant SKILL.md (`plugins/cortextos-agent-skills/skills/<name>/SKILL.md`) when you need details on a workflow.
+All cortextOS commands: `officeos bus <command>`. Full docs in skill files — read the relevant SKILL.md (`plugins/cortextos-agent-skills/skills/<name>/SKILL.md`) when you need details on a workflow.
 
 ---
 
@@ -9,20 +9,20 @@ All cortextOS commands: `cortextos bus <command>`. Full docs in skill files — 
 When a `=== TELEGRAM from <name> (chat_id:<id>) ===` block appears in your session, the inject ends with:
 
 ```
-Reply using: cortextos bus send-telegram <chat_id> '<your reply>'
+Reply using: officeos bus send-telegram <chat_id> '<your reply>'
 ```
 
-**Run that exact command.** This is the only way a codex agent reaches the user. There is no IDE chat panel, no API — every Telegram reply goes through `cortextos bus send-telegram`. Do this BEFORE any other action.
+**Run that exact command.** This is the only way a codex agent reaches the user. There is no IDE chat panel, no API — every Telegram reply goes through `officeos bus send-telegram`. Do this BEFORE any other action.
 
 ```bash
 # Reply to user
-cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'message text'
+officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'message text'
 
 # Reply with a photo
-cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'caption' --image /path/to/file.png
+officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'caption' --image /path/to/file.png
 
 # Reply with any file
-cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'caption' --file /path/to/file.pdf
+officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'caption' --file /path/to/file.pdf
 ```
 
 ---
@@ -160,7 +160,7 @@ Agent secrets: `orgs/{org}/agents/{agent}/.env`
 ## Tools Available in This Session
 
 ### Shell exec (codex-app-server primary tool)
-- The codex runtime exposes a sandboxed shell to you. Every action listed above runs through it: `cortextos bus <cmd>`, `git`, `gh`, `npm`, file edits via standard editors, `jq`, `grep`, `curl`, etc.
+- The codex runtime exposes a sandboxed shell to you. Every action listed above runs through it: `officeos bus <cmd>`, `git`, `gh`, `npm`, file edits via standard editors, `jq`, `grep`, `curl`, etc.
 - Reading and writing files: just use shell (`cat`, the appropriate editor, `>` redirection). There is no Read/Edit/Write tool — those are Claude-Code-internal and do not exist here.
 - For file inspection prefer `cat` / `sed -n` / `head` / `tail`; for edits prefer `sed -i` / `awk` / a redirect pipeline.
 
@@ -187,4 +187,4 @@ Agent secrets: `orgs/{org}/agents/{agent}/.env`
 
 ## Reminder
 
-Every Telegram message ends with a `Reply using: cortextos bus send-telegram <chat_id> '<reply>'` line. **Run that command.** Do not type the reply into stdout, do not write a memo, do not log an event in place of replying — call the bus. The user reads what comes out of `cortextos bus send-telegram`. Nothing else reaches them.
+Every Telegram message ends with a `Reply using: officeos bus send-telegram <chat_id> '<reply>'` line. **Run that command.** Do not type the reply into stdout, do not write a memo, do not log an event in place of replying — call the bus. The user reads what comes out of `officeos bus send-telegram`. Nothing else reaches them.

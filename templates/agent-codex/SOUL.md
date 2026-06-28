@@ -10,7 +10,7 @@ Read once per session. Internalize. Do not reference in conversation. Full conte
 Use the bus scripts. Every action that does NOT go through the bus is invisible. The bus is your voice.
 - No events logged = you look dead. Log aggressively.
 - No heartbeat = dashboard shows you as DEAD.
-- Telegram replies = `cortextos bus send-telegram` only. There is no other reply path.
+- Telegram replies = `officeos bus send-telegram` only. There is no other reply path.
 
 ## Task Discipline
 Every significant piece of work (>10 min) gets a task BEFORE you start. No exceptions.
@@ -28,7 +28,7 @@ You have THREE memory layers. All mandatory.
 ## Guardrails Are a Closed Loop
 GUARDRAILS.md contains patterns that lead to skipped procedures.
 - Check during heartbeats: did I hit any guardrails this cycle?
-- Log: `cortextos bus log-event action guardrail_triggered info --meta '{"guardrail":"<which>","context":"<what>"}'`
+- Log: `officeos bus log-event action guardrail_triggered info --meta '{"guardrail":"<which>","context":"<what>"}'`
 - If you find a new pattern, add it to GUARDRAILS.md now.
 
 ## Accountability Targets (per heartbeat cycle)
@@ -52,6 +52,6 @@ GUARDRAILS.md contains patterns that lead to skipped procedures.
 
 ## Communication
 - Internal: direct and concise, lead with the answer
-- External (Telegram): use `cortextos bus send-telegram <chat_id> '<message>'` — every reply, no exceptions
+- External (Telegram): use `officeos bus send-telegram <chat_id> '<message>'` — every reply, no exceptions
 - Org brand voice, professional, opinionated when asked
 - If stuck >15 min: escalate (don't spin). Include: what tried, what failed, what needed.

@@ -44,7 +44,7 @@ export class WorkerProcess {
    * Spawn the worker Claude Code session with the given task prompt.
    */
   async spawn(env: CtxEnv, prompt: string, config: { model?: string } = {}): Promise<void> {
-    // Ensure bus dirs exist so the worker can use cortextos bus commands
+    // Ensure bus dirs exist so the worker can use officeos bus commands
     try {
       mkdirSync(join(env.ctxRoot, 'inbox', this.name), { recursive: true });
       mkdirSync(join(env.ctxRoot, 'state', this.name), { recursive: true });

@@ -20,14 +20,14 @@ Package a local skill, agent template, or org template for sharing with the cort
 
 ```bash
 # Dry run - shows what would be packaged and any PII found
-cortextos bus prepare-submission <type> <source-path> <item-name> --dry-run
+officeos bus prepare-submission <type> <source-path> <item-name> --dry-run
 ```
 
 Types: skill, agent, org
 
 Example:
 ```bash
-cortextos bus prepare-submission skill ./skills/morning-review morning-review --dry-run
+officeos bus prepare-submission skill ./skills/morning-review morning-review --dry-run
 ```
 
 ### Step 2: Review PII scan results
@@ -55,10 +55,10 @@ Send via Telegram:
 
 ```bash
 # Local submission only (adds to local catalog, no PR)
-cortextos bus submit-community-item <item-name> <type> "<description>" --author "<your-name>"
+officeos bus submit-community-item <item-name> <type> "<description>" --author "<your-name>"
 
 # Full contribution (branch + push to origin + open PR against upstream)
-cortextos bus submit-community-item <item-name> <type> "<description>" --author "<your-name>" --contribute
+officeos bus submit-community-item <item-name> <type> "<description>" --author "<your-name>" --contribute
 ```
 
 The `--contribute` flag:

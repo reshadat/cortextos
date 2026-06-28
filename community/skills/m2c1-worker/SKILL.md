@@ -122,11 +122,11 @@ You are the M2C1 orchestrator. Follow the 12-phase workflow in .claude/skills/m2
 ## Communication
 Send messages to <your-agent-name>:
 ```
-cortextos bus send-message <your-agent-name> normal '<message>'
+officeos bus send-message <your-agent-name> normal '<message>'
 ```
 Check inbox:
 ```
-cortextos bus check-inbox
+officeos bus check-inbox
 ```
 
 Set environment:
@@ -162,12 +162,12 @@ cortextos spawn-worker "$WORKER_NAME" \
 
 The worker:
 - Runs in `$PROJECT_DIR` with `--dangerously-skip-permissions`
-- Gets `CTX_AGENT_NAME=$WORKER_NAME` so it can use `cortextos bus send-message` to reach you
+- Gets `CTX_AGENT_NAME=$WORKER_NAME` so it can use `officeos bus send-message` to reach you
 - Is tracked by the daemon: `cortextos list-workers` shows its status
 
 Log the spawn:
 ```bash
-cortextos bus log-event action worker_spawned info \
+officeos bus log-event action worker_spawned info \
   --meta '{"worker":"'$WORKER_NAME'","parent":"'$CTX_AGENT_NAME'","project":"'$PROJECT_DIR'"}'
 ```
 
@@ -184,7 +184,7 @@ cortextos bus log-event action worker_spawned info \
 
 ```bash
 # Via bus messages (worker sends updates)
-cortextos bus check-inbox
+officeos bus check-inbox
 
 # Via git (see what was built)
 cd $PROJECT_DIR && git log --oneline | head -10
@@ -198,7 +198,7 @@ ls $PROJECT_DIR/.claude/orchestration-*/
 The worker will send you questions via send-message. Answer them:
 
 ```bash
-cortextos bus send-message <worker-name> normal '<your answers>'
+officeos bus send-message <worker-name> normal '<your answers>'
 ```
 
 Base your answers on:
@@ -213,7 +213,7 @@ If you do not know the answer, make a reasonable decision and note it. Do not bl
 
 If the worker appears stuck (no bus messages, no new git commits > 15 minutes):
 
-1. Send a bus message: `cortextos bus send-message <worker-name> normal 'Continue with the M2C1 workflow. What phase are you on?'`
+1. Send a bus message: `officeos bus send-message <worker-name> normal 'Continue with the M2C1 workflow. What phase are you on?'`
 2. Check git: `cd $PROJECT_DIR && git log --oneline | head -5`
 3. Inject directly into the PTY if still unresponsive: `cortextos inject-worker <worker-name> "Continue with the M2C1 workflow. What phase are you on?"`
 4. Check worker status: `cortextos list-workers`
@@ -252,7 +252,7 @@ console.log('MCP config updated');
 
 # 2. Worker must restart to pick up MCP config
 # Send via bus message:
-cortextos bus send-message <worker-name> normal \
+officeos bus send-message <worker-name> normal \
   'MCP config updated at .claude/settings.json. Please restart your session with --continue to pick it up, then test Playwright by taking a screenshot of google.com.'
 ```
 
@@ -279,7 +279,7 @@ EOF
 chmod 600 "$PROJECT_DIR/.env"
 
 # Tell the worker via bus to source it
-cortextos bus send-message <worker-name> normal 'Source .env in your project dir before running any API calls.'
+officeos bus send-message <worker-name> normal 'Source .env in your project dir before running any API calls.'
 ```
 
 ### Skills for the Worker
@@ -287,7 +287,7 @@ cortextos bus send-message <worker-name> normal 'Source .env in your project dir
 Copy relevant cortextOS skills to the worker's project:
 ```bash
 # If the worker needs browser automation knowledge, install via community catalog:
-cortextos bus install-community-item playwright-automation
+officeos bus install-community-item playwright-automation
 ```
 
 ---
@@ -300,17 +300,17 @@ Once the worker is past discovery and tool setup, it should run autonomously:
 
 Tell the worker to create a /loop for task polling within its session:
 ```bash
-cortextos bus send-message <worker-name> normal \
+officeos bus send-message <worker-name> normal \
   'Set up a /loop every 10 minutes to check START.md for pending tasks. If not working on a task, pick the next one.'
 ```
-<!-- Note: /loop is intentionally used here — this is a short-lived session-scoped poll for the worker's task queue, not a persistent cron. For persistent recurring crons, use cortextos bus add-cron instead. -->
+<!-- Note: /loop is intentionally used here — this is a short-lived session-scoped poll for the worker's task queue, not a persistent cron. For persistent recurring crons, use officeos bus add-cron instead. -->
 
 ### Periodic Check-ins
 
 Check in every 30-60 minutes:
 ```bash
 # Check bus for worker updates
-cortextos bus check-inbox
+officeos bus check-inbox
 
 # Check git progress
 cd $PROJECT_DIR && git log --oneline | head -5
@@ -363,7 +363,7 @@ The worker's last phase should be comprehensive testing. Verify:
 
 If tests fail, tell the worker:
 ```bash
-cortextos bus send-message <worker-name> normal \
+officeos bus send-message <worker-name> normal \
   'E2E test failed: <specific failure>. Fix it and re-test.'
 ```
 
@@ -374,11 +374,11 @@ cortextos bus send-message <worker-name> normal \
 ### On Success
 ```bash
 # Log the milestone
-cortextos bus log-event milestone m2c1_complete info \
+officeos bus log-event milestone m2c1_complete info \
   --meta '{"project":"<name>","location":"<path>","tasks":<count>,"tests":<count>}'
 
 # Notify orchestrator
-cortextos bus send-message $CTX_ORCHESTRATOR_AGENT normal \
+officeos bus send-message $CTX_ORCHESTRATOR_AGENT normal \
   'M2C1 build complete: <project>. Location: <path>. <summary>'
 
 # Clean up worker inbox
@@ -391,12 +391,12 @@ cortextos terminate-worker "$WORKER_NAME"
 ### On Failure
 ```bash
 # Log what happened
-cortextos bus log-event action m2c1_failed info \
+officeos bus log-event action m2c1_failed info \
   --meta '{"project":"<name>","phase":"<where it failed>","reason":"<why>"}'
 
 # Keep the directory for debugging
 # Report to orchestrator
-cortextos bus send-message $CTX_ORCHESTRATOR_AGENT normal \
+officeos bus send-message $CTX_ORCHESTRATOR_AGENT normal \
   'M2C1 build FAILED: <project>. Failed at phase <N>. Reason: <why>. Directory preserved at <path>.'
 ```
 

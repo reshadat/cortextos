@@ -6,7 +6,7 @@ Skipping steps = broken system. The dashboard monitors your compliance.
 ## Step 1: Update heartbeat (DO THIS FIRST)
 
 ```bash
-cortextos bus update-heartbeat "<1-sentence summary of current work>"
+officeos bus update-heartbeat "<1-sentence summary of current work>"
 ```
 
 If this fails, your agent shows as DEAD on the dashboard. Fix it before anything else.
@@ -18,13 +18,13 @@ Messages arrive in real time via the fast-checker daemon — you don't need to p
 Full reference: `.claude/skills/comms/SKILL.md`
 
 ```bash
-cortextos bus check-inbox
+officeos bus check-inbox
 ```
 
 For any messages returned: process and ACK each one:
 
 ```bash
-cortextos bus ack-inbox "<message_id>"
+officeos bus ack-inbox "<message_id>"
 ```
 
 Un-ACK'd messages are re-delivered after 5 minutes. Target: 0 un-ACK'd after this sweep.
@@ -34,8 +34,8 @@ Un-ACK'd messages are re-delivered after 5 minutes. Target: 0 un-ACK'd after thi
 Full reference: `.claude/skills/tasks/SKILL.md`
 
 ```bash
-cortextos bus list-tasks --agent $CTX_AGENT_NAME --status pending
-cortextos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
+officeos bus list-tasks --agent $CTX_AGENT_NAME --status pending
+officeos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
 ```
 
 - If you have pending tasks: pick the highest priority one
@@ -49,7 +49,7 @@ Stale tasks are visible on the dashboard. They make you look broken.
 Full reference: `.claude/skills/event-logging/SKILL.md`
 
 ```bash
-cortextos bus log-event heartbeat agent_heartbeat info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
+officeos bus log-event heartbeat agent_heartbeat info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
 ```
 
 ## Step 5: Write daily memory
@@ -87,12 +87,12 @@ Pick your highest priority task and work on it. Tasks should trace back to your 
 
 When starting:
 ```bash
-cortextos bus update-task "<task_id>" in_progress
+officeos bus update-task "<task_id>" in_progress
 ```
 
 When done:
 ```bash
-cortextos bus complete-task "<task_id>" --result "<summary of what was produced>"
+officeos bus complete-task "<task_id>" --result "<summary of what was produced>"
 ```
 
 If you are blocked, see `.claude/skills/human-tasks/SKILL.md` for the human task and approval workflow.
@@ -106,7 +106,7 @@ Ask yourself: did I skip any procedures this cycle? Did I rationalize not doing 
 
 If yes, log it:
 ```bash
-cortextos bus log-event action guardrail_triggered info --meta '{"guardrail":"<which one>","context":"<what happened>"}'
+officeos bus log-event action guardrail_triggered info --meta '{"guardrail":"<which one>","context":"<what happened>"}'
 ```
 
 If you discovered a new pattern that should be a guardrail, add it to GUARDRAILS.md now.
@@ -128,7 +128,7 @@ Full reference: `.claude/skills/knowledge-base/SKILL.md`
 Keep your memory collection searchable and current:
 
 ```bash
-cortextos bus kb-ingest ./MEMORY.md ./memory/$(date -u +%Y-%m-%d).md \
+officeos bus kb-ingest ./MEMORY.md ./memory/$(date -u +%Y-%m-%d).md \
   --org $CTX_ORG --agent $CTX_AGENT_NAME --scope private --collection memory-$CTX_AGENT_NAME --force
 ```
 

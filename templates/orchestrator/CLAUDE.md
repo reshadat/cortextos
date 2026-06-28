@@ -19,17 +19,17 @@ If `ONBOARDED`: continue with the session start protocol below.
 
 See AGENTS.md for the full 13-step session start checklist. Key steps:
 
-1. **Send boot message first**: `cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID "Booting up... one moment"`
+1. **Send boot message first**: `officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID "Booting up... one moment"`
 2. Read all bootstrap files: IDENTITY.md, SOUL.md, GUARDRAILS.md, GOALS.md, HEARTBEAT.md, MEMORY.md, USER.md, TOOLS.md, SYSTEM.md
 3. Read org knowledge base: `../../knowledge.md`
-4. Discover available skills: `cortextos bus list-skills --format text`
-5. Discover active agents: `cortextos bus list-agents`
-6. **Crons are daemon-managed.** External crons auto-load from `${CTX_ROOT}/state/${CTX_AGENT_NAME}/crons.json` on daemon start; you do not need to restore them. Use `cortextos bus list-crons $CTX_AGENT_NAME` to confirm. Do NOT use `CronCreate` or `/loop` — those are session-only and won't survive restarts.
+4. Discover available skills: `officeos bus list-skills --format text`
+5. Discover active agents: `officeos bus list-agents`
+6. **Crons are daemon-managed.** External crons auto-load from `${CTX_ROOT}/state/${CTX_AGENT_NAME}/crons.json` on daemon start; you do not need to restore them. Use `officeos bus list-crons $CTX_AGENT_NAME` to confirm. Do NOT use `CronCreate` or `/loop` — those are session-only and won't survive restarts.
 7. Check today's memory file for in-progress work
-8. If resuming a task, query KB: `cortextos bus kb-query "<task topic>" --org $CTX_ORG`
-9. Check inbox: `cortextos bus check-inbox`
-10. Update heartbeat: `cortextos bus update-heartbeat "online"`
-11. Log session start: `cortextos bus log-event action session_start info --meta '{"agent":"'$CTX_AGENT_NAME'"}'`
+8. If resuming a task, query KB: `officeos bus kb-query "<task topic>" --org $CTX_ORG`
+9. Check inbox: `officeos bus check-inbox`
+10. Update heartbeat: `officeos bus update-heartbeat "online"`
+11. Log session start: `officeos bus log-event action session_start info --meta '{"agent":"'$CTX_AGENT_NAME'"}'`
 12. Write session start entry to daily memory
 13. Send full online status — **only AFTER crons are confirmed set**
 
@@ -77,10 +77,10 @@ Never guess. Two options only:
 
 Every significant piece of work gets a task. See `.claude/skills/tasks/SKILL.md` for full reference.
 
-1. **Create**: `cortextos bus create-task "<title>" --desc "<desc>"`
-2. **Start**: `cortextos bus update-task <id> in_progress`
-3. **Complete**: `cortextos bus complete-task <id> --result "[summary]"`
-4. **Log KPI**: `cortextos bus log-event task task_completed info --meta '{"task_id":"ID"}'`
+1. **Create**: `officeos bus create-task "<title>" --desc "<desc>"`
+2. **Start**: `officeos bus update-task <id> in_progress`
+3. **Complete**: `officeos bus complete-task <id> --result "[summary]"`
+4. **Log KPI**: `officeos bus log-event task task_completed info --meta '{"task_id":"ID"}'`
 
 CONSEQUENCE: Tasks without creation = invisible on dashboard. Your effectiveness score will be 0%.
 TARGET: Every significant piece of work (>10 minutes) = at least 1 task created.
@@ -112,13 +112,13 @@ TARGET: >= 3 memory entries per session.
 Log significant events so the Activity feed shows what's happening.
 
 ```bash
-cortextos bus log-event action session_start info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
-cortextos bus log-event task task_completed info --meta '{"task_id":"<id>","agent":"'$CTX_AGENT_NAME'"}'
+officeos bus log-event action session_start info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
+officeos bus log-event task task_completed info --meta '{"task_id":"<id>","agent":"'$CTX_AGENT_NAME'"}'
 
 # Orchestrator-specific coordination events
-cortextos bus log-event action task_dispatched info --meta '{"to":"<agent>","task":"<title>"}'
-cortextos bus log-event action briefing_sent info --meta '{"type":"morning_review"}'
-cortextos bus log-event action briefing_sent info --meta '{"type":"evening_review"}'
+officeos bus log-event action task_dispatched info --meta '{"to":"<agent>","task":"<title>"}'
+officeos bus log-event action briefing_sent info --meta '{"type":"morning_review"}'
+officeos bus log-event action briefing_sent info --meta '{"type":"evening_review"}'
 ```
 
 CONSEQUENCE: Events without logging are invisible in the Activity feed.
@@ -133,7 +133,7 @@ Messages arrive in real time via the fast-checker daemon:
 ```
 === TELEGRAM from <name> (chat_id:<id>) ===
 <text>
-Reply using: cortextos bus send-telegram <chat_id> "<reply>"
+Reply using: officeos bus send-telegram <chat_id> "<reply>"
 ```
 
 Photos include a `local_file:` path. Callbacks include `callback_data:` and `message_id:`. Process all immediately and reply using the command shown.
@@ -147,10 +147,10 @@ Photos include a `local_file:` path. Callbacks include `callback_data:` and `mes
 ```
 === AGENT MESSAGE from <agent> [msg_id: <id>] ===
 <text>
-Reply using: cortextos bus send-message <agent> normal '<reply>' <msg_id>
+Reply using: officeos bus send-message <agent> normal '<reply>' <msg_id>
 ```
 
-Always include `msg_id` as reply_to (auto-ACKs the original). Un-ACK'd messages redeliver after 5 min. For no-reply messages: `cortextos bus ack-inbox <msg_id>`
+Always include `msg_id` as reply_to (auto-ACKs the original). Un-ACK'd messages redeliver after 5 min. For no-reply messages: `officeos bus ack-inbox <msg_id>`
 
 ---
 
@@ -158,9 +158,9 @@ Always include `msg_id` as reply_to (auto-ACKs the original). Un-ACK'd messages 
 
 External crons are daemon-managed and live in `${CTX_ROOT}/state/${CTX_AGENT_NAME}/crons.json`. The daemon scheduler owns dispatch — you do not register or restore crons in-session.
 
-**View:** `cortextos bus list-crons $CTX_AGENT_NAME`
-**Add:** `cortextos bus add-cron $CTX_AGENT_NAME <name> <interval-or-cron-expr> <prompt>`
-**Remove:** `cortextos bus remove-cron $CTX_AGENT_NAME <name>`
+**View:** `officeos bus list-crons $CTX_AGENT_NAME`
+**Add:** `officeos bus add-cron $CTX_AGENT_NAME <name> <interval-or-cron-expr> <prompt>`
+**Remove:** `officeos bus remove-cron $CTX_AGENT_NAME <name>`
 
 Do NOT use `CronCreate` or `/loop` — those are session-only and evaporate on restart.
 
@@ -168,8 +168,8 @@ Do NOT use `CronCreate` or `/loop` — those are session-only and evaporate on r
 
 ## Restart
 
-**Soft** (preserves history): `cortextos bus self-restart --reason "why"`
-**Hard** (fresh session): `cortextos bus hard-restart --reason "why"`
+**Soft** (preserves history): `officeos bus self-restart --reason "why"`
+**Hard** (fresh session): `officeos bus hard-restart --reason "why"`
 
 When the user asks to restart, ALWAYS ask them first: "Fresh restart or continue with conversation history?" Do NOT restart until they specify which type.
 
@@ -232,10 +232,10 @@ If it requires domain expertise (code, content, email, research), delegate to th
 ### Communication
 | Action | Command |
 |--------|---------|
-| Send Telegram | `cortextos bus send-telegram <chat_id> "<msg>"` |
-| Send to agent | `cortextos bus send-message <agent> <priority> '<msg>' [reply_to]` |
-| Check inbox | `cortextos bus check-inbox` |
-| ACK message | `cortextos bus ack-inbox <msg_id>` |
+| Send Telegram | `officeos bus send-telegram <chat_id> "<msg>"` |
+| Send to agent | `officeos bus send-message <agent> <priority> '<msg>' [reply_to]` |
+| Check inbox | `officeos bus check-inbox` |
+| ACK message | `officeos bus ack-inbox <msg_id>` |
 
 ### Logs
 | Log | Path |

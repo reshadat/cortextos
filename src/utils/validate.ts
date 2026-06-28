@@ -153,7 +153,7 @@ export function wrapFenceSafe(input: string): string {
  *    that swallows following real structure (survives input transforms — no
  *    zero-width reliance);
  *  - prefix forged `=== AGENT MESSAGE` / `=== TELEGRAM` / `Reply using:
- *    cortextos bus` lines with [quoted] so they read as content. The leading-
+ *    officeos bus` lines with [quoted] so they read as content. The leading-
  *    whitespace class must match every Unicode space char a downstream parser's
  *    `.trim()` would strip, or a header preceded by e.g. NBSP/IDEOGRAPHIC SPACE
  *    escapes [quoted] here yet is still recognized as a header after trim (#596,
@@ -169,7 +169,7 @@ export function sanitizeForPtyInjection(input: string): string {
     .replace(/\r\n?/g, '\n')
     .replace(/`{3,}/g, '``')
     // Neutralize forged channel headers (=== SLACK/AGENT MESSAGE/TELEGRAM from \u2026),
-    // and forged reply/ack/bus command lines (officeos|cortextos bus \u2026) so a
+    // and forged reply/ack/bus command lines (officeos|officeos bus \u2026) so a
     // slash-command or thread-context body can't impersonate a real inbound
     // header or redirect a reply to an attacker-chosen channel.
     .replace(

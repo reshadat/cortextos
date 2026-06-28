@@ -155,7 +155,7 @@ describe('PR-02: add-agent --runtime codex-app-server', () => {
     }
   });
 
-  it('AGENTS.md and TOOLS.md prominently teach the cortextos bus send-telegram reply rule', async () => {
+  it('AGENTS.md and TOOLS.md prominently teach the officeos bus send-telegram reply rule', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -174,12 +174,12 @@ describe('PR-02: add-agent --runtime codex-app-server', () => {
     );
 
     // Both must reference the bus command — without it the bootstrap is broken.
-    expect(agentsMd).toMatch(/cortextos bus send-telegram/);
-    expect(toolsMd).toMatch(/cortextos bus send-telegram/);
+    expect(agentsMd).toMatch(/officeos bus send-telegram/);
+    expect(toolsMd).toMatch(/officeos bus send-telegram/);
 
     // AGENTS.md must call out the rule prominently — appearing in the first
     // 1500 chars (i.e. above the fold, not buried at the bottom).
-    expect(agentsMd.slice(0, 1500)).toMatch(/cortextos bus send-telegram/);
+    expect(agentsMd.slice(0, 1500)).toMatch(/officeos bus send-telegram/);
 
     // No leftover Claude-Code-only paths in the codex template.
     expect(agentsMd).not.toMatch(/\.claude\/skills\//);

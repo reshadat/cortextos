@@ -4,7 +4,7 @@
  * Pre-external-persistent-crons, agents were taught to use `CronCreate` /
  * `/loop` and to edit `config.json` for cron registration.  After that
  * migration, all persistent crons live in `crons.json` and are managed via
- * `cortextos bus add-cron` / `update-cron` / `remove-cron`.  Existing
+ * `officeos bus add-cron` / `update-cron` / `remove-cron`.  Existing
  * user-customized agent workspaces still carry the old teaching, which is
  * misleading at best.
  *
@@ -78,25 +78,25 @@ const STALE_PATTERNS: StalePattern[] = [
     name: 'CronCreate',
     match: (line) => /\bCronCreate\b/.test(line),
     suggestion:
-      "Use 'cortextos bus add-cron <agent> <name> <interval> <prompt>' for persistent crons. Keep CronCreate only for one-shot reminders (recurring: false).",
+      "Use 'officeos bus add-cron <agent> <name> <interval> <prompt>' for persistent crons. Keep CronCreate only for one-shot reminders (recurring: false).",
   },
   {
     name: '/loop create cron',
     match: (line) => /\/loop\s+create\s+cron\b/.test(line),
     suggestion:
-      "Use 'cortextos bus add-cron'. /loop is session-only and dies on restart.",
+      "Use 'officeos bus add-cron'. /loop is session-only and dies on restart.",
   },
   {
     name: '/loop <interval> (cron creation form)',
     match: (line) => /`?\/loop\s+\d+[smhd]\b/.test(line),
     suggestion:
-      "Use 'cortextos bus add-cron'. /loop is session-only.",
+      "Use 'officeos bus add-cron'. /loop is session-only.",
   },
   {
     name: '(configured in config.json)',
     match: (line) => /\(configured in config\.json\)/.test(line),
     suggestion:
-      "Replace with '(configured via cortextos bus add-cron)'. config.json is no longer the cron source of truth.",
+      "Replace with '(configured via officeos bus add-cron)'. config.json is no longer the cron source of truth.",
   },
   {
     name: 'edit config.json (cron context)',
@@ -105,7 +105,7 @@ const STALE_PATTERNS: StalePattern[] = [
       /\bcron(s|expr|s\.json|s array)?\b/i.test(line) &&
       /\b(edit|modify|add to|update|write to)\b/i.test(line),
     suggestion:
-      "config.json no longer holds crons. Use 'cortextos bus add-cron' (the daemon owns crons.json directly).",
+      "config.json no longer holds crons. Use 'officeos bus add-cron' (the daemon owns crons.json directly).",
   },
 ];
 
@@ -134,7 +134,7 @@ interface SafeSubstitution {
 const SAFE_SUBSTITUTIONS: SafeSubstitution[] = [
   {
     from: /\(configured in config\.json\)/g,
-    to: '(configured via cortextos bus add-cron)',
+    to: '(configured via officeos bus add-cron)',
   },
 ];
 

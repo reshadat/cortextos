@@ -17,17 +17,17 @@ Your heartbeat cron is daemon-managed (default every 4h). It lives in `${CTX_ROO
 
 ```bash
 # 1. Update your heartbeat with what you're doing
-cortextos bus update-heartbeat "WORKING ON: <current task summary>"
+officeos bus update-heartbeat "WORKING ON: <current task summary>"
 
 # 2. Check inbox for messages
-cortextos bus check-inbox
+officeos bus check-inbox
 
 # 3. Log heartbeat event
-cortextos bus log-event heartbeat agent_heartbeat info \
+officeos bus log-event heartbeat agent_heartbeat info \
   --meta "{\"agent\":\"$CTX_AGENT_NAME\",\"status\":\"active\"}"
 
 # 4. Check your task queue for anything stale
-cortextos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
+officeos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
 ```
 
 ---
@@ -35,7 +35,7 @@ cortextos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
 ## Updating Heartbeat
 
 ```bash
-cortextos bus update-heartbeat "<one sentence: what you are doing right now>"
+officeos bus update-heartbeat "<one sentence: what you are doing right now>"
 ```
 
 Call this:
@@ -44,7 +44,7 @@ Call this:
 - When starting a new significant task
 - Before going into a long-running operation
 
-**Never claim a status you haven't verified.** To confirm your crons are active: `cortextos bus list-crons $CTX_AGENT_NAME` (shows each cron's `next_fire_at`). Crons are daemon-managed and survive restarts — if a cron is missing, add it via `cortextos bus add-cron`.
+**Never claim a status you haven't verified.** To confirm your crons are active: `officeos bus list-crons $CTX_AGENT_NAME` (shows each cron's `next_fire_at`). Crons are daemon-managed and survive restarts — if a cron is missing, add it via `officeos bus add-cron`.
 
 ---
 
@@ -52,10 +52,10 @@ Call this:
 
 ```bash
 # All agents in the org
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 
 # JSON format for parsing
-cortextos bus read-all-heartbeats --format json
+officeos bus read-all-heartbeats --format json
 ```
 
 Returns: agent name, status, last update timestamp, current task.

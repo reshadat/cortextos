@@ -6,7 +6,7 @@
  *
  * This gives agents persistent, token-free cross-session memory:
  * - Facts are written at compaction time (not just end-of-day)
- * - On next session start, agents recall recent facts via `cortextos bus recall-facts`
+ * - On next session start, agents recall recent facts via `officeos bus recall-facts`
  * - Zero live-context tokens consumed — facts are indexed files, not conversation history
  *
  * Registered in settings.json under "PreCompact". Fires and returns immediately

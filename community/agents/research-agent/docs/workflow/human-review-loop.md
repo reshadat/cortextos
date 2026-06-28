@@ -5,7 +5,7 @@
 When `research.delivery.requires_approval` is `true` (the default):
 
 1. Run completes, summary written to `research/output/YYYY-MM-DD/summary.md`
-2. Agent creates a cortextOS approval with `cortextos bus create-approval`
+2. Agent creates a cortextOS approval with `officeos bus create-approval`
 3. Agent writes `research/output/YYYY-MM-DD/PENDING-APPROVAL.md`
 4. Human reviews the dashboard approval, summary, and briefs
 5. If approved, agent runs delivery-routing with the existing summary

@@ -32,7 +32,7 @@ For the complete red flag table (15 patterns), see `.claude/skills/guardrails-re
 2. **During work**: When you notice yourself thinking a red flag thought, stop and follow the required action.
 3. **On heartbeat**: Self-check - did I hit any guardrails this cycle? If yes, log it:
    ```bash
-   cortextos bus log-event action guardrail_triggered info --meta '{"guardrail":"<which one>","context":"<what happened>"}'
+   officeos bus log-event action guardrail_triggered info --meta '{"guardrail":"<which one>","context":"<what happened>"}'
    ```
 4. **When you discover a new pattern**: Add a new row to the table in `.claude/skills/guardrails-reference/SKILL.md`. The file improves over time.
 

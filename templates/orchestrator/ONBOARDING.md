@@ -13,7 +13,7 @@ The system onboarding already collected the essential org configuration. Read it
 ### Step 1: Send boot message
 
 ```bash
-cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID "Orchestrator online - running first-boot setup. I'll ask you a few quick questions, then I'm up and running."
+officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID "Orchestrator online - running first-boot setup. I'll ask you a few quick questions, then I'm up and running."
 ```
 
 ### Step 2: Read identity from org context
@@ -110,7 +110,7 @@ Send via Telegram:
 >
 > Is 2 hours the right frequency, or do you want reminders more/less often?"
 
-**END YOUR TURN HERE.** Do not call any more tools or produce any more output. The user's Telegram reply will be delivered as your next conversation turn. When you receive it, update the check-approvals cron interval via `cortextos bus update-cron $CTX_AGENT_NAME check-approvals --interval <new>` if they want a different frequency, then continue from Step 8.
+**END YOUR TURN HERE.** Do not call any more tools or produce any more output. The user's Telegram reply will be delivered as your next conversation turn. When you receive it, update the check-approvals cron interval via `officeos bus update-cron $CTX_AGENT_NAME check-approvals --interval <new>` if they want a different frequency, then continue from Step 8.
 
 ### Step 8: Communication style
 
@@ -139,19 +139,19 @@ The orchestrator has 5 built-in crons. Set them all up now.
 
 ### Step 11: Set up core crons
 
-All crons are daemon-managed and survive restarts automatically. Use `cortextos bus add-cron` — do NOT use `/loop` or CronCreate for persistent scheduling.
+All crons are daemon-managed and survive restarts automatically. Use `officeos bus add-cron` — do NOT use `/loop` or CronCreate for persistent scheduling.
 
 Check for existing crons first:
 ```bash
-cortextos bus list-crons $CTX_AGENT_NAME
+officeos bus list-crons $CTX_AGENT_NAME
 ```
 
 **Interval-based crons:**
 
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME heartbeat 4h Read HEARTBEAT.md and follow its instructions. Update your heartbeat, check inbox, review agent health via cortextos bus read-all-heartbeats, and work on coordination tasks.
+officeos bus add-cron $CTX_AGENT_NAME heartbeat 4h Read HEARTBEAT.md and follow its instructions. Update your heartbeat, check inbox, review agent health via officeos bus read-all-heartbeats, and work on coordination tasks.
 
-cortextos bus add-cron $CTX_AGENT_NAME approval-sweep 2h Check for pending approvals: cortextos bus list-approvals --format json. Also check cortextos bus list-tasks --project human-tasks --status pending. For any pending approval or human task older than 1h, send user a Telegram reminder.
+officeos bus add-cron $CTX_AGENT_NAME approval-sweep 2h Check for pending approvals: officeos bus list-approvals --format json. Also check officeos bus list-tasks --project human-tasks --status pending. For any pending approval or human task older than 1h, send user a Telegram reminder.
 ```
 
 **Time-anchored crons** — compute hours from context.json, then register:
@@ -164,16 +164,16 @@ MORNING_HOUR=${MORNING_HOUR:-8}
 EVENING_HOUR=${EVENING_HOUR:-18}
 echo "Morning review: ${MORNING_HOUR}:00 | Evening review: ${EVENING_HOUR}:00"
 
-cortextos bus add-cron $CTX_AGENT_NAME morning-review "0 ${MORNING_HOUR} * * *" Read .claude/skills/morning-review/SKILL.md and execute the full morning review workflow. Include goal cascade from .claude/skills/goal-management/SKILL.md.
+officeos bus add-cron $CTX_AGENT_NAME morning-review "0 ${MORNING_HOUR} * * *" Read .claude/skills/morning-review/SKILL.md and execute the full morning review workflow. Include goal cascade from .claude/skills/goal-management/SKILL.md.
 
-cortextos bus add-cron $CTX_AGENT_NAME evening-review "0 ${EVENING_HOUR} * * *" Read .claude/skills/evening-review/SKILL.md and execute the full evening review workflow. Summarize the day, propose overnight tasks, queue nighttime work.
+officeos bus add-cron $CTX_AGENT_NAME evening-review "0 ${EVENING_HOUR} * * *" Read .claude/skills/evening-review/SKILL.md and execute the full evening review workflow. Summarize the day, propose overnight tasks, queue nighttime work.
 
-cortextos bus add-cron $CTX_AGENT_NAME weekly-review "0 ${MORNING_HOUR} * * 0" Read .claude/skills/weekly-review/SKILL.md and run the full weekly review. Review all agent outputs, evaluate performance, plan next week.
+officeos bus add-cron $CTX_AGENT_NAME weekly-review "0 ${MORNING_HOUR} * * 0" Read .claude/skills/weekly-review/SKILL.md and run the full weekly review. Review all agent outputs, evaluate performance, plan next week.
 ```
 
 Verify all 5 crons are registered:
 ```bash
-cortextos bus list-crons $CTX_AGENT_NAME
+officeos bus list-crons $CTX_AGENT_NAME
 ```
 
 ### Step 12: Write working hours, communication style, and autonomy to bootstrap files
@@ -194,8 +194,8 @@ Write to SOUL.md Autonomy Rules using `default_approval_categories` as the "Alwa
 ### Step 13: Discover current agent roster
 
 ```bash
-cortextos bus list-agents --format json
-cortextos bus read-all-heartbeats
+officeos bus list-agents --format json
+officeos bus read-all-heartbeats
 # Fallback: ls "${CTX_ROOT}/state/" 2>/dev/null
 ```
 
@@ -225,7 +225,7 @@ cat > "${CTX_FRAMEWORK_ROOT}/orgs/${CTX_ORG}/agents/<agent>/goals.json" << 'EOF'
 }
 EOF
 cortextos goals generate-md --agent <agent> --org $CTX_ORG
-cortextos bus send-message <agent> normal "Your goals are set for today. Check GOALS.md and create tasks."
+officeos bus send-message <agent> normal "Your goals are set for today. Check GOALS.md and create tasks."
 ```
 
 ---
@@ -295,11 +295,11 @@ Based on their answers, write rules to `.claude/skills/memory/SKILL.md` under a 
 Then do the initial ingestion:
 ```bash
 # Ingest org knowledge base
-cortextos bus kb-ingest "${CTX_FRAMEWORK_ROOT}/orgs/${CTX_ORG}/knowledge.md" \
+officeos bus kb-ingest "${CTX_FRAMEWORK_ROOT}/orgs/${CTX_ORG}/knowledge.md" \
  --org $CTX_ORG --scope shared
 
 # Ingest any specific docs the user listed
-# cortextos bus kb-ingest <path> --org $CTX_ORG --scope <shared|private> --agent $CTX_AGENT_NAME
+# officeos bus kb-ingest <path> --org $CTX_ORG --scope <shared|private> --agent $CTX_AGENT_NAME
 ```
 
 ---
@@ -336,9 +336,9 @@ If yes, collect all 8 things (just like agent onboarding):
 - (g) Loop interval - how often to run the experiment loop (often same as window)
 - (h) Approval required before running each experiment?
 
-Then set up following `.claude/skills/autoresearch/SKILL.md` setup steps exactly. The cycle must be created with `cortextos bus manage-cycle create` including `--loop-interval`. Register the persistent cron immediately after:
+Then set up following `.claude/skills/autoresearch/SKILL.md` setup steps exactly. The cycle must be created with `officeos bus manage-cycle create` including `--loop-interval`. Register the persistent cron immediately after:
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME experiment-loop <loop_interval> "Read .claude/skills/autoresearch/SKILL.md and execute the experiment loop."
+officeos bus add-cron $CTX_AGENT_NAME experiment-loop <loop_interval> "Read .claude/skills/autoresearch/SKILL.md and execute the experiment loop."
 ```
 
 If no:
@@ -451,7 +451,7 @@ Make any changes they request.
 ENABLED=$(cat "${CTX_ROOT}/config/enabled-agents.json" 2>/dev/null || echo '[]')
 if ! echo "$ENABLED" | jq -e --arg name "$CTX_AGENT_NAME" '.[] | select(. == $name)' > /dev/null 2>&1; then
   echo "WARNING: $CTX_AGENT_NAME not found in enabled-agents.json"
-  cortextos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" "Warning: I completed onboarding but I'm not in enabled-agents.json. Run: cortextos start $CTX_AGENT_NAME"
+  officeos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" "Warning: I completed onboarding but I'm not in enabled-agents.json. Run: cortextos start $CTX_AGENT_NAME"
 fi
 ```
 
@@ -460,7 +460,7 @@ fi
 ```bash
 mkdir -p "$CTX_ROOT/state/$CTX_AGENT_NAME"
 touch "$CTX_ROOT/state/$CTX_AGENT_NAME/.onboarded"
-cortextos bus log-event action onboarding_complete info --meta '{"agent":"'$CTX_AGENT_NAME'","role":"orchestrator"}'
+officeos bus log-event action onboarding_complete info --meta '{"agent":"'$CTX_AGENT_NAME'","role":"orchestrator"}'
 ```
 
 ### Step 23b: Verify bootstrap files
@@ -490,7 +490,7 @@ fi
 
 if [ -n "$MISSING" ]; then
   echo "BOOTSTRAP CHECK FAILED - missing or incomplete:${MISSING}"
-  cortextos bus log-event error bootstrap_check_failed warning --meta '{"agent":"'$CTX_AGENT_NAME'","missing":"'"${MISSING}"'"}'
+  officeos bus log-event error bootstrap_check_failed warning --meta '{"agent":"'$CTX_AGENT_NAME'","missing":"'"${MISSING}"'"}'
   # Attempt to fix TOOLS.md by copying from template
   if echo "$MISSING" | grep -q "TOOLS.md"; then
     ROLE="orchestrator"
@@ -541,7 +541,7 @@ done
 
 if [ -z "$CHAT_ID" ]; then
   # Ask user to try again
-  cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID "Still not seeing a message to the bot. Can you send another message to it? Make sure you sent the command /start first."
+  officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID "Still not seeing a message to the bot. Can you send another message to it? Make sure you sent the command /start first."
   # END TURN and retry on next user message
 fi
 ```
@@ -595,7 +595,7 @@ Tell the user via Telegram:
 
 Log the handoff:
 ```bash
-cortextos bus log-event action analyst_onboarding_handoff info --meta '{"agent":"'$CTX_AGENT_NAME'","analyst":"<analyst_name>"}'
+officeos bus log-event action analyst_onboarding_handoff info --meta '{"agent":"'$CTX_AGENT_NAME'","analyst":"<analyst_name>"}'
 ```
 
 > **Important: When creating specialist agents later, the same safeguards apply:**

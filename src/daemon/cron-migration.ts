@@ -142,7 +142,7 @@ function runTeachingCheck(args: TeachingCheckArgs): void {
     const fileCount = new Set(result.matches.map((m) => m.file)).size;
     args.log(
       `cron-teaching upgrade recommended: ${result.matches.length} stale references in ${fileCount} files. ` +
-        `Run cortextos bus upgrade-cron-teaching ${args.agentName}`,
+        `Run officeos bus upgrade-cron-teaching ${args.agentName}`,
     );
   }
   writeTeachingMarker(args.ctxRoot, args.agentName);

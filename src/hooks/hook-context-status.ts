@@ -2,7 +2,7 @@
  * StatusLine hook — writes Claude Code's context window usage to a state file.
  *
  * Configured in settings.json as:
- *   "statusLine": { "type": "command", "command": "cortextos bus hook-context-status",
+ *   "statusLine": { "type": "command", "command": "officeos bus hook-context-status",
  *                   "refreshInterval": 5, "timeout": 2 }
  *
  * Claude Code pipes a JSON blob to stdin after every assistant turn (debounced 300ms)

@@ -94,7 +94,7 @@ export function readMaxCrashesPerDay(agentDir: string | undefined): number | nul
 }
 
 /**
- * Send a crash notification via `cortextos bus send-message` to the listed
+ * Send a crash notification via `officeos bus send-message` to the listed
  * recipient agents. Best-effort: failures are swallowed so an alert miss never
  * cascades into a hook crash.
  */

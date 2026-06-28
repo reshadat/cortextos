@@ -30,14 +30,14 @@ You need to spend real money on behalf of the user. Examples:
 Never create a card before getting approval. Use the `financial` category.
 
 ```bash
-APPR_ID=$(cortextos bus create-approval \
+APPR_ID=$(officeos bus create-approval \
   "Purchase: $VENDOR — $AMOUNT for $REASON" \
   "financial" \
   "Vendor: $VENDOR | Amount: \$$AMOUNT | Justification: $REASON")
 echo "APPR_ID=$APPR_ID"
 
-cortextos bus update-task "$TASK_ID" blocked
-cortextos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" \
+officeos bus update-task "$TASK_ID" blocked
+officeos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" \
   "Purchase approval needed: \$$AMOUNT for $VENDOR — $REASON"
 ```
 
@@ -95,8 +95,8 @@ mcp__agent-cards__close_card(card_id: "CARD_ID")
 ### Step 6: Log the result
 
 ```bash
-cortextos bus complete-task "$TASK_ID" --result "Purchased $VENDOR for \$$AMOUNT. Card ****$LAST4. Transaction: $STATUS"
-cortextos bus log-event task purchase_completed info --meta "{\"vendor\":\"$VENDOR\",\"amount_cents\":$AMOUNT_CENTS,\"card_last4\":\"$LAST4\"}"
+officeos bus complete-task "$TASK_ID" --result "Purchased $VENDOR for \$$AMOUNT. Card ****$LAST4. Transaction: $STATUS"
+officeos bus log-event task purchase_completed info --meta "{\"vendor\":\"$VENDOR\",\"amount_cents\":$AMOUNT_CENTS,\"card_last4\":\"$LAST4\"}"
 ```
 
 ---

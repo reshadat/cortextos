@@ -1,11 +1,11 @@
 /**
- * PR-12 regression: `cortextos bus send-telegram` must normalize literal
+ * PR-12 regression: `officeos bus send-telegram` must normalize literal
  * `\n` / `\t` (2-char escape sequences) into real newlines / tabs before
  * passing the message to the Telegram API and before logging it to the
  * outbound-messages.jsonl trail.
  *
  * Bug context: codex-app-server agents emit shell commands like
- *   cortextos bus send-telegram CHATID 'hello\n\nworld'
+ *   officeos bus send-telegram CHATID 'hello\n\nworld'
  * where the `\n` is inside a single-quoted bash string. Bash does NOT expand
  * escapes inside single quotes, so the CLI receives the literal 2-char
  * sequence `\n` in argv. Without normalization, Telegram renders the literal

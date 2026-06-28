@@ -24,7 +24,7 @@ triggers: ["upstream check", "framework update", "check upstream", "upstream aut
 ### Step 1 — Fetch and inspect
 ```bash
 cd /path/to/cortextos
-cortextos bus check-upstream
+officeos bus check-upstream
 ```
 Read the output. If it reports no new commits, skip to Step 7 (log noop and stop).
 
@@ -60,13 +60,13 @@ For EVERY new commit, scan the diff for touched paths. If ANY of the new commits
 - `community/skills/` — community skill catalog changes that affect running agents
 - `community/agents/` — community agent templates that affect running agents
 
-When flagging: collect the commit SHAs, commit messages, and touched paths, and send them to [ORCHESTRATOR] via `cortextos bus send-message [ORCHESTRATOR] normal '<summary>'`. Do not apply.
+When flagging: collect the commit SHAs, commit messages, and touched paths, and send them to [ORCHESTRATOR] via `officeos bus send-message [ORCHESTRATOR] normal '<summary>'`. Do not apply.
 
 ### Step 4 — Apply safe bugfix / docs / chore commits
 If all new commits are pure bugfix or docs/chore AND none touch the guardrail paths:
 ```bash
 cd /path/to/cortextos
-CORTEXTOS_CONFIRM_UPSTREAM_MERGE=yes cortextos bus check-upstream --apply
+CORTEXTOS_CONFIRM_UPSTREAM_MERGE=yes officeos bus check-upstream --apply
 ```
 **The `CORTEXTOS_CONFIRM_UPSTREAM_MERGE=yes` env var is required.** Without it, `check-upstream --apply` returns `{"status": "error", "error": "Refusing to auto-merge upstream..."}` as a safety gate. The env var is the "I have reviewed the diff and I trust the changes" signal. Set it inline, not exported, so it does not leak into subsequent unrelated commands.
 
@@ -101,14 +101,14 @@ If any new commit is feature or mixed but all paths are safe:
 ### Step 6 — Report to [ORCHESTRATOR] on success
 When a bugfix batch is successfully applied and the build + tests are green:
 ```bash
-cortextos bus send-message [ORCHESTRATOR] normal 'Framework upstream auto-update YYYY-MM-DD: applied N commits. Build + test green. Details: ...'
+officeos bus send-message [ORCHESTRATOR] normal 'Framework upstream auto-update YYYY-MM-DD: applied N commits. Build + test green. Details: ...'
 ```
 Include the commit list and any interesting touched paths (e.g. dist/cli.js rebuilt, specific src/ modules touched).
 
 ### Step 7 — Log and record (run this step ALWAYS, even for noop)
 ```bash
-cortextos bus create-task "framework-upstream-check $(date +%Y-%m-%d)" --desc "Daily upstream check. Result: <applied N / flagged M / skipped K / noop>"
-cortextos bus log-event action framework_updated info --meta '{"applied":N,"flagged":M,"skipped":K,"noop":BOOL}'
+officeos bus create-task "framework-upstream-check $(date +%Y-%m-%d)" --desc "Daily upstream check. Result: <applied N / flagged M / skipped K / noop>"
+officeos bus log-event action framework_updated info --meta '{"applied":N,"flagged":M,"skipped":K,"noop":BOOL}'
 ```
 
 Write a single-line entry to today's daily memory file describing the result.

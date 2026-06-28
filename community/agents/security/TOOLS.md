@@ -28,7 +28,7 @@ All standard cortextOS bus commands apply. See `.claude/skills/bus-reference/SKI
 | Command | Purpose |
 |---------|---------|
 | `find . -name ".env*" -exec stat {} \;` | Check .env file permissions (should be 0600) |
-| `cortextos bus list-agents --format json` | Audit running agent configurations |
+| `officeos bus list-agents --format json` | Audit running agent configurations |
 | `pm2 list` | Check process management state |
 
 ## Browser-Based Analysis

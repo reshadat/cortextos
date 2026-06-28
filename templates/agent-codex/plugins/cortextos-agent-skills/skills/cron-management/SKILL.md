@@ -34,7 +34,7 @@ Treat the inject as if the user just sent you `<prompt>`. Run it to completion. 
 you actually handled it (not just that the prompt was injected):
 
 ```bash
-cortextos bus update-cron-fire <cron-name> --interval <interval>
+officeos bus update-cron-fire <cron-name> --interval <interval>
 ```
 
 `<interval>` matches the cron's schedule shorthand (`6h`, `30m`, `1d`) or the expected gap
@@ -53,13 +53,13 @@ removes itself at the end of its handler, so its `last_fire` never matters again
 Check that your crons are registered. Do not recreate them unless they are missing.
 
 ```bash
-cortextos bus list-crons $CTX_AGENT_NAME
+officeos bus list-crons $CTX_AGENT_NAME
 ```
 
 If a cron is missing from the list, add it:
 
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME <name> <interval|cron-expr> "<prompt>"
+officeos bus add-cron $CTX_AGENT_NAME <name> <interval|cron-expr> "<prompt>"
 ```
 
 ---
@@ -68,14 +68,14 @@ cortextos bus add-cron $CTX_AGENT_NAME <name> <interval|cron-expr> "<prompt>"
 
 **Interval shorthand** (s/m/h/d/w):
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME heartbeat 6h "Read HEARTBEAT.md and follow its instructions."
-cortextos bus add-cron $CTX_AGENT_NAME health-check 30m "Check system health and report anomalies."
+officeos bus add-cron $CTX_AGENT_NAME heartbeat 6h "Read HEARTBEAT.md and follow its instructions."
+officeos bus add-cron $CTX_AGENT_NAME health-check 30m "Check system health and report anomalies."
 ```
 
 **5-field cron expression** (minute hour dom month dow):
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME morning-report "0 9 * * 1-5" "Generate and send the daily analytics report."
-cortextos bus add-cron $CTX_AGENT_NAME weekly-summary "0 17 * * 5" "Compile and deliver the weekly summary."
+officeos bus add-cron $CTX_AGENT_NAME morning-report "0 9 * * 1-5" "Generate and send the daily analytics report."
+officeos bus add-cron $CTX_AGENT_NAME weekly-summary "0 17 * * 5" "Compile and deliver the weekly summary."
 ```
 
 The daemon reloads automatically after `add-cron`. Confirm with `list-crons`.
@@ -86,16 +86,16 @@ The daemon reloads automatically after `add-cron`. Confirm with `list-crons`.
 
 ```bash
 # Change the schedule
-cortextos bus update-cron $CTX_AGENT_NAME heartbeat --interval 4h
+officeos bus update-cron $CTX_AGENT_NAME heartbeat --interval 4h
 
 # Update the prompt
-cortextos bus update-cron $CTX_AGENT_NAME heartbeat --prompt "New prompt text."
+officeos bus update-cron $CTX_AGENT_NAME heartbeat --prompt "New prompt text."
 
 # Disable (stops firing without removing it)
-cortextos bus update-cron $CTX_AGENT_NAME heartbeat --enabled false
+officeos bus update-cron $CTX_AGENT_NAME heartbeat --enabled false
 
 # Re-enable
-cortextos bus update-cron $CTX_AGENT_NAME heartbeat --enabled true
+officeos bus update-cron $CTX_AGENT_NAME heartbeat --enabled true
 ```
 
 ---
@@ -103,7 +103,7 @@ cortextos bus update-cron $CTX_AGENT_NAME heartbeat --enabled true
 ## Removing a Cron
 
 ```bash
-cortextos bus remove-cron $CTX_AGENT_NAME <name>
+officeos bus remove-cron $CTX_AGENT_NAME <name>
 ```
 
 ---
@@ -116,8 +116,8 @@ a future-dated 5-field cron expression plus a self-removing handler:
 ```bash
 # Remind me on May 8 at 15:30 local time to send the weekly report.
 # Format: minute hour day month dow
-cortextos bus add-cron $CTX_AGENT_NAME may8-report "30 15 8 5 *" \
-  'Send the weekly report. Then remove this cron: cortextos bus remove-cron '"$CTX_AGENT_NAME"' may8-report'
+officeos bus add-cron $CTX_AGENT_NAME may8-report "30 15 8 5 *" \
+  'Send the weekly report. Then remove this cron: officeos bus remove-cron '"$CTX_AGENT_NAME"' may8-report'
 ```
 
 When the cron fires, your handler does the work AND removes the cron. If you forget the
@@ -128,8 +128,8 @@ If you need a reminder less than 24 hours out and the date math is awkward, use 
 interval shorthand that you remove on first fire instead:
 
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME quick-reminder 90m \
-  'Check the soak run. Then: cortextos bus remove-cron '"$CTX_AGENT_NAME"' quick-reminder'
+officeos bus add-cron $CTX_AGENT_NAME quick-reminder 90m \
+  'Check the soak run. Then: officeos bus remove-cron '"$CTX_AGENT_NAME"' quick-reminder'
 ```
 
 ---
@@ -148,10 +148,10 @@ crons that must only fire on schedule).
 
 ```bash
 # All crons for this agent
-cortextos bus get-cron-log $CTX_AGENT_NAME
+officeos bus get-cron-log $CTX_AGENT_NAME
 
 # Filter to a specific cron
-cortextos bus get-cron-log $CTX_AGENT_NAME <name>
+officeos bus get-cron-log $CTX_AGENT_NAME <name>
 ```
 
 Each log entry: `ts`, `cron`, `status` (fired/retried/failed), `attempt`, `duration_ms`, `error`.
@@ -161,14 +161,14 @@ Each log entry: `ts`, `cron`, `status` (fired/retried/failed), `attempt`, `durat
 ## Troubleshooting
 
 **Cron not firing:**
-1. `cortextos bus list-crons $CTX_AGENT_NAME` — confirm it is registered and not disabled.
-2. `cortextos bus get-cron-log $CTX_AGENT_NAME <name>` — check for `status: failed` entries.
+1. `officeos bus list-crons $CTX_AGENT_NAME` — confirm it is registered and not disabled.
+2. `officeos bus get-cron-log $CTX_AGENT_NAME <name>` — check for `status: failed` entries.
 3. Check daemon log: `~/.cortextos/$CTX_INSTANCE_ID/logs/$CTX_AGENT_NAME/`
 
 **`crons.json` corrupted:**
 - `readCrons` automatically falls back to `crons.json.bak` on parse failure. Usually self-healing.
 - If both files are bad, re-add crons via `add-cron` or force re-migration:
-  `cortextos bus migrate-crons $CTX_AGENT_NAME --force`
+  `officeos bus migrate-crons $CTX_AGENT_NAME --force`
 
 **Scheduler retained stale schedule after reload:**
 - If a reload produces an empty schedule (transient corruption), the daemon keeps the last-good

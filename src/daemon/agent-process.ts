@@ -754,7 +754,7 @@ export class AgentProcess {
       const items = overdue.map(r =>
         `  - [${r.id}] (due ${r.fire_at}): ${r.prompt}`,
       ).join('\n');
-      return ` You also have ${overdue.length} overdue persistent reminder(s) from before this restart — handle each one, then run: cortextos bus ack-reminder <id>\n${items}`;
+      return ` You also have ${overdue.length} overdue persistent reminder(s) from before this restart — handle each one, then run: officeos bus ack-reminder <id>\n${items}`;
     } catch {
       return '';
     }
@@ -774,7 +774,7 @@ export class AgentProcess {
       if (!existsSync(contextPath)) return '';
       const ctx = JSON.parse(readFileSync(contextPath, 'utf-8'));
       if (!ctx.require_deliverables) return '';
-      return ' DELIVERABLE STANDARD: Every task you submit for review MUST have at least one file deliverable attached via the save-output bus command. A task with zero file deliverables will be sent back. Attach files with: cortextos bus save-output <task-id> <file-path> --label "<descriptive label>". Labels must be human-readable at a glance: describe WHAT it is plus enough context to understand at a glance. Good: "Traffic Growth Plan — 10 channels, 30-day launch sequence". Bad: "traffic-growth-plan.md" or "output-1". Notes are for context only, never file paths or URLs.';
+      return ' DELIVERABLE STANDARD: Every task you submit for review MUST have at least one file deliverable attached via the save-output bus command. A task with zero file deliverables will be sent back. Attach files with: officeos bus save-output <task-id> <file-path> --label "<descriptive label>". Labels must be human-readable at a glance: describe WHAT it is plus enough context to understand at a glance. Good: "Traffic Growth Plan — 10 channels, 30-day launch sequence". Bad: "traffic-growth-plan.md" or "output-1". Notes are for context only, never file paths or URLs.';
     } catch {
       return '';
     }
@@ -782,7 +782,7 @@ export class AgentProcess {
 
   /**
    * Consume the .handoff-doc-path marker (written by the context watchdog or the
-   * agent itself via `cortextos bus hard-restart --handoff-doc <path>`).
+   * agent itself via `officeos bus hard-restart --handoff-doc <path>`).
    * Returns a boot-prompt fragment pointing the new session at the handoff doc,
    * or an empty string if no marker exists.
    * The marker is unlinked after reading so it fires only once per restart.

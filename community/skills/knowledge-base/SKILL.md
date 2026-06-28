@@ -14,7 +14,7 @@ The knowledge base lets you search indexed documents using natural language — 
 ## Query (before starting research)
 
 ```bash
-cortextos bus kb-query "your question" \
+officeos bus kb-query "your question" \
   --org $CTX_ORG \
   --agent $CTX_AGENT_NAME
 ```
@@ -30,12 +30,12 @@ Use this:
 
 ```bash
 # Ingest to shared org collection (visible to all agents)
-cortextos bus kb-ingest /path/to/docs \
+officeos bus kb-ingest /path/to/docs \
   --org $CTX_ORG \
   --scope shared
 
 # Ingest to your private collection (only visible to you)
-cortextos bus kb-ingest /path/to/docs \
+officeos bus kb-ingest /path/to/docs \
   --org $CTX_ORG \
   --agent $CTX_AGENT_NAME \
   --scope private
@@ -51,7 +51,7 @@ Ingest after:
 ## List Collections
 
 ```bash
-cortextos bus kb-collections --org $CTX_ORG
+officeos bus kb-collections --org $CTX_ORG
 ```
 
 ---
@@ -61,7 +61,7 @@ cortextos bus kb-collections --org $CTX_ORG
 List all KB collections for the org:
 
 ```bash
-cortextos bus kb-collections --org $CTX_ORG
+officeos bus kb-collections --org $CTX_ORG
 ```
 
 If no collections appear, the KB may not be configured yet — check that `GEMINI_API_KEY` is set in `orgs/$CTX_ORG/secrets.env`.

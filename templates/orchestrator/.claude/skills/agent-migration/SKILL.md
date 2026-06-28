@@ -211,11 +211,11 @@ After all files are copied:
 cd "$CTX_FRAMEWORK_ROOT/orgs/$CTX_ORG/agents/<new_name>"
 
 # Shared org knowledge (meetings, research, docs)
-cortextos bus kb-ingest ./meetings --org $CTX_ORG --scope shared
-cortextos bus kb-ingest ./docs --org $CTX_ORG --scope shared
+officeos bus kb-ingest ./meetings --org $CTX_ORG --scope shared
+officeos bus kb-ingest ./docs --org $CTX_ORG --scope shared
 
 # Private agent knowledge (CRM, personal memory)
-cortextos bus kb-ingest ./MEMORY.md ./crm/contacts.json \
+officeos bus kb-ingest ./MEMORY.md ./crm/contacts.json \
   --org $CTX_ORG --agent <new_name> --scope private
 ```
 
@@ -230,7 +230,7 @@ cd "$CTX_FRAMEWORK_ROOT" && cortextos start <new_name>
 Send a workspace orientation message via the bus. This is the first message the agent will receive. It must instruct the agent to read the entire migrated workspace before doing anything else — including before contacting the user — and then run a migration-aware onboarding:
 
 ```bash
-cortextos bus send-message <new_name> normal \
+officeos bus send-message <new_name> normal \
   'You have been migrated from a legacy agent workspace into cortextOS v2. Before doing anything else — before messaging the user, before setting up crons, before running onboarding — read your entire workspace:
 
 1. Bootstrap files: IDENTITY.md, SOUL.md, MEMORY.md, USER.md, GUARDRAILS.md, GOALS.md, HEARTBEAT.md
@@ -246,7 +246,7 @@ Then proceed with cortextOS onboarding (/onboarding), but treat it as a migratio
 Log the dispatch:
 
 ```bash
-cortextos bus log-event action task_dispatched info \
+officeos bus log-event action task_dispatched info \
   --meta '{"to":"<new_name>","task":"workspace orientation + migration-aware onboarding"}'
 ```
 
@@ -276,13 +276,13 @@ Update SYSTEM.md team roster:
 | config.json crons | Selectively | Port user-defined schedules, update paths |
 | .env (tokens/secrets) | Never | Source fresh from user |
 | Daily memory files | No | These are session logs — discard |
-| Old bus script references | Never | Update all paths to v2 cortextos bus commands |
+| Old bus script references | Never | Update all paths to v2 officeos bus commands |
 
 ---
 
 ## Notes
 
 - Always present the audit to the user before executing — confirm what to include/exclude
-- If the source uses old bash bus scripts (`bus/send-message.sh`, etc.), translate all commands to `cortextos bus <command>` equivalents
+- If the source uses old bash bus scripts (`bus/send-message.sh`, etc.), translate all commands to `officeos bus <command>` equivalents
 - If the source workspace has custom tools or MCP configs, check with user whether to port them
 - The permission-prompt issue (agent getting stuck at file edit approval dialog) is fixed in v2 via pre-approved .claude settings — verify the new agent's .claude/settings.json allows edits

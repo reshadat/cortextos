@@ -125,7 +125,7 @@ export class FastChecker {
     const agentName = this.agent.name;
     this.heartbeatTimer = setInterval(() => {
       const ts = new Date().toISOString();
-      execFile('cortextos', ['bus', 'update-heartbeat', `[watchdog] ${agentName} alive — idle session ${ts}`], (err) => {
+      execFile('officeos', ['bus', 'update-heartbeat', `[watchdog] ${agentName} alive — idle session ${ts}`], (err) => {
         if (err) this.log(`Heartbeat watchdog error: ${err.message}`);
       });
     }, HEARTBEAT_INTERVAL_MS);
@@ -345,7 +345,7 @@ export class FastChecker {
     const replyTail = corrFlags ? ` ${corrFlags}` : '';
     return `=== AGENT MESSAGE from ${safeFrom}${replyNote}${corrNote} [msg_id: ${msg.id}] ===
 ${wrapFenceSafe(msg.text)}
-Reply using: cortextos bus send-message ${safeFrom} normal '<your reply>' ${msg.id}${replyTail}
+Reply using: officeos bus send-message ${safeFrom} normal '<your reply>' ${msg.id}${replyTail}
 
 `;
   }
@@ -395,7 +395,7 @@ Reply using: cortextos bus send-message ${safeFrom} normal '<your reply>' ${msg.
       : wrapFenceSafe(text);
     return `=== TELEGRAM from [USER: ${sanitizeForPtyInjection(from)}] (chat_id:${chatId}) ===
 ${replyCx}${historyCx}${body}
-${lastSentCtx}Reply using: cortextos bus send-telegram ${chatId} '<your reply>'
+${lastSentCtx}Reply using: officeos bus send-telegram ${chatId} '<your reply>'
 
 `;
   }
@@ -465,7 +465,7 @@ Reply using: officeos bus send-slack ${channelId} '<your reply>'
 caption:
 ${wrapFenceSafe(caption)}
 local_file: ${imagePath}
-Reply using: cortextos bus send-telegram ${chatId} '<your reply>'
+Reply using: officeos bus send-telegram ${chatId} '<your reply>'
 
 `;
   }
@@ -486,7 +486,7 @@ caption:
 ${wrapFenceSafe(caption)}
 local_file: ${filePath}
 file_name: ${sanitizeForPtyInjection(fileName)}
-Reply using: cortextos bus send-telegram ${chatId} '<your reply>'
+Reply using: officeos bus send-telegram ${chatId} '<your reply>'
 
 `;
   }
@@ -514,7 +514,7 @@ Reply using: cortextos bus send-telegram ${chatId} '<your reply>'
     return `=== TELEGRAM VOICE from ${sanitizeForPtyInjection(from)} (chat_id:${chatId}) ===
 duration: ${dur}s
 local_file: ${filePath}
-${transcriptBlock}Reply using: cortextos bus send-telegram ${chatId} '<your reply>'
+${transcriptBlock}Reply using: officeos bus send-telegram ${chatId} '<your reply>'
 
 `;
   }
@@ -538,7 +538,7 @@ ${wrapFenceSafe(caption)}
 duration: ${dur}s
 local_file: ${filePath}
 file_name: ${sanitizeForPtyInjection(fileName)}
-Reply using: cortextos bus send-telegram ${chatId} '<your reply>'
+Reply using: officeos bus send-telegram ${chatId} '<your reply>'
 
 `;
   }
@@ -924,7 +924,7 @@ Reply using: cortextos bus send-telegram ${chatId} '<your reply>'
         `=== TELEGRAM from [USER: ${senderName}] (chat_id:${chatId}) ===`,
         `callback_data: ${safeData}`,
         `message_id: ${messageId}`,
-        `Reply using: cortextos bus send-telegram ${chatId} '<your reply>'`,
+        `Reply using: officeos bus send-telegram ${chatId} '<your reply>'`,
       ].join('\n');
       const injected = this.agent.injectMessage(msg);
       if (injected && this.telegramApi) {
@@ -1152,7 +1152,7 @@ Reply using: cortextos bus send-telegram ${chatId} '<your reply>'
         writeFileSync(statusPath, JSON.stringify({ used_percentage: 0, exceeds_200k_tokens: false, written_at: new Date().toISOString() }));
       } catch { /* non-fatal */ }
       const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + 'Z';
-      const handoffPrompt = `[CONTEXT HANDOFF REQUIRED] Context is at ${Math.round(effectivePct)}%. Write a handoff document to memory/handoffs/handoff-${ts}.md with these sections: ## Current Tasks, ## Next Actions, ## Active Crons, ## Key Context, ## Files Modified This Session. Then run: cortextos bus hard-restart --reason "context handoff at ${Math.round(effectivePct)}%" --handoff-doc <absolute path to the handoff doc you just wrote>. Do this NOW before the context window is exhausted.`;
+      const handoffPrompt = `[CONTEXT HANDOFF REQUIRED] Context is at ${Math.round(effectivePct)}%. Write a handoff document to memory/handoffs/handoff-${ts}.md with these sections: ## Current Tasks, ## Next Actions, ## Active Crons, ## Key Context, ## Files Modified This Session. Then run: officeos bus hard-restart --reason "context handoff at ${Math.round(effectivePct)}%" --handoff-doc <absolute path to the handoff doc you just wrote>. Do this NOW before the context window is exhausted.`;
       this.agent.injectMessage(handoffPrompt);
       this.log(`Handoff prompt injected at ${Math.round(effectivePct)}%`);
       // Pre-arm .force-fresh so the next restart is always a clean fresh session.

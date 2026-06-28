@@ -107,7 +107,7 @@ describe('scanFile — apply mode (literal substitutions)', () => {
     expect(r.applied).toBe(2);
     const out = readFileSync(fp, 'utf-8');
     expect(out).not.toContain('(configured in config.json)');
-    expect(out).toContain('(configured via cortextos bus add-cron)');
+    expect(out).toContain('(configured via officeos bus add-cron)');
   });
 
   it('does not rewrite anything when apply=false (default)', () => {
@@ -187,7 +187,7 @@ describe('scanAgentDir', () => {
 
     expect(r.appliedSubstitutions).toBe(1);
     const out = readFileSync(join(workDir, 'AGENTS.md'), 'utf-8');
-    expect(out).toContain('(configured via cortextos bus add-cron)');
+    expect(out).toContain('(configured via officeos bus add-cron)');
     // CronCreate line is still there (not safe to mechanically rewrite).
     expect(out).toContain('Use CronCreate to register.');
 

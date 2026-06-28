@@ -5,13 +5,13 @@ Execute every step.
 ## 1. Update Heartbeat
 
 ```bash
-cortextos bus update-heartbeat "<current CRM assistant status>"
+officeos bus update-heartbeat "<current CRM assistant status>"
 ```
 
 ## 2. Sweep Inbox
 
 ```bash
-cortextos bus check-inbox
+officeos bus check-inbox
 ```
 
 Reply or ACK every message.
@@ -19,8 +19,8 @@ Reply or ACK every message.
 ## 3. Check Tasks and CRM Loops
 
 ```bash
-cortextos bus list-tasks --agent $CTX_AGENT_NAME --status pending
-cortextos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
+officeos bus list-tasks --agent $CTX_AGENT_NAME --status pending
+officeos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
 ```
 
 Also check:
@@ -32,7 +32,7 @@ Also check:
 ## 4. Log Heartbeat Event
 
 ```bash
-cortextos bus log-event heartbeat agent_heartbeat info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
+officeos bus log-event heartbeat agent_heartbeat info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
 ```
 
 ## 5. Write Daily Memory

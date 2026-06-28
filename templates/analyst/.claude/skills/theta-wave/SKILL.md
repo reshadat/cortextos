@@ -25,15 +25,15 @@ When your theta-wave cron fires:
 ### Phase 1: Initiate
 **First action**: Message the orchestrator that theta wave is starting.
 ```bash
-cortextos bus send-message <orchestrator> high "Theta wave initiated. Running deep system scan. Stand by for findings."
+officeos bus send-message <orchestrator> high "Theta wave initiated. Running deep system scan. Stand by for findings."
 ```
 
 ### Phase 2: Deep System Scan
 Scan EVERYTHING:
-- All agent heartbeats: `cortextos bus read-all-heartbeats`
-- All agent tasks: `cortextos bus list-tasks`
-- All experiment results: `cortextos bus list-experiments --json`
-- Per-agent experiment context: `cortextos bus gather-context --agent <name> --format json` (for each agent)
+- All agent heartbeats: `officeos bus read-all-heartbeats`
+- All agent tasks: `officeos bus list-tasks`
+- All experiment results: `officeos bus list-experiments --json`
+- Per-agent experiment context: `officeos bus gather-context --agent <name> --format json` (for each agent)
 - Org goals and north star: read GOALS.md
 - Agent memories: read each agent's MEMORY.md and recent daily memory
 - Analytics reports if available
@@ -94,7 +94,7 @@ Based on the conversation, decide what to change:
 
 **Create new cycles for agents:**
 ```bash
-cortextos bus manage-cycle create <agent> \
+officeos bus manage-cycle create <agent> \
   --cycle <cycle_name> \
   --metric <metric_name> \
   --metric-type <quantitative|qualitative> \
@@ -106,12 +106,12 @@ cortextos bus manage-cycle create <agent> \
 ```
 Then send the agent a message to set up the corresponding cron:
 ```bash
-cortextos bus send-message <agent> normal "New autoresearch cycle created: <cycle_name> optimizing <metric_name>. Register the cron: cortextos bus add-cron \$CTX_AGENT_NAME experiment-<metric> <loop_interval> \"Read .claude/skills/autoresearch/SKILL.md and execute the experiment loop.\""
+officeos bus send-message <agent> normal "New autoresearch cycle created: <cycle_name> optimizing <metric_name>. Register the cron: officeos bus add-cron \$CTX_AGENT_NAME experiment-<metric> <loop_interval> \"Read .claude/skills/autoresearch/SKILL.md and execute the experiment loop.\""
 ```
 
 **Modify existing cycles:**
 ```bash
-cortextos bus manage-cycle modify <agent> --cycle <name> \
+officeos bus manage-cycle modify <agent> --cycle <name> \
   --window <new_window> \
   --loop-interval <new_loop_interval> \
   --surface <new_surface> \
@@ -123,7 +123,7 @@ Use `--enabled false` to pause a stale or converged cycle instead of removing it
 
 **Remove converged or irrelevant cycles:**
 ```bash
-cortextos bus manage-cycle remove <agent> --cycle <name>
+officeos bus manage-cycle remove <agent> --cycle <name>
 ```
 
 If `auto_create_agent_cycles` or `auto_modify_agent_cycles` is false, create approvals instead of executing directly.

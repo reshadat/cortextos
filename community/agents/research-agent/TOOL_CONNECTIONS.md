@@ -16,7 +16,7 @@ Put credentials in `.env`, org secrets, connector configuration, or the relevant
 |---|---|
 | `GITHUB_TOKEN` | GitHub search and higher rate limits |
 | `APIFY_TOKEN` | Optional social discovery and transcript enrichment |
-| `CTX_TELEGRAM_CHAT_ID` | Existing cortextOS Telegram destination used by `cortextos bus send-telegram` |
+| `CTX_TELEGRAM_CHAT_ID` | Existing cortextOS Telegram destination used by `officeos bus send-telegram` |
 | `SLACK_WEBHOOK_URL` | Slack delivery |
 | `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` | Optional Reddit OAuth |
 

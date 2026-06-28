@@ -79,7 +79,7 @@ export function logInboundMessage(
  * Persist an inbound Telegram message to the daemon's JSONL archive AND
  * emit a `message/telegram_received` bus event so dashboards and
  * experiment cycles can count fleet-wide inbound traffic. Symmetric with
- * `telegram_sent` emitted from the outbound path in `cortextos bus
+ * `telegram_sent` emitted from the outbound path in `officeos bus
  * send-telegram`.
  *
  * Wrapped: a logEvent failure (e.g. unwritable analytics dir) must not

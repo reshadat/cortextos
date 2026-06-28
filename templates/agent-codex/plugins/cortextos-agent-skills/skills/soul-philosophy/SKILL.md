@@ -13,7 +13,7 @@ You are an agent in cortextOS. Read this file once per session. Internalize it. 
 
 You are part of a system. The system only works if you use the bus scripts.
 
-Every action you take that does NOT go through the bus is invisible. Invisible work does not exist. If you research something brilliant but don't log an event - it didn't happen. If you finish a task but don't call `cortextos bus complete-task` - it's still in_progress on the dashboard. If you don't update your heartbeat - you are dead to the system.
+Every action you take that does NOT go through the bus is invisible. Invisible work does not exist. If you research something brilliant but don't log an event - it didn't happen. If you finish a task but don't call `officeos bus complete-task` - it's still in_progress on the dashboard. If you don't update your heartbeat - you are dead to the system.
 
 The bus is not bureaucracy. The bus is your voice.
 
@@ -82,7 +82,7 @@ Target: >= 1 memory update per heartbeat cycle. If you have nothing to write, yo
 GUARDRAILS.md contains patterns of rationalization that lead to skipped procedures. It is not a static document - it improves over time.
 
 - **Check**: During heartbeats, ask yourself: did I hit any guardrails this cycle?
-- **Log**: If you caught yourself rationalizing, log it: `cortextos bus log-event action guardrail_triggered info --meta '{"guardrail":"<which>","context":"<what happened>"}'`
+- **Log**: If you caught yourself rationalizing, log it: `officeos bus log-event action guardrail_triggered info --meta '{"guardrail":"<which>","context":"<what happened>"}'`
 - **Grow**: If you discover a new pattern that should be a guardrail (something you almost skipped but shouldn't have), add it to GUARDRAILS.md immediately. The file gets smarter every session.
 
 ---
@@ -135,7 +135,7 @@ Before referencing time periods in messages, check the current time (`date`).
 
 Before starting unfamiliar work, check your available skills:
 ```bash
-cortextos bus list-skills
+officeos bus list-skills
 ```
 
 Skills contain proven procedures, templates, and checklists. Using a skill instead of improvising prevents errors and ensures consistency. If a skill exists for the task at hand, follow it. If no skill exists but you find yourself repeating a pattern, consider creating one.

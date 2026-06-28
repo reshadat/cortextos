@@ -73,7 +73,7 @@ Then continue from Part 2.
 ### Step 6: Discover existing agents
 
 ```bash
-cortextos bus read-all-heartbeats --format text
+officeos bus read-all-heartbeats --format text
 # Fallback if no heartbeats yet:
 ls "${CTX_ROOT}/state/" 2>/dev/null
 ```
@@ -163,7 +163,7 @@ If KB is enabled:
 
 Offer to ingest any monitoring docs the user mentions:
 ```bash
-cortextos bus kb-ingest <path> --org $CTX_ORG --scope shared
+officeos bus kb-ingest <path> --org $CTX_ORG --scope shared
 ```
 
 ## Part 3: Workflows and Crons
@@ -183,17 +183,17 @@ NIGHT_HOUR=${NIGHT_HOUR:-18}
 echo "Day starts: ${DAY_HOUR}:00, Night starts: ${NIGHT_HOUR}:00"
 ```
 
-**Set up the heartbeat cron via `cortextos bus add-cron`:**
+**Set up the heartbeat cron via `officeos bus add-cron`:**
 
 - Heartbeat (every 4h): `Read HEARTBEAT.md and follow its instructions. Update your heartbeat, check inbox, and work on your highest priority task.`
 
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME heartbeat 4h "Read HEARTBEAT.md and follow its instructions. Update your heartbeat, check inbox, and work on your highest priority task."
+officeos bus add-cron $CTX_AGENT_NAME heartbeat 4h "Read HEARTBEAT.md and follow its instructions. Update your heartbeat, check inbox, and work on your highest priority task."
 ```
 
-Then verify with `cortextos bus list-crons $CTX_AGENT_NAME` — if a `heartbeat` entry already exists, skip adding a duplicate.
+Then verify with `officeos bus list-crons $CTX_AGENT_NAME` — if a `heartbeat` entry already exists, skip adding a duplicate.
 
-The default config also includes a `nightly-metrics` cron (24h) that runs `cortextos bus collect-metrics`. Verify it exists: `cortextos bus list-crons $CTX_AGENT_NAME`.
+The default config also includes a `nightly-metrics` cron (24h) that runs `officeos bus collect-metrics`. Verify it exists: `officeos bus list-crons $CTX_AGENT_NAME`.
 
 Do NOT use `/loop` for these — those crons are session-only and will not survive a restart.
 
@@ -201,7 +201,7 @@ Do NOT use `/loop` for these — those crons are session-only and will not survi
 > "I have a heartbeat cycle every 4 hours and nightly metrics collection. Want me to add any other recurring checks? For example: daily reports, integration health checks, custom monitoring."
 
 For each additional cron the user requests:
-- Add via bus: `cortextos bus add-cron $CTX_AGENT_NAME <name> <interval> "<prompt>"`
+- Add via bus: `officeos bus add-cron $CTX_AGENT_NAME <name> <interval> "<prompt>"`
 - If complex, create a skill file at `.claude/skills/<workflow-name>/SKILL.md`
 
 ### Step 13: Ask for tools and access
@@ -306,12 +306,12 @@ Write to `${CTX_AGENT_DIR}/SYSTEM.md`:
 
 For live agent roster, run:
 ```bash
-cortextos bus list-agents
+officeos bus list-agents
 ```
 
 For agent health (last heartbeat per agent), run:
 ```bash
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 ```
 ```
 
@@ -416,21 +416,21 @@ NIGHT_HOUR=${NIGHT_HOUR:-18}
 DAILY_HOUR=$(( (NIGHT_HOUR + 1) % 24 ))
 ```
 
-For each enabled feature, register the cron via `cortextos bus add-cron`. The daemon persists it to `crons.json` and dispatches automatically — do not edit config.json directly.
+For each enabled feature, register the cron via `officeos bus add-cron`. The daemon persists it to `crons.json` and dispatches automatically — do not edit config.json directly.
 
-**local_version_control** — register via `cortextos bus add-cron` (time-anchored, daemon-managed):
+**local_version_control** — register via `officeos bus add-cron` (time-anchored, daemon-managed):
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME auto-commit "0 ${DAILY_HOUR} * * *" "Run daily git snapshot. cortextos bus auto-commit - review the staged diff for PII - commit with descriptive message. Never push."
+officeos bus add-cron $CTX_AGENT_NAME auto-commit "0 ${DAILY_HOUR} * * *" "Run daily git snapshot. officeos bus auto-commit - review the staged diff for PII - commit with descriptive message. Never push."
 ```
 
-**upstream_sync** — register via `cortextos bus add-cron` (time-anchored, same hour, 2 minutes offset):
+**upstream_sync** — register via `officeos bus add-cron` (time-anchored, same hour, 2 minutes offset):
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME check-upstream "2 ${DAILY_HOUR} * * *" "Check for framework updates: cortextos bus check-upstream. If updates available, explain every change in plain English via Telegram and wait for explicit approval before applying. Never apply during night mode."
+officeos bus add-cron $CTX_AGENT_NAME check-upstream "2 ${DAILY_HOUR} * * *" "Check for framework updates: officeos bus check-upstream. If updates available, explain every change in plain English via Telegram and wait for explicit approval before applying. Never apply during night mode."
 ```
 
-**catalog_browse** — register via `cortextos bus add-cron` (weekly, Sunday same hour):
+**catalog_browse** — register via `officeos bus add-cron` (weekly, Sunday same hour):
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME catalog-browse "4 ${DAILY_HOUR} * * 0" "Browse community catalog: cortextos bus browse-catalog. Surface ONE relevant new item to user via Telegram. If they say install it: cortextos bus install-community-item <name>. If they decline, skip that item for 30 days."
+officeos bus add-cron $CTX_AGENT_NAME catalog-browse "4 ${DAILY_HOUR} * * 0" "Browse community catalog: officeos bus browse-catalog. Surface ONE relevant new item to user via Telegram. If they say install it: officeos bus install-community-item <name>. If they decline, skip that item for 30 days."
 ```
 
 **community_publish** - no cron needed, triggered manually.
@@ -480,7 +480,7 @@ After writing theta wave config, notify the orchestrator:
 ```bash
 ORCH_NAME=$(jq -r '.orchestrator // empty' "${CTX_FRAMEWORK_ROOT}/orgs/${CTX_ORG}/context.json" 2>/dev/null)
 if [ -n "$ORCH_NAME" ]; then
-  cortextos bus send-message "${ORCH_NAME}" normal "Theta wave configured: enabled=true, interval=<interval>, approval_required=<val>, auto_create=<val>, auto_modify=<val>"
+  officeos bus send-message "${ORCH_NAME}" normal "Theta wave configured: enabled=true, interval=<interval>, approval_required=<val>, auto_create=<val>, auto_modify=<val>"
 fi
 ```
 
@@ -496,9 +496,9 @@ NIGHT_HOUR=${NIGHT_HOUR:-18}
 TW_HOUR=$(( (NIGHT_HOUR + 2) % 24 ))
 ```
 
-Register via `cortextos bus add-cron` (time-anchored, daemon-managed):
+Register via `officeos bus add-cron` (time-anchored, daemon-managed):
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME theta-wave "0 ${TW_HOUR} * * *" "Read .claude/skills/theta-wave/SKILL.md. Initiate the theta wave cycle. First action: message the orchestrator that theta wave is starting and share your initial system scan."
+officeos bus add-cron $CTX_AGENT_NAME theta-wave "0 ${TW_HOUR} * * *" "Read .claude/skills/theta-wave/SKILL.md. Initiate the theta wave cycle. First action: message the orchestrator that theta wave is starting and share your initial system scan."
 ```
 
 ## Part 8: Dashboard Walkthrough
@@ -550,7 +550,7 @@ if [ -z "$ORCH_NAME" ]; then
   ORCH_NAME=$(ls "${CTX_ROOT}/state/" 2>/dev/null | head -1)
 fi
 if [ -n "$ORCH_NAME" ]; then
-  cortextos bus send-message "${ORCH_NAME}" normal "Analyst onboarding complete. User wants to create specialist agents: [list]. Please run specialist creation flow now."
+  officeos bus send-message "${ORCH_NAME}" normal "Analyst onboarding complete. User wants to create specialist agents: [list]. Please run specialist creation flow now."
 fi
 ```
 
@@ -564,7 +564,7 @@ If no specialists wanted: proceed to step 29.
 ENABLED=$(cat "${CTX_FRAMEWORK_ROOT}/orgs/${CTX_ORG}/enabled-agents.json" 2>/dev/null || echo '[]')
 if ! echo "$ENABLED" | jq -e --arg name "$CTX_AGENT_NAME" '.[] | select(. == $name)' > /dev/null 2>&1; then
   echo "WARNING: $CTX_AGENT_NAME not found in enabled-agents.json"
-  cortextos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" "Warning: I completed onboarding but I'm not in enabled-agents.json. Run: cortextos start $CTX_AGENT_NAME"
+  officeos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" "Warning: I completed onboarding but I'm not in enabled-agents.json. Run: cortextos start $CTX_AGENT_NAME"
 fi
 ```
 
@@ -572,7 +572,7 @@ fi
 
 ```bash
 touch "${CTX_ROOT}/state/${CTX_AGENT_NAME}/.onboarded"
-cortextos bus log-event action onboarding_complete info --meta '{"agent":"'$CTX_AGENT_NAME'","role":"analyst"}'
+officeos bus log-event action onboarding_complete info --meta '{"agent":"'$CTX_AGENT_NAME'","role":"analyst"}'
 ```
 
 ### Step 29b: Verify bootstrap files
@@ -602,7 +602,7 @@ fi
 
 if [ -n "$MISSING" ]; then
   echo "BOOTSTRAP CHECK FAILED - missing or incomplete:${MISSING}"
-  cortextos bus log-event error bootstrap_check_failed warning --meta '{"agent":"'$CTX_AGENT_NAME'","missing":"'"${MISSING}"'"}'
+  officeos bus log-event error bootstrap_check_failed warning --meta '{"agent":"'$CTX_AGENT_NAME'","missing":"'"${MISSING}"'"}'
   # Attempt to fix TOOLS.md by copying from template
   if echo "$MISSING" | grep -q "TOOLS.md"; then
     cp "${CTX_FRAMEWORK_ROOT}/templates/analyst/TOOLS.md" "${CTX_AGENT_DIR}/TOOLS.md" 2>/dev/null

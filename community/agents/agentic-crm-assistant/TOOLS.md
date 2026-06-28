@@ -6,15 +6,15 @@ This template is tool-agnostic. The setup skill detects and records whichever to
 
 | Need | Command |
 |---|---|
-| Reply to user | `cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID "<message>"` |
-| Create task | `cortextos bus create-task "<title>" --desc "<desc>"` |
-| Update task | `cortextos bus update-task <task_id> in_progress\|blocked\|completed` |
-| Complete task | `cortextos bus complete-task <task_id> --result "<summary>"` |
-| Attach deliverable | `cortextos bus save-output <task_id> <file> --label "<human-readable label>"` |
-| Request approval | `cortextos bus create-approval "<title>" <category> "<context>"` |
-| Log event | `cortextos bus log-event <category> <event> info --meta '<json>'` |
-| Heartbeat | `cortextos bus update-heartbeat "<status>"` |
-| Crons | `cortextos bus list-crons $CTX_AGENT_NAME`, `cortextos bus add-cron ...` |
+| Reply to user | `officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID "<message>"` |
+| Create task | `officeos bus create-task "<title>" --desc "<desc>"` |
+| Update task | `officeos bus update-task <task_id> in_progress\|blocked\|completed` |
+| Complete task | `officeos bus complete-task <task_id> --result "<summary>"` |
+| Attach deliverable | `officeos bus save-output <task_id> <file> --label "<human-readable label>"` |
+| Request approval | `officeos bus create-approval "<title>" <category> "<context>"` |
+| Log event | `officeos bus log-event <category> <event> info --meta '<json>'` |
+| Heartbeat | `officeos bus update-heartbeat "<status>"` |
+| Crons | `officeos bus list-crons $CTX_AGENT_NAME`, `officeos bus add-cron ...` |
 
 ## Optional Tool Classes
 

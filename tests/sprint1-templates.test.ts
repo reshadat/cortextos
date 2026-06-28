@@ -62,9 +62,9 @@ describe('Sprint 1: Template Completeness', () => {
       expect(content).toContain('ONBOARDING');
     });
 
-    it('CLAUDE.md references cortextos bus commands', () => {
+    it('CLAUDE.md references officeos bus commands', () => {
       const content = readFileSync(join(agentDir, 'CLAUDE.md'), 'utf-8');
-      expect(content).toContain('cortextos bus');
+      expect(content).toContain('officeos bus');
       expect(content).not.toContain('bash $CTX_FRAMEWORK_ROOT/bus/');
     });
 

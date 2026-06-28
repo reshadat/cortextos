@@ -14,17 +14,17 @@
 For the live roster:
 
 ```bash
-cortextos bus list-agents
+officeos bus list-agents
 ```
 
 ## Agent Health
 
 ```bash
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 ```
 
 ## Communication
 
-- Agent-to-agent: `cortextos bus send-message <agent> <priority> "<text>"`
-- Telegram to user: `cortextos bus send-telegram <chat_id> "<text>"`
-- Check inbox: `cortextos bus check-inbox`
+- Agent-to-agent: `officeos bus send-message <agent> <priority> "<text>"`
+- Telegram to user: `officeos bus send-telegram <chat_id> "<text>"`
+- Check inbox: `officeos bus check-inbox`

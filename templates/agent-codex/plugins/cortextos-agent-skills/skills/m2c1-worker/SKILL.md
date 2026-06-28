@@ -120,11 +120,11 @@ You are the M2C1 orchestrator. Follow the 12-phase workflow in plugins/cortextos
 ## Communication
 Send messages to <your-agent-name>:
 ```
-cortextos bus send-message <your-agent-name> normal '<message>'
+officeos bus send-message <your-agent-name> normal '<message>'
 ```
 Check inbox:
 ```
-cortextos bus check-inbox
+officeos bus check-inbox
 ```
 
 
@@ -136,11 +136,11 @@ If you detect the same tool call repeated 5 or more times consecutively (same to
 1. Stop immediately — do not make the call again
 2. Send a stuck alert to <your-agent-name>:
    ```
-   cortextos bus send-message <your-agent-name> urgent 'STUCK ALERT: Detected repeated tool call loop. Tool: <tool-name>. Args: <args summary>. Repeated 5 times. Pausing for supervisor guidance.'
+   officeos bus send-message <your-agent-name> urgent 'STUCK ALERT: Detected repeated tool call loop. Tool: <tool-name>. Args: <args summary>. Repeated 5 times. Pausing for supervisor guidance.'
    ```
 3. Wait for a bus message from <your-agent-name> before continuing. Check inbox:
    ```
-   cortextos bus check-inbox
+   officeos bus check-inbox
    ```
 4. Do not resume until the supervisor responds with instructions.
 
@@ -173,13 +173,13 @@ Before writing any code or creating any project files:
 3. Send PLAN.md content to <your-agent-name>:
    ```
    PLAN_CONTENT=$(cat PLAN.md)
-   cortextos bus send-message <your-agent-name> normal "PLAN READY FOR REVIEW
+   officeos bus send-message <your-agent-name> normal "PLAN READY FOR REVIEW
 
 $PLAN_CONTENT"
    ```
 4. Wait for approval. Check inbox every 60 seconds:
    ```
-   cortextos bus check-inbox
+   officeos bus check-inbox
    ```
    Do NOT write any source files until you receive a message containing `PLAN_APPROVED`.
 5. Once approved, read plugins/cortextos-agent-skills/skills/m2c1/orchestration-workflow.md and begin implementation.
@@ -207,12 +207,12 @@ cortextos spawn-worker "$WORKER_NAME" \
 
 The worker:
 - Runs in `$PROJECT_DIR` with `--dangerously-skip-permissions`
-- Gets `CTX_AGENT_NAME=$WORKER_NAME` so it can use `cortextos bus send-message` to reach you
+- Gets `CTX_AGENT_NAME=$WORKER_NAME` so it can use `officeos bus send-message` to reach you
 - Is tracked by the daemon: `cortextos list-workers` shows its status
 
 Log the spawn:
 ```bash
-cortextos bus log-event action worker_spawned info \
+officeos bus log-event action worker_spawned info \
   --meta '{"worker":"'$WORKER_NAME'","parent":"'$CTX_AGENT_NAME'","project":"'$PROJECT_DIR'"}'
 ```
 
@@ -229,7 +229,7 @@ cortextos bus log-event action worker_spawned info \
 
 ```bash
 # Via bus messages (worker sends updates)
-cortextos bus check-inbox
+officeos bus check-inbox
 
 # Via git (see what was built)
 cd $PROJECT_DIR && git log --oneline | head -10
@@ -243,7 +243,7 @@ ls $PROJECT_DIR/.claude/orchestration-*/
 The worker will send you questions via send-message. Answer them:
 
 ```bash
-cortextos bus send-message <worker-name> normal '<your answers>'
+officeos bus send-message <worker-name> normal '<your answers>'
 ```
 
 Base your answers on:
@@ -268,12 +268,12 @@ The worker will send a `PLAN READY FOR REVIEW` message with the full PLAN.md con
 
 **To approve:**
 ```bash
-cortextos bus send-message <worker-name> normal 'PLAN_APPROVED. Proceed with implementation.'
+officeos bus send-message <worker-name> normal 'PLAN_APPROVED. Proceed with implementation.'
 ```
 
 **To request changes:**
 ```bash
-cortextos bus send-message <worker-name> normal 'PLAN_REJECTED. Revise: <specific feedback>. Resend when updated.'
+officeos bus send-message <worker-name> normal 'PLAN_REJECTED. Revise: <specific feedback>. Resend when updated.'
 ```
 
 The worker will not write any source files until it receives `PLAN_APPROVED`. Do not leave it waiting — review promptly.
@@ -282,7 +282,7 @@ The worker will not write any source files until it receives `PLAN_APPROVED`. Do
 
 If the worker appears stuck (no bus messages, no new git commits > 15 minutes):
 
-1. Send a bus message: `cortextos bus send-message <worker-name> normal 'Continue with the M2C1 workflow. What phase are you on?'`
+1. Send a bus message: `officeos bus send-message <worker-name> normal 'Continue with the M2C1 workflow. What phase are you on?'`
 2. Check git: `cd $PROJECT_DIR && git log --oneline | head -5`
 3. Inject directly into the PTY if still unresponsive: `cortextos inject-worker <worker-name> "Continue with the M2C1 workflow. What phase are you on?"`
 4. Check worker status: `cortextos list-workers`
@@ -304,15 +304,15 @@ The worker self-monitors for repeated tool call loops and will send you a `STUCK
 
 ```bash
 # If the approach is wrong — redirect:
-cortextos bus send-message <worker-name> normal 'Understood. Stop that approach. Instead: <alternative>. Continue from there.'
+officeos bus send-message <worker-name> normal 'Understood. Stop that approach. Instead: <alternative>. Continue from there.'
 
 # If it is a transient error — tell worker to skip:
-cortextos bus send-message <worker-name> normal 'Skip that step for now and continue to the next task. We will revisit.'
+officeos bus send-message <worker-name> normal 'Skip that step for now and continue to the next task. We will revisit.'
 
 # If you need to inspect first:
 cd $PROJECT_DIR && git log --oneline | head -5
 # Then respond with a specific directive
-cortextos bus send-message <worker-name> normal '<directive>'
+officeos bus send-message <worker-name> normal '<directive>'
 ```
 
 **Do not send a generic 'continue' message.** The worker is paused because it is genuinely stuck — it needs a specific direction change, not permission to loop again.
@@ -350,7 +350,7 @@ cp "$CTX_FRAMEWORK_ROOT/templates/agent-codex/plugins/cortextos-agent-skills/ski
    "$PROJECT_DIR/plugins/cortextos-agent-skills/skills/agent-browser/SKILL.md"
 
 # 2. Worker can use agent-browser via Bash (no MCP restart required):
-cortextos bus send-message <worker-name> normal \
+officeos bus send-message <worker-name> normal \
   'agent-browser is available globally. Test by running: agent-browser open https://example.com && agent-browser get title && agent-browser close. Use snapshot-then-ref pattern for AI-driven flows. The plugins/cortextos-agent-skills/skills/agent-browser/SKILL.md was added — invoke `agent-browser skills get <name>` for current per-version command syntax.'
 ```
 
@@ -377,7 +377,7 @@ EOF
 chmod 600 "$PROJECT_DIR/.env"
 
 # Tell the worker via bus to source it
-cortextos bus send-message <worker-name> normal 'Source .env in your project dir before running any API calls.'
+officeos bus send-message <worker-name> normal 'Source .env in your project dir before running any API calls.'
 ```
 
 ### Skills for the Worker
@@ -399,7 +399,7 @@ Once the worker is past discovery and tool setup, it should run autonomously:
 
 Register a daemon cron on the worker so it polls its task queue every 10 minutes:
 ```bash
-cortextos bus add-cron <worker-name> task-poll 10m \
+officeos bus add-cron <worker-name> task-poll 10m \
   'Check START.md for pending tasks. If not working on a task, pick the next one.'
 ```
 
@@ -411,7 +411,7 @@ This survives worker restart, works on both `claude-code` and `codex-app-server`
 Check in every 30-60 minutes:
 ```bash
 # Check bus for worker updates
-cortextos bus check-inbox
+officeos bus check-inbox
 
 # Check git progress
 cd $PROJECT_DIR && git log --oneline | head -5
@@ -464,7 +464,7 @@ The worker's last phase should be comprehensive testing. Verify:
 
 If tests fail, tell the worker:
 ```bash
-cortextos bus send-message <worker-name> normal \
+officeos bus send-message <worker-name> normal \
   'E2E test failed: <specific failure>. Fix it and re-test.'
 ```
 
@@ -475,11 +475,11 @@ cortextos bus send-message <worker-name> normal \
 ### On Success
 ```bash
 # Log the milestone
-cortextos bus log-event milestone m2c1_complete info \
+officeos bus log-event milestone m2c1_complete info \
   --meta '{"project":"<name>","location":"<path>","tasks":<count>,"tests":<count>}'
 
 # Notify orchestrator
-cortextos bus send-message $CTX_ORCHESTRATOR_AGENT normal \
+officeos bus send-message $CTX_ORCHESTRATOR_AGENT normal \
   'M2C1 build complete: <project>. Location: <path>. <summary>'
 
 # Clean up worker inbox
@@ -492,12 +492,12 @@ cortextos terminate-worker "$WORKER_NAME"
 ### On Failure
 ```bash
 # Log what happened
-cortextos bus log-event action m2c1_failed info \
+officeos bus log-event action m2c1_failed info \
   --meta '{"project":"<name>","phase":"<where it failed>","reason":"<why>"}'
 
 # Keep the directory for debugging
 # Report to orchestrator
-cortextos bus send-message $CTX_ORCHESTRATOR_AGENT normal \
+officeos bus send-message $CTX_ORCHESTRATOR_AGENT normal \
   'M2C1 build FAILED: <project>. Failed at phase <N>. Reason: <why>. Directory preserved at <path>.'
 ```
 

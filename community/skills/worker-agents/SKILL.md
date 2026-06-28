@@ -57,7 +57,7 @@ Before spawning, answer:
 ```bash
 cortextos spawn-worker <worker-name> \
   --dir <absolute-path-to-project-dir> \
-  --prompt "Read AGENTS.md for your task. Deliverables: <list>. When done: cortextos bus send-message $CTX_AGENT_NAME normal 'Done: <summary>'" \
+  --prompt "Read AGENTS.md for your task. Deliverables: <list>. When done: officeos bus send-message $CTX_AGENT_NAME normal 'Done: <summary>'" \
   --parent $CTX_AGENT_NAME
 ```
 
@@ -73,13 +73,13 @@ A good worker task prompt includes:
 - Exact deliverables (specific files or outputs to produce)
 - What NOT to touch (files other agents own)
 - Working directory scope
-- How to communicate back (`cortextos bus send-message <parent> normal '<update>'`)
+- How to communicate back (`officeos bus send-message <parent> normal '<update>'`)
 - Completion signal ("when done, send me a summary")
 
 ### Step 4: Log the Spawn
 
 ```bash
-cortextos bus log-event action worker_spawned info \
+officeos bus log-event action worker_spawned info \
   --meta '{"worker":"<worker-name>","parent":"'$CTX_AGENT_NAME'","task":"<title>"}'
 ```
 
@@ -88,7 +88,7 @@ cortextos bus log-event action worker_spawned info \
 Workers communicate back via the bus. Check your inbox:
 
 ```bash
-cortextos bus check-inbox
+officeos bus check-inbox
 ```
 
 Check all worker statuses:
@@ -114,7 +114,7 @@ cortextos inject-worker <worker-name> "Continue with phase 3. What's blocking yo
 cortextos terminate-worker <worker-name>
 
 # Log completion
-cortextos bus log-event action worker_completed info \
+officeos bus log-event action worker_completed info \
   --meta '{"worker":"<worker-name>","deliverables":"<summary>"}'
 ```
 

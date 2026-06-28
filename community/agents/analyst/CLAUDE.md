@@ -19,9 +19,9 @@ If `ONBOARDED`: continue with the session start protocol below.
 
 1. Read all bootstrap files: IDENTITY.md, SOUL.md, GUARDRAILS.md, GOALS.md, MEMORY.md, USER.md, SYSTEM.md
 2. Read org knowledge base: `../../knowledge.md` (shared facts all agents need)
-3. Discover available skills: `cortextos bus list-skills --format text`
-4. Discover active agents: `cortextos bus list-agents` (live roster from enabled-agents.json)
-5. **Crons are daemon-managed** — use `cortextos bus list-crons $CTX_AGENT_NAME` to see what's scheduled (no manual restore needed).
+3. Discover available skills: `officeos bus list-skills --format text`
+4. Discover active agents: `officeos bus list-agents` (live roster from enabled-agents.json)
+5. **Crons are daemon-managed** — use `officeos bus list-crons $CTX_AGENT_NAME` to see what's scheduled (no manual restore needed).
 6. Check today's memory file (`memory/YYYY-MM-DD.md`) for any in-progress work
 7. Check inbox for pending messages
 8. **Goals check**: Read `goals.json` — if `focus` and `goals` are both empty, message your orchestrator: "I'm online but have no goals set. Can you send me today's goals?" Then read GOALS.md for any pre-set goals.
@@ -31,10 +31,10 @@ If `ONBOARDED`: continue with the session start protocol below.
 
 Every significant piece of work gets a task. See `.claude/skills/tasks/SKILL.md` for full reference.
 
-1. **Create**: `cortextos bus create-task "<title>" --desc "<desc>"`
-2. **Start**: `cortextos bus update-task <id> in_progress`
-3. **Complete**: `cortextos bus complete-task <id> --result "[summary]"`
-4. **Log KPI**: `cortextos bus log-event action task_completed info --meta '{"task_id":"ID"}'`
+1. **Create**: `officeos bus create-task "<title>" --desc "<desc>"`
+2. **Start**: `officeos bus update-task <id> in_progress`
+3. **Complete**: `officeos bus complete-task <id> --result "[summary]"`
+4. **Log KPI**: `officeos bus log-event action task_completed info --meta '{"task_id":"ID"}'`
 
 CONSEQUENCE: Tasks without creation = invisible on dashboard. Your effectiveness score will be 0%.
 TARGET: Every significant piece of work (>10 minutes) = at least 1 task created.
@@ -66,8 +66,8 @@ TARGET: >= 3 memory entries per session.
 Log significant events so the Activity feed shows what's happening.
 
 ```bash
-cortextos bus log-event action session_start info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
-cortextos bus log-event action task_completed info --meta '{"task_id":"<id>","agent":"'$CTX_AGENT_NAME'"}'
+officeos bus log-event action session_start info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
+officeos bus log-event action task_completed info --meta '{"task_id":"<id>","agent":"'$CTX_AGENT_NAME'"}'
 ```
 
 CONSEQUENCE: Events without logging are invisible in the Activity feed.
@@ -82,7 +82,7 @@ Messages arrive in real time via the fast-checker daemon:
 ```
 === TELEGRAM from <name> (chat_id:<id>) ===
 <text>
-Reply using: cortextos bus send-telegram <chat_id> "<reply>"
+Reply using: officeos bus send-telegram <chat_id> "<reply>"
 ```
 
 Photos include a `local_file:` path. Callbacks include `callback_data:` and `message_id:`. Process all immediately and reply using the command shown.
@@ -96,10 +96,10 @@ Photos include a `local_file:` path. Callbacks include `callback_data:` and `mes
 ```
 === AGENT MESSAGE from <agent> [msg_id: <id>] ===
 <text>
-Reply using: cortextos bus send-message <agent> normal '<reply>' <msg_id>
+Reply using: officeos bus send-message <agent> normal '<reply>' <msg_id>
 ```
 
-Always include `msg_id` as reply_to (auto-ACKs the original). Un-ACK'd messages redeliver after 5 min. For no-reply messages: `cortextos bus ack-inbox <msg_id>`
+Always include `msg_id` as reply_to (auto-ACKs the original). Un-ACK'd messages redeliver after 5 min. For no-reply messages: `officeos bus ack-inbox <msg_id>`
 
 ---
 
@@ -107,12 +107,12 @@ Always include `msg_id` as reply_to (auto-ACKs the original). Un-ACK'd messages 
 
 Crons are **daemon-managed** — loaded from `crons.json` on daemon start, no session restoration needed.
 
-**List:** `cortextos bus list-crons $CTX_AGENT_NAME`
-**Add:** `cortextos bus add-cron $CTX_AGENT_NAME <name> <interval> "<prompt>"`
-**Remove:** `cortextos bus remove-cron $CTX_AGENT_NAME <name>`
-**Update interval:** `cortextos bus update-cron $CTX_AGENT_NAME <name> --interval <new>`
-**Test fire:** `cortextos bus test-cron-fire $CTX_AGENT_NAME <name>`
-**Execution history:** `cortextos bus get-cron-log $CTX_AGENT_NAME [name]`
+**List:** `officeos bus list-crons $CTX_AGENT_NAME`
+**Add:** `officeos bus add-cron $CTX_AGENT_NAME <name> <interval> "<prompt>"`
+**Remove:** `officeos bus remove-cron $CTX_AGENT_NAME <name>`
+**Update interval:** `officeos bus update-cron $CTX_AGENT_NAME <name> --interval <new>`
+**Test fire:** `officeos bus test-cron-fire $CTX_AGENT_NAME <name>`
+**Execution history:** `officeos bus get-cron-log $CTX_AGENT_NAME [name]`
 
 Do NOT use `/loop` or CronCreate for persistent scheduling — those are session-only and will not survive a restart. Use the `cron-management` skill for full CRUD guidance.
 
@@ -120,8 +120,8 @@ Do NOT use `/loop` or CronCreate for persistent scheduling — those are session
 
 ## Restart
 
-**Soft** (preserves history): `cortextos bus self-restart --reason "why"`
-**Hard** (fresh session): `cortextos bus hard-restart --reason "why"`
+**Soft** (preserves history): `officeos bus self-restart --reason "why"`
+**Hard** (fresh session): `officeos bus hard-restart --reason "why"`
 
 When the user asks to restart, ALWAYS ask them first: "Fresh restart or continue with conversation history?" Do NOT restart until they specify which type.
 
@@ -135,7 +135,7 @@ If `ecosystem.local_version_control.enabled` is true in your config.json, run th
 
 ```bash
 # Layer 1: auto-commit.sh stages files with safety checks
-RESULT=$(cortextos bus auto-commit)
+RESULT=$(officeos bus auto-commit)
 
 # Layer 2: YOU review the staged diff
 # - Read the diff: git diff --cached
@@ -155,7 +155,7 @@ If `ecosystem.upstream_sync.enabled` is true in your config.json, check for fram
 
 ```bash
 # Check for updates (never auto-merges)
-RESULT=$(cortextos bus check-upstream)
+RESULT=$(officeos bus check-upstream)
 ```
 
 If updates are available:
@@ -164,7 +164,7 @@ If updates are available:
 3. Explain EVERY change in plain English to the user via Telegram
 4. Lead with the most impactful change (security fixes > bug fixes > features)
 5. WAIT for explicit user approval before applying
-6. Only after "yes": `cortextos bus check-upstream --apply`
+6. Only after "yes": `officeos bus check-upstream --apply`
 7. Verify system health after merge
 
 **SAFETY RULES:**
@@ -181,12 +181,12 @@ If updates are available:
 If `ecosystem.catalog_browse.enabled` is true in your config.json, scan the catalog on your configured schedule:
 
 ```bash
-RESULT=$(cortextos bus browse-catalog)
-RESULT=$(cortextos bus browse-catalog --type skill --tag email)
-RESULT=$(cortextos bus browse-catalog --search "content")
+RESULT=$(officeos bus browse-catalog)
+RESULT=$(officeos bus browse-catalog --type skill --tag email)
+RESULT=$(officeos bus browse-catalog --search "content")
 ```
 
-When you find something relevant: surface ONE suggestion at a time via Telegram. If they say "install it": `cortextos bus install-community-item <name>`. If they decline, don't suggest the same item for 30 days.
+When you find something relevant: surface ONE suggestion at a time via Telegram. If they say "install it": `officeos bus install-community-item <name>`. If they decline, don't suggest the same item for 30 days.
 
 ---
 
@@ -195,9 +195,9 @@ When you find something relevant: surface ONE suggestion at a time via Telegram.
 If `ecosystem.community_publish.enabled` is true in your config.json, periodically check for custom skills running successfully 2+ weeks. If user agrees to share:
 
 ```bash
-cortextos bus prepare-submission <type> <source-path> <item-name>
+officeos bus prepare-submission <type> <source-path> <item-name>
 # Review output for PII, clean staging dir, show user final version
-cortextos bus submit-community-item <name> <type> "<description>"
+officeos bus submit-community-item <name> <type> "<description>"
 ```
 
 **PII is critical.** Automated scan + your manual review of every file.
@@ -240,11 +240,11 @@ cortextos bus submit-community-item <name> <type> "<description>"
 ### Communication
 | Action | Command |
 |--------|---------|
-| Send Telegram | `cortextos bus send-telegram <chat_id> "<msg>"` |
-| Send photo | `cortextos bus send-telegram <chat_id> "<caption>" --image /path` |
-| Send to agent | `cortextos bus send-message <agent> <priority> '<msg>' [reply_to]` |
-| Check inbox | `cortextos bus check-inbox` |
-| ACK message | `cortextos bus ack-inbox <msg_id>` |
+| Send Telegram | `officeos bus send-telegram <chat_id> "<msg>"` |
+| Send photo | `officeos bus send-telegram <chat_id> "<caption>" --image /path` |
+| Send to agent | `officeos bus send-message <agent> <priority> '<msg>' [reply_to]` |
+| Check inbox | `officeos bus check-inbox` |
+| ACK message | `officeos bus ack-inbox <msg_id>` |
 
 ### Logs
 | Log | Path |
@@ -275,14 +275,14 @@ cortextos bus submit-community-item <name> <type> "<description>"
 ### Nightly Metrics Collection
 Run the metrics collector on your nightly cron:
 ```bash
-cortextos bus collect-metrics
+officeos bus collect-metrics
 ```
 Review the output at `~/.cortextos/$CTX_INSTANCE_ID/analytics/reports/latest.json` and report anomalies to orchestrator.
 
 ### Health Monitoring
 Every heartbeat cycle, check system health:
 ```bash
-cortextos bus read-all-heartbeats --format text
+officeos bus read-all-heartbeats --format text
 ```
 
 **Alert orchestrator if:**

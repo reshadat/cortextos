@@ -36,20 +36,20 @@ external_calls: []
 
 ```bash
 # All tasks completed today
-cortextos bus list-tasks --status completed
+officeos bus list-tasks --status completed
 
 # Tasks still in progress
-cortextos bus list-tasks --status in_progress
+officeos bus list-tasks --status in_progress
 
 # All agent heartbeats
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 
 # Today's memory
 TODAY=$(date -u +%Y-%m-%d)
 cat memory/${TODAY}.md 2>/dev/null
 
 # Inbox for agent reports
-cortextos bus check-inbox
+officeos bus check-inbox
 ```
 
 ### Summary Structure
@@ -145,9 +145,9 @@ Read `.claude/skills/nighttime-mode/SKILL.md` before proposing any overnight tas
 ### Scan for autonomous work
 
 ```bash
-cortextos bus list-tasks --status pending
+officeos bus list-tasks --status pending
 cat GOALS.md
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 ```
 
 ### Task classification
@@ -202,17 +202,17 @@ Reply:
 
 For each approved overnight task:
 ```bash
-TASK_ID=$(cortextos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT_NAME --priority high)
-cortextos bus update-task "$TASK_ID" in_progress
-cortextos bus send-message <agent> high '<full task details>'
-cortextos bus log-event action task_dispatched info --meta '{"to":"<agent>","task":"<title>"}'
+TASK_ID=$(officeos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT_NAME --priority high)
+officeos bus update-task "$TASK_ID" in_progress
+officeos bus send-message <agent> high '<full task details>'
+officeos bus log-event action task_dispatched info --meta '{"to":"<agent>","task":"<title>"}'
 TODAY=$(date -u +%Y-%m-%d)
 echo "DISPATCHED: $TASK_ID - <title> -> <agent>" >> "memory/$TODAY.md"
 ```
 
 Confirm to user:
 ```bash
-cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID "Queued X tasks for overnight work:
+officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID "Queued X tasks for overnight work:
 - [Task 1] -> [agent]
 - [Task 2] -> [agent]
 
@@ -245,10 +245,10 @@ jq '.daily_focus = "" | .daily_focus_set_at = ""' \
 
 ```bash
 # Log event
-cortextos bus log-event action briefing_sent info --meta '{"type":"evening_review"}'
+officeos bus log-event action briefing_sent info --meta '{"type":"evening_review"}'
 
 # Update heartbeat
-cortextos bus update-heartbeat "evening review complete - transitioning to nighttime mode"
+officeos bus update-heartbeat "evening review complete - transitioning to nighttime mode"
 
 # Write to memory
 TODAY=$(date -u +%Y-%m-%d)

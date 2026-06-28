@@ -33,7 +33,7 @@ Every entry in TOOLS.md needs:
 
 ## Adding a New Bus Script
 
-Bus scripts live in `$CTX_FRAMEWORK_ROOT/bus/` and are invoked as `cortextos bus <command>`.
+Bus scripts live in `$CTX_FRAMEWORK_ROOT/bus/` and are invoked as `officeos bus <command>`.
 
 When a new wrapper is added, add an entry in the `## Bus Scripts` section of TOOLS.md:
 
@@ -42,7 +42,7 @@ When a new wrapper is added, add an entry in the `## Bus Scripts` section of TOO
 Brief description of what it does.
 
 ```bash
-cortextos bus new-command <required_arg> [--optional flag]
+officeos bus new-command <required_arg> [--optional flag]
 ```
 
 - **required_arg**: What it is
@@ -50,7 +50,7 @@ cortextos bus new-command <required_arg> [--optional flag]
 
 Example:
 ```bash
-cortextos bus new-command "my value" --flag result
+officeos bus new-command "my value" --flag result
 ```
 ```
 
@@ -84,7 +84,7 @@ Add a dedicated section at the bottom of TOOLS.md under the `## Third-Party Tool
 
 1. Notify the orchestrator so it can update its own TOOLS.md if the tool is org-wide:
 ```bash
-cortextos bus send-message "$CTX_ORCHESTRATOR_AGENT" normal "New tool registered in TOOLS.md: <tool name>. Update your TOOLS.md if applicable."
+officeos bus send-message "$CTX_ORCHESTRATOR_AGENT" normal "New tool registered in TOOLS.md: <tool name>. Update your TOOLS.md if applicable."
 ```
 
 2. If it is a shared tool all agents should have, the orchestrator should broadcast to all agents.

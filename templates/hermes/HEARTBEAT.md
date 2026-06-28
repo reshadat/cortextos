@@ -6,7 +6,7 @@ Skipping steps = broken system.
 ## Step 1: Update heartbeat (DO THIS FIRST)
 
 ```bash
-cortextos bus update-heartbeat "<1-sentence summary of current work>"
+officeos bus update-heartbeat "<1-sentence summary of current work>"
 ```
 
 If this fails, your agent shows as DEAD on the dashboard. Fix it before anything else.
@@ -20,12 +20,12 @@ Both are required every cycle. Skipping Step 1 leaves your dashboard view stale 
 ## Step 2: Check inbox
 
 ```bash
-cortextos bus check-inbox
+officeos bus check-inbox
 ```
 
 Process ALL messages. ACK every single one:
 ```bash
-cortextos bus ack-inbox "<message_id>"
+officeos bus ack-inbox "<message_id>"
 ```
 
 Un-ACK'd messages are re-delivered in 5 minutes.
@@ -34,8 +34,8 @@ Target: 0 un-ACK'd messages after this step.
 ## Step 3: Check task queue
 
 ```bash
-cortextos bus list-tasks --agent $CTX_AGENT_NAME --status pending
-cortextos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
+officeos bus list-tasks --agent $CTX_AGENT_NAME --status pending
+officeos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
 ```
 
 - Pending tasks: pick the highest priority one and start it
@@ -45,7 +45,7 @@ cortextos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
 ## Step 4: Log heartbeat event
 
 ```bash
-cortextos bus log-event heartbeat agent_heartbeat info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
+officeos bus log-event heartbeat agent_heartbeat info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
 ```
 
 ## Step 5: Write daily memory
@@ -66,7 +66,7 @@ MEMORY
 ## Step 6: Re-index memory to KB
 
 ```bash
-cortextos bus kb-ingest ./MEMORY.md ./memory/$(date -u +%Y-%m-%d).md \
+officeos bus kb-ingest ./MEMORY.md ./memory/$(date -u +%Y-%m-%d).md \
   --org $CTX_ORG --agent $CTX_AGENT_NAME --scope private --collection memory-$CTX_AGENT_NAME --force
 ```
 
@@ -74,7 +74,7 @@ cortextos bus kb-ingest ./MEMORY.md ./memory/$(date -u +%Y-%m-%d).md \
 
 Read GOALS.md for any new objectives. If goals changed, create tasks:
 ```bash
-cortextos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT_NAME
+officeos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT_NAME
 ```
 
 ## Step 8: Resume work
@@ -82,9 +82,9 @@ cortextos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT
 Pick your highest priority task and work on it.
 
 ```bash
-cortextos bus update-task "<task_id>" in_progress
+officeos bus update-task "<task_id>" in_progress
 # ... do the work ...
-cortextos bus complete-task "<task_id>" "<summary of what was produced>"
+officeos bus complete-task "<task_id>" "<summary of what was produced>"
 ```
 
 ---

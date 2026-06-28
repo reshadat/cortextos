@@ -14,7 +14,7 @@ Use these to detect and surface problems before they become crises.
 Find tasks that have been in-progress too long or pending without action:
 
 ```bash
-cortextos bus check-stale-tasks
+officeos bus check-stale-tasks
 ```
 
 Flags:
@@ -33,13 +33,13 @@ Detect agents whose GOALS.md hasn't been updated recently:
 
 ```bash
 # Default threshold (7 days)
-cortextos bus check-goal-staleness
+officeos bus check-goal-staleness
 
 # Custom threshold
-cortextos bus check-goal-staleness --threshold 3
+officeos bus check-goal-staleness --threshold 3
 
 # JSON output for parsing
-cortextos bus check-goal-staleness --json
+officeos bus check-goal-staleness --json
 ```
 
 **When to run:** Weekly, or when an agent seems directionless.
@@ -51,7 +51,7 @@ cortextos bus check-goal-staleness --json
 Check for human-assigned tasks that are waiting too long:
 
 ```bash
-cortextos bus check-human-tasks
+officeos bus check-human-tasks
 ```
 
 Sends reminders for overdue human tasks. Run daily (orchestrator) or when blocked waiting on a human.
@@ -63,10 +63,10 @@ Sends reminders for overdue human tasks. Run daily (orchestrator) or when blocke
 Read all agent heartbeats at once:
 
 ```bash
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 
 # JSON for parsing
-cortextos bus read-all-heartbeats --format json
+officeos bus read-all-heartbeats --format json
 ```
 
 Stale threshold: agent hasn't updated in >6h = investigate.
@@ -78,7 +78,7 @@ Stale threshold: agent hasn't updated in >6h = investigate.
 Collect and record system metrics snapshot:
 
 ```bash
-cortextos bus collect-metrics
+officeos bus collect-metrics
 ```
 
 Run nightly (analyst cron). Captures task counts, completion rates, agent activity.
@@ -91,16 +91,16 @@ Run this during morning review or when something feels off:
 
 ```bash
 echo "=== Fleet Heartbeats ==="
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 
 echo "=== Stale Tasks ==="
-cortextos bus check-stale-tasks
+officeos bus check-stale-tasks
 
 echo "=== Stale Goals ==="
-cortextos bus check-goal-staleness
+officeos bus check-goal-staleness
 
 echo "=== Human Tasks ==="
-cortextos bus check-human-tasks
+officeos bus check-human-tasks
 ```
 
 Surface any findings to the user via Telegram if critical.

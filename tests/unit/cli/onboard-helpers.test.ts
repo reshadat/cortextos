@@ -66,12 +66,12 @@ describe('onboard helpers', () => {
       permissions: { allow: ['Bash', 'Read'], defaultMode: 'bypassPermissions' },
       hooks: {
         PermissionRequest: [
-          { matcher: 'ExitPlanMode', hooks: [{ type: 'command', command: 'cortextos bus hook-planmode-telegram', timeout: 1860 }] },
-          { hooks: [{ type: 'command', command: 'cortextos bus hook-permission-telegram', timeout: 1860 }] },
+          { matcher: 'ExitPlanMode', hooks: [{ type: 'command', command: 'officeos bus hook-planmode-telegram', timeout: 1860 }] },
+          { hooks: [{ type: 'command', command: 'officeos bus hook-permission-telegram', timeout: 1860 }] },
         ],
         PreToolUse: [
           { hooks: [{ type: 'command', command: 'officeos bus hook-loop-detector', timeout: 5 }] },
-          { matcher: 'AskUserQuestion', hooks: [{ type: 'command', command: 'cortextos bus hook-ask-telegram', timeout: 10 }] },
+          { matcher: 'AskUserQuestion', hooks: [{ type: 'command', command: 'officeos bus hook-ask-telegram', timeout: 10 }] },
         ],
       },
     };

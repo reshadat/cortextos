@@ -10,7 +10,7 @@ Daily snapshot of all agent workspace changes. Runs via auto-commit.sh with a tw
 
 ## When to Run
 
-- Daily cron (configured via `cortextos bus add-cron`)
+- Daily cron (configured via `officeos bus add-cron`)
 - After major agent work sessions
 - Before any destructive operations
 
@@ -19,7 +19,7 @@ Daily snapshot of all agent workspace changes. Runs via auto-commit.sh with a tw
 ### Step 1: Run auto-commit.sh
 
 ```bash
-RESULT=$(cortextos bus auto-commit)
+RESULT=$(officeos bus auto-commit)
 ```
 
 This stages files with safety checks:

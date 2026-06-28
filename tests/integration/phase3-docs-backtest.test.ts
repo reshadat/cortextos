@@ -155,7 +155,7 @@ describe('Scenario 1: New user onboarding (ONBOARDING.md Step 9)', () => {
     const doc = readDoc(ONBOARDING_MD);
 
     // The doc must prescribe bus add-cron as the persistent cron creation command
-    expect(doc).toContain('cortextos bus add-cron');
+    expect(doc).toContain('officeos bus add-cron');
 
     // Must describe the command signature
     expect(doc).toMatch(/bus add-cron\s+\$CTX_AGENT_NAME\s+<workflow-name>\s+<interval>\s+<prompt>/);
@@ -173,7 +173,7 @@ describe('Scenario 1: New user onboarding (ONBOARDING.md Step 9)', () => {
     // Look for a concrete interval shorthand in an add-cron line (not just <interval>)
     const lines = doc.split('\n');
     const concreteCronLines = lines.filter(l =>
-      /cortextos bus add-cron/.test(l) &&
+      /officeos bus add-cron/.test(l) &&
       /[0-9]+[mhd]|"[0-9*\/]+ /.test(l) &&
       !/<interval>|<name>|<workflow-name>/.test(l)
     );
@@ -189,7 +189,7 @@ describe('Scenario 1: New user onboarding (ONBOARDING.md Step 9)', () => {
     const agentStateDir = join(tmpRoot, CRONS_DIR, agent);
     mkdirSync(agentStateDir, { recursive: true });
 
-    // Doc says: run `cortextos bus add-cron $CTX_AGENT_NAME <workflow-name> <interval> <prompt>`
+    // Doc says: run `officeos bus add-cron $CTX_AGENT_NAME <workflow-name> <interval> <prompt>`
     // We call the underlying addCron API directly (same code path as bus CLI)
     const cronDef: CronDefinition = {
       name: 'heartbeat',
@@ -292,7 +292,7 @@ describe('Scenario 2: Existing user upgrade (CRONS_MIGRATION_GUIDE.md)', () => {
 
   it('2c: migration guide provides manual migration command', () => {
     const doc = readDoc(CRONS_MIGRATION_GUIDE);
-    expect(doc).toContain('cortextos bus migrate-crons');
+    expect(doc).toContain('officeos bus migrate-crons');
     expect(doc).toContain('--force');
   });
 
@@ -445,21 +445,21 @@ describe('Scenario 3: Operator cron CRUD via cron-management/SKILL.md', () => {
     const doc = readDoc(SKILL_MD);
 
     // Must document add-cron command
-    expect(doc).toContain('cortextos bus add-cron');
+    expect(doc).toContain('officeos bus add-cron');
     // Must show interval form
     expect(doc).toMatch(/bus add-cron.*heartbeat.*[0-9]+h/);
     // Must show cron expression form
     expect(doc).toMatch(/bus add-cron.*"0 [0-9]+ \*/);
     // Must document list-crons
-    expect(doc).toContain('cortextos bus list-crons');
+    expect(doc).toContain('officeos bus list-crons');
     // Must document remove-cron
-    expect(doc).toContain('cortextos bus remove-cron');
+    expect(doc).toContain('officeos bus remove-cron');
     // Must document update-cron
-    expect(doc).toContain('cortextos bus update-cron');
+    expect(doc).toContain('officeos bus update-cron');
     // Must document test-cron-fire
-    expect(doc).toContain('cortextos bus test-cron-fire');
+    expect(doc).toContain('officeos bus test-cron-fire');
     // Must document get-cron-log
-    expect(doc).toContain('cortextos bus get-cron-log');
+    expect(doc).toContain('officeos bus get-cron-log');
     // Must have a troubleshooting section
     expect(doc).toContain('Troubleshooting');
   });
@@ -468,7 +468,7 @@ describe('Scenario 3: Operator cron CRUD via cron-management/SKILL.md', () => {
     const doc = readDoc(SKILL_MD);
 
     // Extract lines that look like bus add-cron invocations
-    const addCronLines = doc.split('\n').filter(l => /cortextos bus add-cron/.test(l));
+    const addCronLines = doc.split('\n').filter(l => /officeos bus add-cron/.test(l));
     expect(addCronLines.length, 'Skill doc must have multiple add-cron examples').toBeGreaterThan(2);
 
     // Every example should have an agent placeholder + a name + a schedule
@@ -634,7 +634,7 @@ describe('Scenario 4: Support troubleshooting missing crons', () => {
     expect(troubleshootingSection).toContain('get-cron-log');
 
     // Must cover: manual re-run path
-    expect(troubleshootingSection).toContain('cortextos bus migrate-crons');
+    expect(troubleshootingSection).toContain('officeos bus migrate-crons');
   });
 
   it('4b: cron-management/SKILL.md Troubleshooting covers cron-not-firing + just-added-cron', () => {

@@ -42,9 +42,9 @@ echo 'NEW_KEY=value' >> "$ORG_ENV"
 chmod 600 "$ORG_ENV"
 
 # 3. Restart all running agents so they pick it up
-cortextos bus list-agents --format json | jq -r '.[].name' | while read agent; do
+officeos bus list-agents --format json | jq -r '.[].name' | while read agent; do
   echo "Restarting $agent..."
-  cortextos bus send-message "$agent" high "hard-restart" "new shared secret added: NEW_KEY"
+  officeos bus send-message "$agent" high "hard-restart" "new shared secret added: NEW_KEY"
   sleep 10
 done
 ```
@@ -62,7 +62,7 @@ echo 'MY_KEY=value' >> "$AGENT_ENV"
 chmod 600 "$AGENT_ENV"
 
 # 3. Restart THIS agent only
-cortextos bus self-restart --reason "new agent secret added: MY_KEY"
+officeos bus self-restart --reason "new agent secret added: MY_KEY"
 ```
 
 ---
@@ -107,14 +107,14 @@ ORG_ENV="$CTX_FRAMEWORK_ROOT/orgs/$CTX_ORG/secrets.env"
 # Update the value in the file (edit KEY_NAME line)
 
 # Restart all agents in sequence (stagger to avoid gaps)
-cortextos bus list-agents --format json | jq -r '.[].name' | while read agent; do
+officeos bus list-agents --format json | jq -r '.[].name' | while read agent; do
   echo "Restarting $agent..."
-  cortextos bus send-message "$agent" high "hard-restart" "secret rotation: KEY_NAME"
+  officeos bus send-message "$agent" high "hard-restart" "secret rotation: KEY_NAME"
   sleep 30
 done
 
 # Log the rotation
-cortextos bus log-event action secret_rotated info \
+officeos bus log-event action secret_rotated info \
   --meta "{\"key\":\"KEY_NAME\",\"scope\":\"org\",\"agent\":\"$CTX_AGENT_NAME\"}"
 ```
 
@@ -126,9 +126,9 @@ AGENT_ENV="$CTX_FRAMEWORK_ROOT/orgs/$CTX_ORG/agents/AGENT_NAME/.env"
 chmod 600 "$AGENT_ENV"
 
 # Hard-restart that agent (not soft — PTY must rebuild env)
-cortextos bus send-message AGENT_NAME high "hard-restart" "secret rotation: KEY_NAME"
+officeos bus send-message AGENT_NAME high "hard-restart" "secret rotation: KEY_NAME"
 
-cortextos bus log-event action secret_rotated info \
+officeos bus log-event action secret_rotated info \
   --meta "{\"key\":\"KEY_NAME\",\"scope\":\"agent\",\"agent\":\"AGENT_NAME\"}"
 ```
 

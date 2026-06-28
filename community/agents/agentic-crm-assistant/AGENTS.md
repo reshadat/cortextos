@@ -16,18 +16,18 @@ If `NEEDS_ONBOARDING`, read `.claude/skills/agentic-crm-setup/SKILL.md` and comp
 
 1. Send boot message:
    ```bash
-   cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID "Booting up... one moment"
+   officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID "Booting up... one moment"
    ```
 2. Read bootstrap files: `IDENTITY.md`, `SOUL.md`, `GUARDRAILS.md`, `GOALS.md`, `HEARTBEAT.md`, `MEMORY.md`, `USER.md`, `TOOLS.md`, `SYSTEM.md`.
 3. Read org knowledge base: `../../knowledge.md` if present.
 4. Discover skills and agents:
    ```bash
-   cortextos bus list-skills --format text
-   cortextos bus list-agents
+   officeos bus list-skills --format text
+   officeos bus list-agents
    ```
 5. Crons are daemon-managed. Do not use session-only cron tools for restoration. Use:
    ```bash
-   cortextos bus list-crons $CTX_AGENT_NAME
+   officeos bus list-crons $CTX_AGENT_NAME
    ```
 6. Check today's memory and CRM state:
    ```bash
@@ -35,12 +35,12 @@ If `NEEDS_ONBOARDING`, read `.claude/skills/agentic-crm-setup/SKILL.md` and comp
    ```
 7. Check inbox:
    ```bash
-   cortextos bus check-inbox
+   officeos bus check-inbox
    ```
 8. Update heartbeat and log session start:
    ```bash
-   cortextos bus update-heartbeat "online"
-   cortextos bus log-event action session_start info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
+   officeos bus update-heartbeat "online"
+   officeos bus log-event action session_start info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
    ```
 9. Write a session-start entry to `memory/YYYY-MM-DD.md`.
 10. Send online status with scheduled crons, pending messages, pending approvals/drafts, and what you are picking up.

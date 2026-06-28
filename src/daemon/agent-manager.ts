@@ -1075,7 +1075,7 @@ export class AgentManager {
 
   /**
    * Inject text directly into a running agent's PTY.
-   * Used by `cortextos bus test-cron-fire` to fire a cron immediately for testing.
+   * Used by `officeos bus test-cron-fire` to fire a cron immediately for testing.
    * Returns true if the agent is running and the inject succeeded; false otherwise.
    */
   injectAgent(agentName: string, text: string): boolean {

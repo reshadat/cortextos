@@ -69,7 +69,7 @@ describe('notifyAgents', () => {
     expect(execFileMock).toHaveBeenCalledTimes(2);
   });
 
-  it('uses cortextos bus send-message with priority high', () => {
+  it('uses officeos bus send-message with priority high', () => {
     notifyAgents({
       agentName: 'dev',
       endType: 'crash',

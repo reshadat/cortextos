@@ -4,13 +4,13 @@ This is your first time running. Before starting normal operations, complete thi
 
 > **Environment variables**: `CTX_ROOT`, `CTX_FRAMEWORK_ROOT`, `CTX_ORG`, `CTX_AGENT_NAME`, `CTX_AGENT_DIR`, and `CTX_INSTANCE_ID` are automatically set by the cortextOS framework. You do not need to set them — they are available in every shell command you run.
 
-> **Runtime:** This is a `codex-app-server` agent. Telegram replies go through `cortextos bus send-telegram <chat_id> '<msg>'`. There is no other reply path — every user-facing message MUST use this command.
+> **Runtime:** This is a `codex-app-server` agent. Telegram replies go through `officeos bus send-telegram <chat_id> '<msg>'`. There is no other reply path — every user-facing message MUST use this command.
 
 **IMPORTANT: When this document says "END YOUR TURN", you MUST stop all tool execution and end your response. The user's Telegram reply will arrive as your next conversation turn. Do not keep working — the message will not reach you until your current turn ends.**
 
 ## Part 1: Identity
 
-1. **Introduce yourself** via Telegram (use `cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID '<msg>'`):
+1. **Introduce yourself** via Telegram (use `officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID '<msg>'`):
    > "Hey! I'm a new specialist agent that just came online. Before I start working, I need to get set up. Can you help me with a few questions?"
 
 2. **Confirm identity from system config** — your name is already set (do not re-ask):
@@ -82,7 +82,7 @@ Then continue from step 8.
 
 8. **Discover your team:**
    ```bash
-   cortextos bus read-all-heartbeats
+   officeos bus read-all-heartbeats
    # Fallback if no heartbeats yet: ls "${CTX_ROOT}/state/" 2>/dev/null
    ```
    List all agents found and ask:
@@ -101,14 +101,14 @@ Then continue from step 8.
    - Determine the prompt (what to do each time)
    - Add it as a persistent cron (survives restarts automatically):
      ```bash
-     cortextos bus add-cron $CTX_AGENT_NAME <workflow-name> <interval> <prompt>
+     officeos bus add-cron $CTX_AGENT_NAME <workflow-name> <interval> <prompt>
      ```
      For example:
      ```bash
-     cortextos bus add-cron $CTX_AGENT_NAME heartbeat 6h Read HEARTBEAT.md and follow its instructions.
-     cortextos bus add-cron $CTX_AGENT_NAME daily-report "0 9 * * 1-5" Generate and send the daily analytics report.
+     officeos bus add-cron $CTX_AGENT_NAME heartbeat 6h Read HEARTBEAT.md and follow its instructions.
+     officeos bus add-cron $CTX_AGENT_NAME daily-report "0 9 * * 1-5" Generate and send the daily analytics report.
      ```
-   - `cortextos bus add-cron` is the only persistent scheduling path on this runtime. There is no in-session scheduling tool; daemon-managed crons are what survives restarts.
+   - `officeos bus add-cron` is the only persistent scheduling path on this runtime. There is no in-session scheduling tool; daemon-managed crons are what survives restarts.
    - If the workflow is complex (multi-step procedure), create a skill file at `plugins/cortextos-agent-skills/skills/<workflow-name>/SKILL.md` with YAML frontmatter and detailed steps, and a corresponding symlink at `~/.codex/skills/${CTX_AGENT_NAME}__<workflow-name>` pointing to that directory.
 
 10. **Ask for tools and access:**
@@ -190,7 +190,7 @@ After workflows and tools are configured:
 
     If the user wants a different heartbeat interval, update the heartbeat cron interval:
     ```bash
-    cortextos bus add-cron $CTX_AGENT_NAME heartbeat <new_interval> Read HEARTBEAT.md and follow its instructions.
+    officeos bus add-cron $CTX_AGENT_NAME heartbeat <new_interval> Read HEARTBEAT.md and follow its instructions.
     ```
     (This overwrites the existing heartbeat cron entry in `crons.json`.)
     If they want a different stale task window (default 2h), note it in MEMORY.md — the agent applies it judgmentally during HEARTBEAT.md Step 3.
@@ -239,7 +239,7 @@ After workflows and tools are configured:
     Then set up the initial ingestion:
     ```bash
     # Ingest existing memory and key docs
-    cortextos bus kb-ingest \
+    officeos bus kb-ingest \
       "$CTX_AGENT_DIR/MEMORY.md" \
       "$CTX_AGENT_DIR/GOALS.md" \
       "$CTX_AGENT_DIR/IDENTITY.md" \
@@ -352,7 +352,7 @@ Do NOT rewrite TOOLS.md from memory. The template contains the authoritative ref
     - Chat ID: <from .env>
     ```
 
-18. **Confirm with user** via Telegram (`cortextos bus send-telegram`):
+18. **Confirm with user** via Telegram (`officeos bus send-telegram`):
     > "All set! Here's who I am: [summary]. I have [N] crons set up: [list]. My top priority is [goal 1]. Anything you want to change before I start working?"
 
     Make any changes they request.
@@ -363,21 +363,21 @@ Do NOT rewrite TOOLS.md from memory. The template contains the authoritative ref
 ENABLED=$(cat "${CTX_ROOT}/config/enabled-agents.json" 2>/dev/null || echo '[]')
 if ! echo "$ENABLED" | jq -e --arg name "$CTX_AGENT_NAME" '.[] | select(. == $name)' > /dev/null 2>&1; then
   echo "WARNING: $CTX_AGENT_NAME not found in enabled-agents.json"
-  cortextos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" "Warning: I completed onboarding but I'm not in enabled-agents.json. Run: cortextos start $CTX_AGENT_NAME"
+  officeos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" "Warning: I completed onboarding but I'm not in enabled-agents.json. Run: cortextos start $CTX_AGENT_NAME"
 fi
 ```
 
 19. **Mark onboarding complete and signal orchestrator:**
     ```bash
     touch "${CTX_ROOT}/state/${CTX_AGENT_NAME}/.onboarded"
-    cortextos bus log-event action onboarding_complete info --meta '{"agent":"'$CTX_AGENT_NAME'","role":"specialist"}'
+    officeos bus log-event action onboarding_complete info --meta '{"agent":"'$CTX_AGENT_NAME'","role":"specialist"}'
     ```
 
     Signal the orchestrator that this specialist is fully configured and ready:
     ```bash
     ORCH_NAME=$(cat "${CTX_FRAMEWORK_ROOT}/orgs/${CTX_ORG}/context.json" 2>/dev/null | jq -r '.orchestrator // empty')
     if [ -n "$ORCH_NAME" ]; then
-      cortextos bus send-message "${ORCH_NAME}" normal "Specialist agent ${CTX_AGENT_NAME} onboarding complete and ready to work."
+      officeos bus send-message "${ORCH_NAME}" normal "Specialist agent ${CTX_AGENT_NAME} onboarding complete and ready to work."
     fi
     ```
 
@@ -408,7 +408,7 @@ fi
 
 if [ -n "$MISSING" ]; then
   echo "BOOTSTRAP CHECK FAILED - missing or incomplete:${MISSING}"
-  cortextos bus log-event error bootstrap_check_failed warning --meta '{"agent":"'$CTX_AGENT_NAME'","missing":"'"${MISSING}"'"}'
+  officeos bus log-event error bootstrap_check_failed warning --meta '{"agent":"'$CTX_AGENT_NAME'","missing":"'"${MISSING}"'"}'
   if echo "$MISSING" | grep -q "TOOLS.md"; then
     cp "${CTX_FRAMEWORK_ROOT}/templates/agent-codex/TOOLS.md" "${CTX_AGENT_DIR}/TOOLS.md" 2>/dev/null
   fi
@@ -451,7 +451,7 @@ fi
     [Current approach description]
     EOF
 
-    cortextos bus manage-cycle create $CTX_AGENT_NAME \
+    officeos bus manage-cycle create $CTX_AGENT_NAME \
       --cycle "<metric_name>" \
       --metric "<metric_name>" \
       --metric-type "<quantitative|qualitative>" \
@@ -464,7 +464,7 @@ fi
 
     Then add the experiment cron as a persistent cron (survives restarts):
     ```bash
-    cortextos bus add-cron $CTX_AGENT_NAME experiment-<metric> <cron_frequency> Read plugins/cortextos-agent-skills/skills/autoresearch/SKILL.md and execute the experiment loop.
+    officeos bus add-cron $CTX_AGENT_NAME experiment-<metric> <cron_frequency> Read plugins/cortextos-agent-skills/skills/autoresearch/SKILL.md and execute the experiment loop.
     ```
 
     If user set approval_required to false, update `experiments/config.json`:
@@ -480,4 +480,4 @@ fi
 - If the user gives short answers, ask follow-up questions. More context = better agent.
 - Do NOT proceed to normal operations until onboarding is complete and the marker is written.
 - If a tool setup fails, note it as a blocker in GOALS.md and move on. Don't get stuck.
-- Every time you message the user, use `cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID '<message>'`. There is no other channel.
+- Every time you message the user, use `officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID '<message>'`. There is no other channel.

@@ -55,7 +55,7 @@ research/output/YYYY-MM-DD/PENDING-APPROVAL.md
 
 Run complete. Summary ready but not sent (`research.delivery.requires_approval = true`).
 
-**Approval:** Created through `cortextos bus create-approval`.
+**Approval:** Created through `officeos bus create-approval`.
 
 **Summary path:** research/output/YYYY-MM-DD/summary.md
 **Signals selected:** N
@@ -68,13 +68,13 @@ Run complete. Summary ready but not sent (`research.delivery.requires_approval =
 Use the normal approval workflow:
 
 ```bash
-APPR_ID=$(cortextos bus create-approval \
+APPR_ID=$(officeos bus create-approval \
   "Send research summary for YYYY-MM-DD" \
   external-comms \
   "Destination: ${DESTINATION}. Summary: research/output/YYYY-MM-DD/summary.md. Pending context: research/output/YYYY-MM-DD/PENDING-APPROVAL.md")
-cortextos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" \
+officeos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" \
   "Approval needed: research summary for YYYY-MM-DD is ready. Check dashboard approval ${APPR_ID}."
-cortextos bus log-event action approval_created info \
+officeos bus log-event action approval_created info \
   --meta "{\"approval_id\":\"${APPR_ID}\",\"destination\":\"${DESTINATION}\"}"
 ```
 
@@ -95,7 +95,7 @@ Send to configured destination automatically, then mark `delivered_at`.
 ### Telegram
 
 ```bash
-cortextos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" "$MESSAGE"
+officeos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" "$MESSAGE"
 ```
 
 Message format: run date, signals collected vs. selected, top 3-5 titles with scores,

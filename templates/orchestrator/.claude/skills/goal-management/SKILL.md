@@ -71,7 +71,7 @@ For each active agent, based on their role and today's daily focus:
    ```
 4. Message the agent:
    ```bash
-   cortextos bus send-message <agent> normal "New goals for today. Check GOALS.md and create tasks."
+   officeos bus send-message <agent> normal "New goals for today. Check GOALS.md and create tasks."
    ```
 
 **If an agent's goals.json already has `daily_focus_set_at` matching today: skip — don't overwrite.**

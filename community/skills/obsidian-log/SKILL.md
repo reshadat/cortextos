@@ -115,7 +115,7 @@ obsidian vault=[VAULT_NAME] append \
 After writing to the vault, ingest the updated memory folder so agents can find it via KB search:
 
 ```bash
-cortextos bus kb-ingest <vault-path>/01-Memory --org [ORG] --scope shared
+officeos bus kb-ingest <vault-path>/01-Memory --org [ORG] --scope shared
 ```
 
 You can also add a daily cron entry to `config.json` to keep the KB automatically current:
@@ -124,7 +124,7 @@ You can also add a daily cron entry to `config.json` to keep the KB automaticall
 {
   "name": "daily-memory-kb-ingest",
   "cron": "0 4 * * *",
-  "prompt": "Ingest today's memory files into the KB: cortextos bus kb-ingest <vault-path>/01-Memory --org [ORG] --scope shared. Log the result.",
+  "prompt": "Ingest today's memory files into the KB: officeos bus kb-ingest <vault-path>/01-Memory --org [ORG] --scope shared. Log the result.",
   "type": "recurring"
 }
 ```

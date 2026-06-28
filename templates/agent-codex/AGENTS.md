@@ -11,12 +11,12 @@ When a message arrives in your session that begins with `=== TELEGRAM from`, the
 ```
 === TELEGRAM from <name> (chat_id:<id>) ===
 <text>
-Reply using: cortextos bus send-telegram <chat_id> '<your reply>'
+Reply using: officeos bus send-telegram <chat_id> '<your reply>'
 ```
 
-**You MUST execute that exact `cortextos bus send-telegram` command before any other action.** This is non-negotiable. Acknowledge first, then do the work. Replies go through the bus — never through any other channel. The user is watching the dashboard for that outbound entry.
+**You MUST execute that exact `officeos bus send-telegram` command before any other action.** This is non-negotiable. Acknowledge first, then do the work. Replies go through the bus — never through any other channel. The user is watching the dashboard for that outbound entry.
 
-If you do not call `cortextos bus send-telegram` on every Telegram-shape inject, the bootstrap is broken and the agent has failed. There is no other reply path for codex agents.
+If you do not call `officeos bus send-telegram` on every Telegram-shape inject, the bootstrap is broken and the agent has failed. There is no other reply path for codex agents.
 
 ---
 
@@ -39,26 +39,26 @@ Complete the following in order. Do not skip steps.
 
 1. **Send boot message first** — before reading anything else. SKIP this step if your startup prompt says `CONTEXT HANDOFF` (that is a handoff restart, not a cold boot):
    ```bash
-   cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'Booting up... one moment'
+   officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'Booting up... one moment'
    ```
 2. Read all bootstrap files: IDENTITY.md, SOUL.md, GUARDRAILS.md, GOALS.md, HEARTBEAT.md, MEMORY.md, USER.md, TOOLS.md, SYSTEM.md
    - TOOLS.md is a compact command index — load the relevant skill (e.g. `plugins/cortextos-agent-skills/skills/tasks/SKILL.md`, `plugins/cortextos-agent-skills/skills/comms/SKILL.md`) when you need full docs for a workflow
 3. Read org knowledge base: `../../knowledge.md` (shared facts all agents need)
-4. Discover available skills: `cortextos bus list-skills --format text`
-5. Discover active agents: `cortextos bus list-agents` (live roster from enabled-agents.json)
-6. **Crons are daemon-managed.** External crons auto-load from `${CTX_ROOT}/state/${CTX_AGENT_NAME}/crons.json` on daemon start; you do not need to restore them. Use `cortextos bus list-crons $CTX_AGENT_NAME` to see what's scheduled. To add or change a cron at runtime, read `plugins/cortextos-agent-skills/skills/cron-management/SKILL.md` and use `cortextos bus add-cron`.
+4. Discover available skills: `officeos bus list-skills --format text`
+5. Discover active agents: `officeos bus list-agents` (live roster from enabled-agents.json)
+6. **Crons are daemon-managed.** External crons auto-load from `${CTX_ROOT}/state/${CTX_AGENT_NAME}/crons.json` on daemon start; you do not need to restore them. Use `officeos bus list-crons $CTX_AGENT_NAME` to see what's scheduled. To add or change a cron at runtime, read `plugins/cortextos-agent-skills/skills/cron-management/SKILL.md` and use `officeos bus add-cron`.
 7. Recall recent session facts (cross-session memory from past compactions):
    ```bash
-   cortextos bus recall-facts --days 3
+   officeos bus recall-facts --days 3
    ```
    Read these before the daily memory file — they capture granular decisions and outcomes from previous sessions that did not make it into MEMORY.md.
 8. Check today's memory file (`memory/$(date -u +%Y-%m-%d).md`) for any in-progress work
-9. If resuming a task, query the knowledge base: `cortextos bus kb-query "<task topic>" --org $CTX_ORG`
-10. Check inbox: `cortextos bus check-inbox`
-11. Update heartbeat: `cortextos bus update-heartbeat "online"`
-12. Log session start: `cortextos bus log-event action session_start info --meta '{"agent":"'$CTX_AGENT_NAME'"}'`
+9. If resuming a task, query the knowledge base: `officeos bus kb-query "<task topic>" --org $CTX_ORG`
+10. Check inbox: `officeos bus check-inbox`
+11. Update heartbeat: `officeos bus update-heartbeat "online"`
+12. Log session start: `officeos bus log-event action session_start info --meta '{"agent":"'$CTX_AGENT_NAME'"}'`
 13. Write session start entry to daily memory (see Memory Protocol below)
-14. Send your online status message via `cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID '<message>'`. On a cold boot: tell them what crons are scheduled (from `cortextos bus list-crons $CTX_AGENT_NAME`), pending messages, and what you are picking up from last session. On a `CONTEXT HANDOFF` restart: send ONE brief conversational message that picks up naturally (e.g. "back — [what you were working on]"). No cron IDs, no status report.
+14. Send your online status message via `officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID '<message>'`. On a cold boot: tell them what crons are scheduled (from `officeos bus list-crons $CTX_AGENT_NAME`), pending messages, and what you are picking up from last session. On a `CONTEXT HANDOFF` restart: send ONE brief conversational message that picks up naturally (e.g. "back — [what you were working on]"). No cron IDs, no status report.
 
 ---
 
@@ -80,16 +80,16 @@ Run these steps before any restart (hard or soft) and on context exhaustion.
 
    MEMEOF
    ```
-2. Update heartbeat: `cortextos bus update-heartbeat "restarting"`
-3. Log session end: `cortextos bus log-event action session_end info --meta '{"agent":"'$CTX_AGENT_NAME'","reason":"[why]"}'`
+2. Update heartbeat: `officeos bus update-heartbeat "restarting"`
+3. Log session end: `officeos bus log-event action session_end info --meta '{"agent":"'$CTX_AGENT_NAME'","reason":"[why]"}'`
 4. **Hard restart only** — notify user on Telegram:
    ```bash
-   cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'Restarting now — will be back in a moment.'
+   officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'Restarting now — will be back in a moment.'
    ```
 5. **Context exhaustion only** — notify first, then hard-restart:
    ```bash
-   cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'Context window full. Hard-restarting with fresh session. Resuming from memory.'
-   cortextos bus hard-restart --reason "context exhaustion"
+   officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'Context window full. Hard-restarting with fresh session. Resuming from memory.'
+   officeos bus hard-restart --reason "context exhaustion"
    ```
 
 **--continue restarts** (71h auto-restart): No user notification needed. Session history is preserved.
@@ -105,7 +105,7 @@ Codex agents track context window usage from `thread/tokenUsage/updated` events 
 | Tier | When | What you see | What you do |
 |---|---|---|---|
 | Tier 1 — warning | usage ≥ `ctx_warning_threshold` (default 70%) | Injected line: `[CONTEXT] Window at NN%. Handoff triggers at HH%.` | Wrap up the current sub-task; avoid starting large new work. No restart yet. |
-| Tier 2 — handoff | usage ≥ `ctx_handoff_threshold` (default 80%) | Injected line: `[CONTEXT HANDOFF REQUIRED] Context is at NN%. Write a handoff document to memory/handoffs/handoff-<ts>.md ...` followed by an absolute target path | Write the handoff doc to that exact path with the five required sections (`## Current Tasks`, `## Next Actions`, `## Active Crons`, `## Key Context`, `## Files Modified This Session`), then run `cortextos bus hard-restart --reason "context handoff at NN%" --handoff-doc <absolute path>`. Do NOT skip writing the doc. |
+| Tier 2 — handoff | usage ≥ `ctx_handoff_threshold` (default 80%) | Injected line: `[CONTEXT HANDOFF REQUIRED] Context is at NN%. Write a handoff document to memory/handoffs/handoff-<ts>.md ...` followed by an absolute target path | Write the handoff doc to that exact path with the five required sections (`## Current Tasks`, `## Next Actions`, `## Active Crons`, `## Key Context`, `## Files Modified This Session`), then run `officeos bus hard-restart --reason "context handoff at NN%" --handoff-doc <absolute path>`. Do NOT skip writing the doc. |
 | Tier 3 — force restart | 5 min after Tier 2 fires with no `hard-restart` call | Daemon force-kills the session and brings a fresh one up | Nothing — the daemon already acted. On the next session start, you will resume via the handoff doc the daemon attached. |
 
 **On resume after a handoff:**
@@ -150,7 +150,7 @@ date --iso-8601=seconds 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ
 - When writing to memory files or logs, use UTC for internal storage (date -u)
 - When scheduling crons, use local time for user-facing crons (e.g. morning briefing at 9am local)
 
-If `CTX_TIMEZONE` is empty, check `config.json` or ask the user to set it via `cortextos bus send-telegram`.
+If `CTX_TIMEZONE` is empty, check `config.json` or ask the user to set it via `officeos bus send-telegram`.
 
 ---
 
@@ -160,16 +160,16 @@ Every significant piece of work gets a task. Tasks are how you stay visible on t
 
 ```bash
 # Create
-cortextos bus create-task "<title>" --desc "<description>"
+officeos bus create-task "<title>" --desc "<description>"
 
 # Mark in progress
-cortextos bus update-task <task_id> in_progress
+officeos bus update-task <task_id> in_progress
 
 # Complete
-cortextos bus complete-task <task_id> --result "[summary of what was done]"
+officeos bus complete-task <task_id> --result "[summary of what was done]"
 
 # Log completion
-cortextos bus log-event task task_completed info --meta '{"task_id":"<id>","agent":"'$CTX_AGENT_NAME'"}'
+officeos bus log-event task task_completed info --meta '{"task_id":"<id>","agent":"'$CTX_AGENT_NAME'"}'
 ```
 
 After completing a research task or producing a significant output, ingest the result to the knowledge base so it persists for future sessions and other agents.
@@ -195,14 +195,14 @@ Three distinct states when you cannot proceed. Use the right one.
 When your work depends on another task or agent completing first:
 
 ```bash
-cortextos bus update-task <task_id> blocked
-cortextos bus log-event task task_blocked info --meta '{"task_id":"<task_id>","blocked_by":"<blocker_task_id>","reason":"<what>"}'
+officeos bus update-task <task_id> blocked
+officeos bus log-event task task_blocked info --meta '{"task_id":"<task_id>","blocked_by":"<blocker_task_id>","reason":"<what>"}'
 ```
 
 When the blocker completes, you receive an inbox message automatically. Unblock immediately:
 
 ```bash
-cortextos bus update-task <task_id> in_progress
+officeos bus update-task <task_id> in_progress
 ```
 
 ### HUMAN TASK (capability — only a human can do this)
@@ -210,10 +210,10 @@ cortextos bus update-task <task_id> in_progress
 When you CANNOT do something yourself (needs payment, physical access, login, sudo):
 
 ```bash
-cortextos bus create-task "[HUMAN] <what needs to be done>" --desc "<instructions>" --project human-tasks
-cortextos bus update-task <your_task_id> blocked
-cortextos bus log-event task task_blocked info --meta '{"task_id":"<your_task_id>","blocked_by":"<human_task_id>","reason":"human dependency"}'
-cortextos bus send-message $CTX_ORCHESTRATOR_AGENT normal "Human task created: [HUMAN] <title> — needed before I can proceed with <your task>"
+officeos bus create-task "[HUMAN] <what needs to be done>" --desc "<instructions>" --project human-tasks
+officeos bus update-task <your_task_id> blocked
+officeos bus log-event task task_blocked info --meta '{"task_id":"<your_task_id>","blocked_by":"<human_task_id>","reason":"human dependency"}'
+officeos bus send-message $CTX_ORCHESTRATOR_AGENT normal "Human task created: [HUMAN] <title> — needed before I can proceed with <your task>"
 ```
 
 When the human task is marked complete, you receive an inbox message. Unblock and resume immediately.
@@ -226,17 +226,17 @@ TARGET: Every human-dependent blocker has a [HUMAN] task within 1 heartbeat of d
 Before ANY external action (email, deploy, post, delete data, financial, merge to main):
 
 ```bash
-APPR_ID=$(cortextos bus create-approval "<what you want to do>" "<category>" "<context and draft>")
-cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'Approval needed: <title> — check dashboard'
-cortextos bus update-task <task_id> blocked
-cortextos bus log-event task task_blocked info --meta '{"task_id":"<task_id>","blocked_by":"'$APPR_ID'","reason":"awaiting approval"}'
+APPR_ID=$(officeos bus create-approval "<what you want to do>" "<category>" "<context and draft>")
+officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID 'Approval needed: <title> — check dashboard'
+officeos bus update-task <task_id> blocked
+officeos bus log-event task task_blocked info --meta '{"task_id":"<task_id>","blocked_by":"'$APPR_ID'","reason":"awaiting approval"}'
 ```
 
 When the user decides, you receive an inbox message with `approval_id`, `decision` (approved/rejected), and `note`.
 - Approved: unblock task, execute the action, complete the task
 - Rejected: complete task as cancelled with the rejection reason
 
-If approval is still pending after 4h in day mode, send one re-ping via Telegram (`cortextos bus send-telegram`).
+If approval is still pending after 4h in day mode, send one re-ping via Telegram (`officeos bus send-telegram`).
 
 Categories: `external-comms` | `financial` | `deployment` | `data-deletion` | `other`
 
@@ -270,7 +270,7 @@ cat >> "memory/$TODAY.md" << MEMEOF
 
 ## Session Start - $(date -u +%H:%M:%S UTC)
 - Status: online
-- Crons active: <list from `cortextos bus list-crons $CTX_AGENT_NAME`>
+- Crons active: <list from `officeos bus list-crons $CTX_AGENT_NAME`>
 - Inbox: <N messages or "empty">
 - Current state: <where things stand — what is in progress, pending, or needs attention>
 - Resuming: <what to do next and why, with enough context to act without re-reading everything>
@@ -288,14 +288,14 @@ Semantic vector store. Three collections: `memory-{agent}` (auto-reindexed at he
 
 ```bash
 # Re-index memory at heartbeat
-cortextos bus kb-ingest ./MEMORY.md ./memory/$(date -u +%Y-%m-%d).md \
+officeos bus kb-ingest ./MEMORY.md ./memory/$(date -u +%Y-%m-%d).md \
   --org $CTX_ORG --agent $CTX_AGENT_NAME --scope private --collection memory-$CTX_AGENT_NAME --force
 
 # Query before any task
-cortextos bus kb-query "your question" --org $CTX_ORG --agent $CTX_AGENT_NAME
+officeos bus kb-query "your question" --org $CTX_ORG --agent $CTX_AGENT_NAME
 
 # Ingest output
-cortextos bus kb-ingest /path/to/output --org $CTX_ORG --agent $CTX_AGENT_NAME --scope private
+officeos bus kb-ingest /path/to/output --org $CTX_ORG --agent $CTX_AGENT_NAME --scope private
 ```
 
 **Requires:** `GEMINI_API_KEY` in `orgs/$CTX_ORG/secrets.env`
@@ -310,7 +310,7 @@ TARGET: Query before every task. Ingest every significant output. Memory collect
 Log significant events so the Activity feed shows what you are doing:
 
 ```bash
-cortextos bus log-event <category> <event> <severity> --meta '<json>'
+officeos bus log-event <category> <event> <severity> --meta '<json>'
 ```
 
 | When | Category | Event | Severity |
@@ -339,10 +339,10 @@ Messages arrive in real time via the fast-checker daemon as injected blocks:
 ```
 === TELEGRAM from <name> (chat_id:<id>) ===
 <text>
-Reply using: cortextos bus send-telegram <chat_id> '<reply>'
+Reply using: officeos bus send-telegram <chat_id> '<reply>'
 ```
 
-**RULE OF FIRST RESPONSE: Execute the exact `cortextos bus send-telegram <chat_id> '<reply>'` command from the inject before any other action.** This is the primary outbound channel. There is no other reply path. Codex agents do not have a UI; the bus is the only way the user sees your response.
+**RULE OF FIRST RESPONSE: Execute the exact `officeos bus send-telegram <chat_id> '<reply>'` command from the inject before any other action.** This is the primary outbound channel. There is no other reply path. Codex agents do not have a UI; the bus is the only way the user sees your response.
 
 The user is waiting. Acknowledge immediately, then execute. Never leave the user as the last person to have sent a message — always follow up when work is done, when something changes, or when you are waiting on something.
 
@@ -373,16 +373,16 @@ Callbacks include `callback_data:` and `message_id:`. Process all immediately an
 ```
 === AGENT MESSAGE from <agent> [msg_id: <id>] ===
 <text>
-Reply using: cortextos bus send-message <agent> normal '<reply>' <msg_id>
+Reply using: officeos bus send-message <agent> normal '<reply>' <msg_id>
 ```
 
 **REPLY + ACK DISCIPLINE — non-negotiable:**
 
 1. **Reply** via the exact `Reply using:` command. Pass `<msg_id>` as the trailing `reply_to` argument so the sender's reply_to chain stays threaded.
-2. **Ack** via `cortextos bus ack-inbox <msg_id>` if (and only if) you do NOT reply. Sending a reply with `reply_to` auto-ACKs; calling `ack-inbox` afterward is harmless but redundant.
+2. **Ack** via `officeos bus ack-inbox <msg_id>` if (and only if) you do NOT reply. Sending a reply with `reply_to` auto-ACKs; calling `ack-inbox` afterward is harmless but redundant.
 3. Un-ACK'd messages redeliver every 5 minutes. An inbox that grows unbounded is the symptom of a missed ack — do not ignore it.
 
-**Multi-message inbox burst:** when `cortextos bus check-inbox` returns several entries, handle them oldest-first. Do not skip ahead; do not batch into one combined reply unless they are clearly a single conversation. Each `msg_id` needs either a `reply_to` reply or an explicit `ack-inbox`.
+**Multi-message inbox burst:** when `officeos bus check-inbox` returns several entries, handle them oldest-first. Do not skip ahead; do not batch into one combined reply unless they are clearly a single conversation. Each `msg_id` needs either a `reply_to` reply or an explicit `ack-inbox`.
 
 **Reply-to threading:** when an inbound `=== AGENT MESSAGE` includes `[reply_to: <prior_id>]`, that means the sender is replying to one of YOUR earlier outbound messages. Your reply should reference that prior context — don't pretend the message arrived in a vacuum.
 
@@ -424,7 +424,7 @@ When a registered cron fires, you receive an injected message in this exact shap
 Treat the inject as if the user just sent you `<prompt>`. Execute it to completion. Then — **mandatory** — record the fire so the daemon's gap-detection can tell you actually handled it:
 
 ```bash
-cortextos bus update-cron-fire <cron-name> --interval <interval>
+officeos bus update-cron-fire <cron-name> --interval <interval>
 ```
 
 `<interval>` matches the cron's schedule shorthand (`6h`, `30m`, `1d`) or its expected gap if it's a 5-field expression. If you skip this step the daemon will eventually nudge you with a "cron seems stuck" reminder even though you handled it — `update-cron-fire` is the audit trail.
@@ -432,37 +432,37 @@ cortextos bus update-cron-fire <cron-name> --interval <interval>
 ### View scheduled crons
 
 ```bash
-cortextos bus list-crons $CTX_AGENT_NAME
+officeos bus list-crons $CTX_AGENT_NAME
 ```
 
-**Add a recurring cron at runtime:** Use `cortextos bus add-cron $CTX_AGENT_NAME <name> <interval-or-cron-expr> <prompt>`. The daemon hot-reloads automatically; `crons.json` survives every kind of restart. For full CRUD (update, pause, resume, troubleshoot) read `plugins/cortextos-agent-skills/skills/cron-management/SKILL.md`. This is the **only** persistent scheduling path on this runtime — there is no in-session scheduling tool, and editing `config.json.crons[]` mid-session does NOT hot-reload (the daemon only re-reads `config.json` on agent boot).
+**Add a recurring cron at runtime:** Use `officeos bus add-cron $CTX_AGENT_NAME <name> <interval-or-cron-expr> <prompt>`. The daemon hot-reloads automatically; `crons.json` survives every kind of restart. For full CRUD (update, pause, resume, troubleshoot) read `plugins/cortextos-agent-skills/skills/cron-management/SKILL.md`. This is the **only** persistent scheduling path on this runtime — there is no in-session scheduling tool, and editing `config.json.crons[]` mid-session does NOT hot-reload (the daemon only re-reads `config.json` on agent boot).
 
-**Add a one-shot reminder:** there is no daemon-side `fire_at`. Use a future-dated 5-field cron expression (e.g. `30 15 8 5 *` fires once at 15:30 on May 8) and have your handler remove itself on first fire via `cortextos bus remove-cron $CTX_AGENT_NAME <name>` so it does not fire again next year. See the cron-management skill for the worked example.
+**Add a one-shot reminder:** there is no daemon-side `fire_at`. Use a future-dated 5-field cron expression (e.g. `30 15 8 5 *` fires once at 15:30 on May 8) and have your handler remove itself on first fire via `officeos bus remove-cron $CTX_AGENT_NAME <name>` so it does not fire again next year. See the cron-management skill for the worked example.
 
-**Remove:** `cortextos bus remove-cron $CTX_AGENT_NAME <name>`
+**Remove:** `officeos bus remove-cron $CTX_AGENT_NAME <name>`
 
 ### Examples
 
 **Heartbeat every 6 hours:**
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME heartbeat 6h Read HEARTBEAT.md and follow its instructions.
+officeos bus add-cron $CTX_AGENT_NAME heartbeat 6h Read HEARTBEAT.md and follow its instructions.
 ```
 
 **Daily report at 9am on weekdays:**
 ```bash
-cortextos bus add-cron $CTX_AGENT_NAME daily-report "0 9 * * 1-5" Read plugins/cortextos-agent-skills/skills/morning-review/SKILL.md and run the daily report.
+officeos bus add-cron $CTX_AGENT_NAME daily-report "0 9 * * 1-5" Read plugins/cortextos-agent-skills/skills/morning-review/SKILL.md and run the daily report.
 ```
 
 **Test a cron fires:**
 ```bash
-cortextos bus test-cron-fire $CTX_AGENT_NAME heartbeat
+officeos bus test-cron-fire $CTX_AGENT_NAME heartbeat
 ```
 
 ### Verify
 
 ```bash
-cortextos bus list-crons $CTX_AGENT_NAME            # next_fire_at for each
-cortextos bus get-cron-log $CTX_AGENT_NAME          # execution history
+officeos bus list-crons $CTX_AGENT_NAME            # next_fire_at for each
+officeos bus get-cron-log $CTX_AGENT_NAME          # execution history
 ls "${CTX_ROOT}/state/${CTX_AGENT_NAME}/.crons-migrated"
 cat "${CTX_ROOT}/state/${CTX_AGENT_NAME}/crons.json"
 ```
@@ -473,10 +473,10 @@ For full CRUD (update, pause, resume, delete), see `plugins/cortextos-agent-skil
 
 ## Restart
 
-When the user asks to restart, always ask first via `cortextos bus send-telegram`: "Fresh restart (lose conversation) or soft restart (keep history)?" Do NOT restart until they specify.
+When the user asks to restart, always ask first via `officeos bus send-telegram`: "Fresh restart (lose conversation) or soft restart (keep history)?" Do NOT restart until they specify.
 
-**Soft** (preserves conversation history): `cortextos bus self-restart --reason "why"`
-**Hard** (fresh session, loses context): `cortextos bus hard-restart --reason "why"`
+**Soft** (preserves conversation history): `officeos bus self-restart --reason "why"`
+**Hard** (fresh session, loses context): `officeos bus hard-restart --reason "why"`
 
 For restarting other agents, crash recovery, and PM2 troubleshooting, see `plugins/cortextos-agent-skills/skills/agent-management/SKILL.md`.
 
@@ -486,7 +486,7 @@ For restarting other agents, crash recovery, and PM2 troubleshooting, see `plugi
 
 Your available skills are discovered at session start:
 ```bash
-cortextos bus list-skills --format text
+officeos bus list-skills --format text
 ```
 
 **Skill paths:** Each skill lives in `plugins/cortextos-agent-skills/skills/<name>/SKILL.md` inside your agent dir. The scaffolder also creates symlinks at `~/.codex/skills/<agent_name>__<skill_name>` so codex's runtime skill discovery sees them; the agent-name prefix prevents collisions when multiple codex agents share the host's `~/.codex/skills/` directory.

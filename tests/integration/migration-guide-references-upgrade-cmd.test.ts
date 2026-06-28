@@ -4,12 +4,12 @@
  * Regression guard for Part B of the upgrade-cron-teaching follow-up.
  *
  * Asserts that CRONS_MIGRATION_GUIDE.md documents the
- * `cortextos bus upgrade-cron-teaching` workflow so the command is
+ * `officeos bus upgrade-cron-teaching` workflow so the command is
  * discoverable by anyone reading the migration story end-to-end.
  *
  * Required content:
  *   - The "Upgrading Existing Agent Skill/Bootstrap Files" section heading
- *   - The literal command string `cortextos bus upgrade-cron-teaching`
+ *   - The literal command string `officeos bus upgrade-cron-teaching`
  *   - Both `--apply` and `--json` flags are mentioned
  *   - The whitelist mechanics (sentinel marker + negation tokens) are noted
  *   - The new section appears after "Manual Migration" so the reader hits it
@@ -30,7 +30,7 @@ describe('CRONS_MIGRATION_GUIDE.md upgrade-cron-teaching references', () => {
 
   it('documents the upgrade-cron-teaching command', () => {
     const body = readFileSync(GUIDE_PATH, 'utf-8');
-    expect(body).toContain('cortextos bus upgrade-cron-teaching');
+    expect(body).toContain('officeos bus upgrade-cron-teaching');
   });
 
   it('has the upgrade section heading', () => {

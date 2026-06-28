@@ -62,7 +62,7 @@ export interface Task {
   due_date: string | null;
   archived: boolean;
   result?: string;
-  /** Linked deliverables (files saved via `cortextos bus save-output`). */
+  /** Linked deliverables (files saved via `officeos bus save-output`). */
   outputs?: TaskOutput[];
   /**
    * Dependency DAG edges (beads-inspired). Optional so existing task
@@ -376,7 +376,7 @@ export interface CronDefinition {
 
   /**
    * ISO 8601 UTC timestamp of when this cron definition was created.
-   * Set automatically by `cortextos bus add-cron`; operators should not modify this.
+   * Set automatically by `officeos bus add-cron`; operators should not modify this.
    *
    * @example "2026-04-01T00:00:00.000Z"
    */
@@ -800,7 +800,7 @@ export interface IPCRequest {
   data?: Record<string, unknown>;
   /**
    * BUG-015: human-readable identifier of the caller (e.g. 'cortextos enable',
-   * 'cortextos bus soft-restart-all'). Logged by the daemon on every incoming
+   * 'officeos bus soft-restart-all'). Logged by the daemon on every incoming
    * IPC request so we can trace which CLI command triggered which daemon action.
    * Optional for backwards compatibility — older clients fall back to 'unknown'.
    */

@@ -11,10 +11,10 @@
 
 This file contains static org context only. For the live agent roster, run:
 ```bash
-cortextos bus list-agents
+officeos bus list-agents
 ```
 
 For agent health (last heartbeat per agent), run:
 ```bash
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 ```

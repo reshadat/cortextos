@@ -1,12 +1,12 @@
 ---
 name: bus-reference
-description: Complete cortextos bus CLI reference - all available commands with examples. Use when you need to look up a bus command, check syntax, or discover available tools.
+description: Complete officeos bus CLI reference - all available commands with examples. Use when you need to look up a bus command, check syntax, or discover available tools.
 ---
 
 # Bus Script Reference - COMPLETE TOOL INVENTORY
 
 Every tool you have. Use them or the system cannot see your work.
-All commands are available via `cortextos bus <command>`.
+All commands are available via `officeos bus <command>`.
 
 ---
 
@@ -16,7 +16,7 @@ All commands are available via `cortextos bus <command>`.
 Create a new task in the system. Tasks are visible on the dashboard.
 
 ```bash
-cortextos bus create-task "<title>" --desc "<description>" [--assignee <agent>] [--priority <p>] [--project <name>]
+officeos bus create-task "<title>" --desc "<description>" [--assignee <agent>] [--priority <p>] [--project <name>]
 ```
 
 - **title** (required): Short task name
@@ -27,14 +27,14 @@ cortextos bus create-task "<title>" --desc "<description>" [--assignee <agent>] 
 
 Example:
 ```bash
-cortextos bus create-task "Write blog post" --desc "Draft a 500-word post on agent orchestration" --priority normal
+officeos bus create-task "Write blog post" --desc "Draft a 500-word post on agent orchestration" --priority normal
 ```
 
 ### update-task
 Update a task's status. Use this when you START working on something.
 
 ```bash
-cortextos bus update-task "<task_id>" <status>
+officeos bus update-task "<task_id>" <status>
 ```
 
 - **task_id** (required): The task ID from create-task or list-tasks
@@ -42,14 +42,14 @@ cortextos bus update-task "<task_id>" <status>
 
 Example:
 ```bash
-cortextos bus update-task "task_abc123" in_progress
+officeos bus update-task "task_abc123" in_progress
 ```
 
 ### complete-task
 Mark a task as completed with a result. Use this when DONE, not when starting.
 
 ```bash
-cortextos bus complete-task "<task_id>" --result "<what you produced>"
+officeos bus complete-task "<task_id>" --result "<what you produced>"
 ```
 
 - **task_id** (required): The task ID
@@ -57,14 +57,14 @@ cortextos bus complete-task "<task_id>" --result "<what you produced>"
 
 Example:
 ```bash
-cortextos bus complete-task "task_abc123" --result "Deployed landing page to production. URL: https://site.com"
+officeos bus complete-task "task_abc123" --result "Deployed landing page to production. URL: https://site.com"
 ```
 
 ### list-tasks
 List and filter tasks. Use during every heartbeat to check your queue.
 
 ```bash
-cortextos bus list-tasks [--status S] [--agent A] [--priority P] [--all-orgs]
+officeos bus list-tasks [--status S] [--agent A] [--priority P] [--all-orgs]
 ```
 
 - **--status**: Filter by `pending` | `in_progress` | `blocked` | `completed`
@@ -74,35 +74,35 @@ cortextos bus list-tasks [--status S] [--agent A] [--priority P] [--all-orgs]
 
 Example:
 ```bash
-cortextos bus list-tasks --agent $CTX_AGENT_NAME --status pending
+officeos bus list-tasks --agent $CTX_AGENT_NAME --status pending
 ```
 
 ### claim-task
 Atomically claim a pending task (sets `in_progress` + assignee in one shot, rejects if another agent already owns it). Prefer this over `update-task ... in_progress` when racing other agents on a shared queue.
 
 ```bash
-cortextos bus claim-task <task_id> [--owner <agent>]
+officeos bus claim-task <task_id> [--owner <agent>]
 ```
 
 ### task-history
 Show a task's append-only audit log (every status change, claim, completion).
 
 ```bash
-cortextos bus task-history <task_id>
+officeos bus task-history <task_id>
 ```
 
 ### check-deps
 Show open dependencies blocking a task — lists `blocked_by` entries that are not yet completed.
 
 ```bash
-cortextos bus check-deps <task_id>
+officeos bus check-deps <task_id>
 ```
 
 ### save-output
 Copy a file into the per-task deliverables tree and link it to the task as a file output. Use when shipping artifacts (reports, generated assets, audit records) tied to a task.
 
 ```bash
-cortextos bus save-output <task_id> <source_path> [--label "<short label>"]
+officeos bus save-output <task_id> <source_path> [--label "<short label>"]
 ```
 
 - **task_id** (required): Target task ID
@@ -111,14 +111,14 @@ cortextos bus save-output <task_id> <source_path> [--label "<short label>"]
 
 Example:
 ```bash
-cortextos bus save-output task_abc123 /tmp/audit-report.md --label "Audit report v1"
+officeos bus save-output task_abc123 /tmp/audit-report.md --label "Audit report v1"
 ```
 
 ### compact-tasks
 Archive completed tasks older than N days into a per-month archive (`archive-YYYY-MM.jsonl`) and remove them from the active list. Preserves audit logs; skips tasks that still appear as blockers.
 
 ```bash
-cortextos bus compact-tasks [--older-than <days>] [--dry-run]
+officeos bus compact-tasks [--older-than <days>] [--dry-run]
 ```
 
 ---
@@ -129,7 +129,7 @@ cortextos bus compact-tasks [--older-than <days>] [--dry-run]
 Send a message to another agent. They will see it on their next inbox check.
 
 ```bash
-cortextos bus send-message <target_agent> <priority> '<message_body>' [reply_to]
+officeos bus send-message <target_agent> <priority> '<message_body>' [reply_to]
 ```
 
 - **target_agent** (required): Target agent name
@@ -139,14 +139,14 @@ cortextos bus send-message <target_agent> <priority> '<message_body>' [reply_to]
 
 Example:
 ```bash
-cortextos bus send-message <agent-name> high '{"action":"deploy","repo":"website","branch":"main"}'
+officeos bus send-message <agent-name> high '{"action":"deploy","repo":"website","branch":"main"}'
 ```
 
 ### check-inbox
 Check for incoming messages from other agents. Run this EVERY heartbeat.
 
 ```bash
-cortextos bus check-inbox
+officeos bus check-inbox
 ```
 
 Returns a list of messages. Each has an ID you must ACK.
@@ -155,12 +155,12 @@ Returns a list of messages. Each has an ID you must ACK.
 Acknowledge a message. Un-ACK'd messages are re-delivered in 5 minutes.
 
 ```bash
-cortextos bus ack-inbox "<message_id>"
+officeos bus ack-inbox "<message_id>"
 ```
 
 Example:
 ```bash
-cortextos bus ack-inbox "msg_xyz789"
+officeos bus ack-inbox "msg_xyz789"
 ```
 
 ---
@@ -172,7 +172,7 @@ Log a structured event. Events are the primary way the dashboard tracks your act
 No events = you look dead. Log aggressively.
 
 ```bash
-cortextos bus log-event <category> <event_name> <severity> --meta '<json_payload>'
+officeos bus log-event <category> <event_name> <severity> --meta '<json_payload>'
 ```
 
 - **category** (required): `action` | `task` | `heartbeat` | `message` | `approval` | `error` | `metric` | `milestone`
@@ -182,10 +182,10 @@ cortextos bus log-event <category> <event_name> <severity> --meta '<json_payload
 
 Examples:
 ```bash
-cortextos bus log-event heartbeat agent_heartbeat info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
-cortextos bus log-event task task_completed info --meta '{"task_id":"task_abc123","summary":"Deployed site"}'
-cortextos bus log-event error deploy_failed error --meta '{"repo":"website","error":"build timeout"}'
-cortextos bus log-event action research_complete info --meta '{"topic":"competitor analysis","findings":3}'
+officeos bus log-event heartbeat agent_heartbeat info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
+officeos bus log-event task task_completed info --meta '{"task_id":"task_abc123","summary":"Deployed site"}'
+officeos bus log-event error deploy_failed error --meta '{"repo":"website","error":"build timeout"}'
+officeos bus log-event action research_complete info --meta '{"topic":"competitor analysis","findings":3}'
 ```
 
 ---
@@ -197,14 +197,14 @@ Update your heartbeat timestamp and status. This is how the system knows you are
 If you do not call this, the dashboard shows you as DEAD.
 
 ```bash
-cortextos bus update-heartbeat "<current_task_summary>"
+officeos bus update-heartbeat "<current_task_summary>"
 ```
 
 - **current_task_summary** (required): 1 sentence describing what you are doing right now
 
 Example:
 ```bash
-cortextos bus update-heartbeat "WORKING ON: Implementing user auth for the dashboard"
+officeos bus update-heartbeat "WORKING ON: Implementing user auth for the dashboard"
 ```
 
 ---
@@ -215,12 +215,12 @@ cortextos bus update-heartbeat "WORKING ON: Implementing user auth for the dashb
 Recall recent session facts extracted at compaction time (cross-session memory). Read these before today's daily memory file — they capture granular decisions and outcomes that did not survive into MEMORY.md.
 
 ```bash
-cortextos bus recall-facts [--days N] [--limit M] [--format json|text]
+officeos bus recall-facts [--days N] [--limit M] [--format json|text]
 ```
 
 Example:
 ```bash
-cortextos bus recall-facts --days 3
+officeos bus recall-facts --days 3
 ```
 
 ---
@@ -231,7 +231,7 @@ cortextos bus recall-facts --days 3
 Request human approval before taking a high-stakes action. Required for: external comms, production deploys, data deletion, financial commitments.
 
 ```bash
-cortextos bus create-approval "<title>" <category> "[context]"
+officeos bus create-approval "<title>" <category> "[context]"
 ```
 
 - **title** (required): What you are requesting approval for
@@ -240,19 +240,19 @@ cortextos bus create-approval "<title>" <category> "[context]"
 
 Example:
 ```bash
-cortextos bus create-approval "Send cold outreach to 50 leads" external-comms "Draft email attached in task_abc123. Target list: SaaS founders."
+officeos bus create-approval "Send cold outreach to 50 leads" external-comms "Draft email attached in task_abc123. Target list: SaaS founders."
 ```
 
 ### update-approval
 Resolve an approval request (typically called by the system after human responds via Telegram).
 
 ```bash
-cortextos bus update-approval <approval_id> <approved|rejected> "[note]"
+officeos bus update-approval <approval_id> <approved|rejected> "[note]"
 ```
 
 Example:
 ```bash
-cortextos bus update-approval "appr_123" approved "User approved via Telegram"
+officeos bus update-approval "appr_123" approved "User approved via Telegram"
 ```
 
 ---
@@ -264,7 +264,7 @@ Send a message to the user via Telegram. Use for urgent updates, approval reques
 Do NOT spam. Reserve for things the user actually needs to see.
 
 ```bash
-cortextos bus send-telegram <chat_id> "<message>"
+officeos bus send-telegram <chat_id> "<message>"
 ```
 
 - **chat_id** (required): Telegram chat ID (available in config)
@@ -272,21 +272,21 @@ cortextos bus send-telegram <chat_id> "<message>"
 
 Example:
 ```bash
-cortextos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" "Task completed: Landing page deployed to production. URL: https://site.com"
+officeos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" "Task completed: Landing page deployed to production. URL: https://site.com"
 ```
 
 ### edit-message
 Edit an existing Telegram message (e.g., to update a status message in-place).
 
 ```bash
-cortextos bus edit-message <chat_id> <message_id> "<new_text>" [reply_markup_json]
+officeos bus edit-message <chat_id> <message_id> "<new_text>" [reply_markup_json]
 ```
 
 ### answer-callback
 Answer a Telegram callback query to dismiss button loading state.
 
 ```bash
-cortextos bus answer-callback <callback_query_id> [toast_text]
+officeos bus answer-callback <callback_query_id> [toast_text]
 ```
 
 ---
@@ -297,21 +297,21 @@ cortextos bus answer-callback <callback_query_id> [toast_text]
 Discover all agents in the system.
 
 ```bash
-cortextos bus list-agents [--org <org>] [--format json|text] [--status running|all]
+officeos bus list-agents [--org <org>] [--format json|text] [--status running|all]
 ```
 
 ### list-skills
 List available skills for the current agent.
 
 ```bash
-cortextos bus list-skills [--format text|json]
+officeos bus list-skills [--format text|json]
 ```
 
 ### read-all-heartbeats
 Aggregate all agent heartbeats into a single JSON object keyed by agent name.
 
 ```bash
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 ```
 
 ---
@@ -322,42 +322,42 @@ cortextos bus read-all-heartbeats
 Find stale tasks: in_progress >2h, pending >24h, stale human tasks, overdue.
 
 ```bash
-cortextos bus check-stale-tasks [--all-orgs]
+officeos bus check-stale-tasks [--all-orgs]
 ```
 
 ### check-goal-staleness
 Check each agent's GOALS.md Updated timestamp. Flags goals older than threshold.
 
 ```bash
-cortextos bus check-goal-staleness [--threshold DAYS] [--json]
+officeos bus check-goal-staleness [--threshold DAYS] [--json]
 ```
 
 ### check-human-tasks
 Check for stale human-assigned tasks and send reminders.
 
 ```bash
-cortextos bus check-human-tasks
+officeos bus check-human-tasks
 ```
 
 ### archive-tasks
 Archive completed tasks older than 7 days.
 
 ```bash
-cortextos bus archive-tasks [--dry-run] [--all-orgs]
+officeos bus archive-tasks [--dry-run] [--all-orgs]
 ```
 
 ### notify-agent
 Send an urgent signal to another agent's fast-checker (bypasses normal inbox polling).
 
 ```bash
-cortextos bus notify-agent <agent_name> "<message>"
+officeos bus notify-agent <agent_name> "<message>"
 ```
 
 ### post-activity
 Post a message to the org's Telegram activity channel.
 
 ```bash
-cortextos bus post-activity "<message>"
+officeos bus post-activity "<message>"
 ```
 
 ---
@@ -368,42 +368,42 @@ cortextos bus post-activity "<message>"
 Create a new experiment proposal. For system-scope, auto-creates an approval.
 
 ```bash
-cortextos bus create-experiment <metric_name> "<hypothesis>" [--surface <path>] [--direction higher|lower] [--window <duration>] [--measurement <cmd>]
+officeos bus create-experiment <metric_name> "<hypothesis>" [--surface <path>] [--direction higher|lower] [--window <duration>] [--measurement <cmd>]
 ```
 
 ### run-experiment
 Start running a proposed experiment.
 
 ```bash
-cortextos bus run-experiment <experiment_id> [changes_description]
+officeos bus run-experiment <experiment_id> [changes_description]
 ```
 
 ### evaluate-experiment
 Evaluate a running experiment and decide keep/discard.
 
 ```bash
-cortextos bus evaluate-experiment <experiment_id> <measured_value> [--score <1-10>] [--justification "<text>"]
+officeos bus evaluate-experiment <experiment_id> <measured_value> [--score <1-10>] [--justification "<text>"]
 ```
 
 ### list-experiments
 List experiments with filters.
 
 ```bash
-cortextos bus list-experiments [--agent <name>] [--status <status>] [--metric <name>] [--json]
+officeos bus list-experiments [--agent <name>] [--status <status>] [--metric <name>] [--json]
 ```
 
 ### gather-context
 Collect experiment context for hypothesis generation.
 
 ```bash
-cortextos bus gather-context [--agent <name>] [--metric <name>] [--format json|markdown]
+officeos bus gather-context [--agent <name>] [--metric <name>] [--format json|markdown]
 ```
 
 ### manage-cycle
 Manage experiment cycles for an agent (start, advance, end). Used by orchestrators to gate cycle transitions.
 
 ```bash
-cortextos bus manage-cycle <action> <agent>
+officeos bus manage-cycle <action> <agent>
 ```
 
 - **action** (required): `start` | `advance` | `end` | `status`
@@ -417,28 +417,28 @@ cortextos bus manage-cycle <action> <agent>
 Restart with `--continue` (preserves conversation history).
 
 ```bash
-cortextos bus self-restart --reason "why"
+officeos bus self-restart --reason "why"
 ```
 
 ### hard-restart
 Kill and relaunch (fresh session, no history).
 
 ```bash
-cortextos bus hard-restart --reason "why"
+officeos bus hard-restart --reason "why"
 ```
 
 ### auto-commit
 Automatic daily snapshot of agent workspace changes. Local only, never pushes.
 
 ```bash
-cortextos bus auto-commit [--dry-run]
+officeos bus auto-commit [--dry-run]
 ```
 
 ### check-upstream
 Check for framework updates from the canonical repo.
 
 ```bash
-cortextos bus check-upstream [--apply]
+officeos bus check-upstream [--apply]
 ```
 
 ---
@@ -455,7 +455,7 @@ update `crons.json` directly. For full protocol, examples, and the one-shot patt
 Register a new persistent cron on an agent. The daemon hot-reloads automatically.
 
 ```bash
-cortextos bus add-cron <agent> <name> <interval-or-cron-expr> <prompt>
+officeos bus add-cron <agent> <name> <interval-or-cron-expr> <prompt>
 ```
 
 - **agent**: target agent name
@@ -468,14 +468,14 @@ cortextos bus add-cron <agent> <name> <interval-or-cron-expr> <prompt>
 Show all registered crons for an agent + each one's `next_fire_at`.
 
 ```bash
-cortextos bus list-crons <agent> [--json]
+officeos bus list-crons <agent> [--json]
 ```
 
 ### remove-cron
 Delete a cron. Daemon reloads on next tick.
 
 ```bash
-cortextos bus remove-cron <agent> <name>
+officeos bus remove-cron <agent> <name>
 ```
 
 ### test-cron-fire
@@ -483,7 +483,7 @@ Inject the cron's prompt into the agent NOW, regardless of schedule. 30-second c
 prevents accidental rapid-fires. Use to verify wiring.
 
 ```bash
-cortextos bus test-cron-fire <agent> <name>
+officeos bus test-cron-fire <agent> <name>
 ```
 
 ### update-cron-fire
@@ -492,7 +492,7 @@ to completion, so the daemon's gap-detection knows you handled it. Without this 
 will eventually nudge you with a "cron seems stuck" reminder.
 
 ```bash
-cortextos bus update-cron-fire <cron-name> --interval <interval>
+officeos bus update-cron-fire <cron-name> --interval <interval>
 ```
 
 The interval should match the cron's schedule shorthand or the expected gap between fires.
@@ -505,28 +505,28 @@ The interval should match the cron's schedule shorthand or the expected gap betw
 Browse community catalog for skills, agents, or org templates.
 
 ```bash
-cortextos bus browse-catalog [--type skill|agent|org] [--tag <tag>] [--search <query>]
+officeos bus browse-catalog [--type skill|agent|org] [--tag <tag>] [--search <query>]
 ```
 
 ### install-community-item
 Install a community catalog item.
 
 ```bash
-cortextos bus install-community-item <item-name> [--dry-run]
+officeos bus install-community-item <item-name> [--dry-run]
 ```
 
 ### prepare-submission
 Prepare a skill/agent/org for community submission (PII scan + staging).
 
 ```bash
-cortextos bus prepare-submission <type> <source-path> <item-name> [--dry-run]
+officeos bus prepare-submission <type> <source-path> <item-name> [--dry-run]
 ```
 
 ### submit-community-item
 Submit a prepared item to the community catalog.
 
 ```bash
-cortextos bus submit-community-item <item-name> <item-type> "<description>" [--dry-run]
+officeos bus submit-community-item <item-name> <item-type> "<description>" [--dry-run]
 ```
 
 ---

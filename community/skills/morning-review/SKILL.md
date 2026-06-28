@@ -43,8 +43,8 @@ Execute each phase in order.
 ### 0A: Check all agent heartbeats
 
 ```bash
-cortextos bus read-all-heartbeats
-cortextos bus check-inbox
+officeos bus read-all-heartbeats
+officeos bus check-inbox
 ```
 
 For each agent, note:
@@ -55,8 +55,8 @@ For each agent, note:
 ### 0B: Check overnight task completions
 
 ```bash
-cortextos bus list-tasks --status completed
-cortextos bus list-tasks --status in_progress
+officeos bus list-tasks --status completed
+officeos bus list-tasks --status in_progress
 ```
 
 Note what was completed overnight, by which agents, and what key deliverables were produced.
@@ -76,7 +76,7 @@ Extract: tasks worked on, pending items, promises made, notes carried forward.
 Cross-reference memory COMPLETED entries against tasks still showing in_progress.
 
 ```bash
-cortextos bus list-tasks --status in_progress
+officeos bus list-tasks --status in_progress
 TODAY=$(date -u +%Y-%m-%d)
 grep "COMPLETED:" memory/${TODAY}.md 2>/dev/null
 grep "COMPLETED:" memory/${YESTERDAY}.md 2>/dev/null
@@ -84,7 +84,7 @@ grep "COMPLETED:" memory/${YESTERDAY}.md 2>/dev/null
 
 For each mismatch, mark completed:
 ```bash
-cortextos bus complete-task "$TASK_ID" --result "<what was produced>"
+officeos bus complete-task "$TASK_ID" --result "<what was produced>"
 ```
 
 ---
@@ -103,7 +103,7 @@ gcal_list_events (limit 1)
 - **OK**: note "GCal OK" for the briefing
 - **FAIL**: create a human task and flag it:
   ```bash
-  cortextos bus create-task "[HUMAN] Google Calendar reauth needed — OAuth token expired or revoked" \
+  officeos bus create-task "[HUMAN] Google Calendar reauth needed — OAuth token expired or revoked" \
     --desc "GCal probe failed during morning review. Reauth at https://accounts.google.com. Agents cannot create/read calendar events until fixed." \
     --priority high --assignee human
   ```
@@ -118,7 +118,7 @@ notion-search (query: "test", page_size: 1)
 
 ### Knowledge Base
 ```bash
-cortextos bus kb-query "health check" --org $CTX_ORG
+officeos bus kb-query "health check" --org $CTX_ORG
 ```
 - **OK or empty results**: note "KB configured"
 - **Not configured warning**: note "KB not configured" (informational, not a failure)
@@ -186,7 +186,7 @@ For each agent in the roster:
    ```
 4. Notify agent:
    ```bash
-   cortextos bus send-message <agent> normal "New goals for today. Check GOALS.md and create tasks."
+   officeos bus send-message <agent> normal "New goals for today. Check GOALS.md and create tasks."
    ```
 
 If an agent's `goals.json` already has `daily_focus_set_at` matching today: skip — don't overwrite.
@@ -218,10 +218,10 @@ From the overnight summary, identify:
 
 For each agent support or autonomous task, create and dispatch:
 ```bash
-TASK_ID=$(cortextos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT_NAME --priority high)
-cortextos bus update-task "$TASK_ID" in_progress
-cortextos bus send-message <agent> high '<task details with full context>'
-cortextos bus log-event action task_dispatched info --meta '{"to":"<agent>","task":"<title>"}'
+TASK_ID=$(officeos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT_NAME --priority high)
+officeos bus update-task "$TASK_ID" in_progress
+officeos bus send-message <agent> high '<task details with full context>'
+officeos bus log-event action task_dispatched info --meta '{"to":"<agent>","task":"<title>"}'
 ```
 
 ---
@@ -231,7 +231,7 @@ cortextos bus log-event action task_dispatched info --meta '{"to":"<agent>","tas
 **Telegram has a 4096 character limit.** Send as separate messages with brief pauses between.
 
 ```bash
-cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID "<message>"
+officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID "<message>"
 ```
 
 ### Briefing structure
@@ -281,10 +281,10 @@ When user replies with approval (e.g., `go all`, `go 1,2`):
 
 For each approved task:
 ```bash
-TASK_ID=$(cortextos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT_NAME --priority high)
-cortextos bus update-task "$TASK_ID" in_progress
-cortextos bus send-message <agent> high '<full task details>'
-cortextos bus log-event action task_dispatched info --meta '{"to":"<agent>","task":"<title>"}'
+TASK_ID=$(officeos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT_NAME --priority high)
+officeos bus update-task "$TASK_ID" in_progress
+officeos bus send-message <agent> high '<full task details>'
+officeos bus log-event action task_dispatched info --meta '{"to":"<agent>","task":"<title>"}'
 ```
 
 ---
@@ -293,10 +293,10 @@ cortextos bus log-event action task_dispatched info --meta '{"to":"<agent>","tas
 
 ```bash
 # Log event
-cortextos bus log-event action briefing_sent info --meta '{"type":"morning_review"}'
+officeos bus log-event action briefing_sent info --meta '{"type":"morning_review"}'
 
 # Update heartbeat
-cortextos bus update-heartbeat "morning review complete - dispatched N tasks"
+officeos bus update-heartbeat "morning review complete - dispatched N tasks"
 
 # Write to memory
 TODAY=$(date -u +%Y-%m-%d)

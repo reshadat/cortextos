@@ -104,10 +104,10 @@ After saving the draft:
 
 ```bash
 # Log the creation
-cortextos bus log-event action skill_draft_created info --meta "{\"skill\":\"[skill-name]\",\"source_task\":\"[task_id]\",\"agent\":\"$CTX_AGENT_NAME\"}"
+officeos bus log-event action skill_draft_created info --meta "{\"skill\":\"[skill-name]\",\"source_task\":\"[task_id]\",\"agent\":\"$CTX_AGENT_NAME\"}"
 
 # Notify orchestrator — it will surface in the next morning digest
-cortextos bus send-message $CTX_ORCHESTRATOR_AGENT normal "Skill candidate drafted: [skill-name] — source task [task_id]. Check skills/drafts/[skill-name]/SKILL.md. Awaiting digest review."
+officeos bus send-message $CTX_ORCHESTRATOR_AGENT normal "Skill candidate drafted: [skill-name] — source task [task_id]. Check skills/drafts/[skill-name]/SKILL.md. Awaiting digest review."
 ```
 
 The orchestrator includes it in the next morning briefing for the user. The user replies `approve [skill-name]`, `reject [skill-name] [reason]`, or `revise [skill-name] [feedback]`.
@@ -128,13 +128,13 @@ mv skills/drafts/[skill-name]/ plugins/cortextos-agent-skills/skills/[skill-name
 sed -i '' 's/status: draft/status: active/' plugins/cortextos-agent-skills/skills/[skill-name]/SKILL.md
 
 # Log activation
-cortextos bus log-event action skill_activated info --meta "{\"skill\":\"[skill-name]\",\"agent\":\"$CTX_AGENT_NAME\"}"
+officeos bus log-event action skill_activated info --meta "{\"skill\":\"[skill-name]\",\"agent\":\"$CTX_AGENT_NAME\"}"
 
 # Notify the user
-cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID "Skill activated: [skill-name] is now live and will be used in future sessions."
+officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID "Skill activated: [skill-name] is now live and will be used in future sessions."
 
 # ACK the inbox message
-cortextos bus ack-inbox [msg_id]
+officeos bus ack-inbox [msg_id]
 ```
 
 ### Rejected
@@ -148,9 +148,9 @@ mv skills/drafts/[skill-name]/SKILL.md skills/archive/[skill-name]/SKILL.md
 echo "\n## Rejection\nReason: [reason]\nDate: $(date -u +%Y-%m-%d)" >> skills/archive/[skill-name]/SKILL.md
 
 # Log
-cortextos bus log-event action skill_rejected info --meta "{\"skill\":\"[skill-name]\",\"reason\":\"[reason]\"}"
+officeos bus log-event action skill_rejected info --meta "{\"skill\":\"[skill-name]\",\"reason\":\"[reason]\"}"
 
-cortextos bus ack-inbox [msg_id]
+officeos bus ack-inbox [msg_id]
 ```
 
 ### Revise
@@ -158,8 +158,8 @@ cortextos bus ack-inbox [msg_id]
 ```bash
 # Apply feedback and re-save the draft
 # Then re-notify orchestrator for another digest cycle
-cortextos bus send-message $CTX_ORCHESTRATOR_AGENT normal "Skill candidate [skill-name] revised per feedback. Ready for re-review."
-cortextos bus ack-inbox [msg_id]
+officeos bus send-message $CTX_ORCHESTRATOR_AGENT normal "Skill candidate [skill-name] revised per feedback. Ready for re-review."
+officeos bus ack-inbox [msg_id]
 ```
 
 ---

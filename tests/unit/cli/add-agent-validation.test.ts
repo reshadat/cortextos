@@ -5,7 +5,7 @@
  *
  * Before the fix, `cortextos add-agent CortextDesigner --template agent --org testorg`
  * succeeded at the CLI level, wrote the agent dir to disk, registered the
- * agent in `enabled-agents.json`, and THEN failed every `cortextos bus *`
+ * agent in `enabled-agents.json`, and THEN failed every `officeos bus *`
  * command at runtime because `resolveEnv()` rejected the same name that
  * add-agent had accepted. Affected agents were half-functional — daemon-
  * managed fine but unable to reply to Telegram, create tasks, check inbox,
@@ -97,7 +97,7 @@ describe('BUG-041: add-agent agent name validation', () => {
 /**
  * Issue #407 regression test: `cortextos add-agent` must reject invalid
  * --org values for the same reasons it rejects invalid agent names —
- * mixed-case orgs pass scaffolding but then break every `cortextos bus *`
+ * mixed-case orgs pass scaffolding but then break every `officeos bus *`
  * invocation at runtime (env.ts strictly validates CTX_ORG) and every
  * dashboard add-agent attempt (POST /api/agents returns HTTP 400).
  */

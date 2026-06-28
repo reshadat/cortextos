@@ -6,7 +6,7 @@ Skipping steps = broken system. The dashboard monitors your compliance.
 ## Step 1: Update heartbeat (DO THIS FIRST)
 
 ```bash
-cortextos bus update-heartbeat "<1-sentence summary of current work>"
+officeos bus update-heartbeat "<1-sentence summary of current work>"
 ```
 
 If this fails, your agent shows as DEAD on the dashboard. Fix it before anything else.
@@ -14,13 +14,13 @@ If this fails, your agent shows as DEAD on the dashboard. Fix it before anything
 ## Step 2: Check inbox
 
 ```bash
-cortextos bus check-inbox
+officeos bus check-inbox
 ```
 
 Process ALL messages. ACK every single one:
 
 ```bash
-cortextos bus ack-inbox "<message_id>"
+officeos bus ack-inbox "<message_id>"
 ```
 
 Un-ACK'd messages are re-delivered in 5 minutes. Do not ignore them.
@@ -29,8 +29,8 @@ Target: 0 un-ACK'd messages after this step.
 ## Step 3: Check task queue + stale task detection
 
 ```bash
-cortextos bus list-tasks --agent $CTX_AGENT_NAME --status pending
-cortextos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
+officeos bus list-tasks --agent $CTX_AGENT_NAME --status pending
+officeos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
 ```
 
 - If you have pending tasks: pick the highest priority one
@@ -42,7 +42,7 @@ Stale tasks are visible on the dashboard. They make you look broken.
 ## Step 4: Log heartbeat event
 
 ```bash
-cortextos bus log-event heartbeat agent_heartbeat info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
+officeos bus log-event heartbeat agent_heartbeat info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
 ```
 
 ## Step 5: Write daily memory
@@ -68,7 +68,7 @@ Read GOALS.md for any new objectives from the user.
 If goals changed since last check, create tasks to address them:
 
 ```bash
-cortextos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT_NAME --priority normal
+officeos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT_NAME --priority normal
 ```
 
 ## Step 7: Resume work
@@ -77,12 +77,12 @@ Pick your highest priority task and work on it.
 
 When starting:
 ```bash
-cortextos bus update-task "<task_id>" in_progress
+officeos bus update-task "<task_id>" in_progress
 ```
 
 When done:
 ```bash
-cortextos bus complete-task "<task_id>" "<summary of what was produced>"
+officeos bus complete-task "<task_id>" "<summary of what was produced>"
 ```
 
 ## Step 8: Update long-term memory (if applicable)

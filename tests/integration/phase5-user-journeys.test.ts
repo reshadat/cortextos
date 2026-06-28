@@ -236,7 +236,7 @@ describe('Journey 1: New user setup (ONBOARDING.md + bus add-cron + scheduler)',
     const doc = readDoc(ONBOARDING_MD);
 
     // Must use bus add-cron
-    expect(doc).toContain('cortextos bus add-cron');
+    expect(doc).toContain('officeos bus add-cron');
 
     // Must document the correct CLI signature
     expect(doc).toMatch(/bus add-cron\s+\$CTX_AGENT_NAME\s+<workflow-name>\s+<interval>\s+<prompt>/);
@@ -255,7 +255,7 @@ describe('Journey 1: New user setup (ONBOARDING.md + bus add-cron + scheduler)',
     // A concrete example: line contains "bus add-cron", a concrete interval
     // (e.g. 6h), and no placeholder angle-brackets
     const concreteLines = lines.filter(l =>
-      /cortextos bus add-cron/.test(l) &&
+      /officeos bus add-cron/.test(l) &&
       /[0-9]+[mhd]|"[0-9*\/]+ /.test(l) &&
       !/<interval>|<name>|<workflow-name>/.test(l)
     );
@@ -424,7 +424,7 @@ describe('Journey 2: Existing user upgrade (cron-migration + zero-downtime)', ()
 
   it('J2-2: CRONS_MIGRATION_GUIDE.md explains bus migrate-crons command for manual re-run', () => {
     const doc = readDoc(CRONS_MIGRATION_GUIDE);
-    expect(doc).toContain('cortextos bus migrate-crons');
+    expect(doc).toContain('officeos bus migrate-crons');
     expect(doc).toContain('.crons-migrated');
     expect(doc).toContain('crons.json');
   });

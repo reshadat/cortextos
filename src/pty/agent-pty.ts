@@ -1,6 +1,6 @@
 import { join } from 'path';
-import { existsSync, readFileSync, readdirSync } from 'fs';
-import { platform } from 'os';
+import { existsSync, readFileSync, readdirSync, mkdirSync, symlinkSync, writeFileSync } from 'fs';
+import { platform, homedir } from 'os';
 import type { AgentConfig, CtxEnv } from '../types/index.js';
 import { OutputBuffer } from './output-buffer.js';
 import { applyHeadroom } from './headroom.js';
@@ -109,6 +109,30 @@ export class AgentPTY {
           ptyEnv[trimmed.slice(0, eqIdx).trim()] = trimmed.slice(eqIdx + 1).trim();
         }
       }
+    }
+
+    // Isolate the agent's Claude "home" (CLAUDE_CONFIG_DIR). Otherwise the agent
+    // inherits the operator's personal ~/.claude global hooks — e.g. an RTK
+    // command-rewriter or caveman PreToolUse/UserPromptSubmit hook — which mangle
+    // the agent's own `officeos bus ...` shell commands so its replies never run.
+    // Auth is kept by symlinking the credentials through; the agent's project
+    // .claude/settings.json (its real hooks) still loads separately.
+    if (!ptyEnv['CLAUDE_CONFIG_DIR']) {
+      try {
+        const realClaude = join(process.env.HOME || homedir(), '.claude');
+        const isolated = join(this.env.ctxRoot, 'state', this.env.agentName, '.claude-home');
+        mkdirSync(isolated, { recursive: true });
+        // Empty user-settings → none of the operator's global hooks load.
+        const settingsDst = join(isolated, 'settings.json');
+        if (!existsSync(settingsDst)) writeFileSync(settingsDst, '{}\n');
+        // Link credentials so the agent authenticates with the operator's session.
+        const credSrc = join(realClaude, '.credentials.json');
+        const credDst = join(isolated, '.credentials.json');
+        if (existsSync(credSrc) && !existsSync(credDst)) {
+          try { symlinkSync(credSrc, credDst); } catch { /* race / exists */ }
+        }
+        ptyEnv['CLAUDE_CONFIG_DIR'] = isolated;
+      } catch { /* fall back to inherited ~/.claude */ }
     }
 
     // Add convenience CTX_* aliases used throughout agent templates.

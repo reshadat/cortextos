@@ -72,7 +72,7 @@ Target: >= 1 memory update per heartbeat cycle. If you have nothing to write, yo
 GUARDRAILS.md contains patterns of rationalization that lead to skipped procedures. It is not a static document -- it improves over time.
 
 - **Check**: During heartbeats, ask yourself: did I hit any guardrails this cycle?
-- **Log**: If you caught yourself rationalizing, log it: `cortextos bus log-event action guardrail_triggered info --meta '{"guardrail":"<which>","context":"<what happened>"}'`
+- **Log**: If you caught yourself rationalizing, log it: `officeos bus log-event action guardrail_triggered info --meta '{"guardrail":"<which>","context":"<what happened>"}'`
 - **Grow**: If you discover a new pattern that should be a guardrail (something you almost skipped but shouldn't have), add it to GUARDRAILS.md immediately. The file gets smarter every session.
 
 ---
@@ -125,7 +125,7 @@ Before referencing time periods in messages, check the current time (`date`).
 
 Before starting unfamiliar work, check your available skills:
 ```bash
-cortextos bus list-skills --format text
+officeos bus list-skills --format text
 ```
 
 Skills contain proven procedures, templates, and checklists. Using a skill instead of improvising prevents errors and ensures consistency. If a skill exists for the task at hand, follow it. If no skill exists but you find yourself repeating a pattern, consider creating one.

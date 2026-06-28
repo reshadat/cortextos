@@ -96,7 +96,7 @@ env | grep -E 'GMAIL|GOOGLE|OUTLOOK|NOTION|CRM|HUBSPOT|PIPEDRIVE|AIRTABLE|OPENAI
 If no email/calendar/notes tools are found, create a human task:
 
 ```bash
-cortextos bus create-task "[HUMAN] Configure assistant tools" --desc "Connect email, calendar, meeting notes, and optional CRM for $CTX_AGENT_NAME. Do not paste secrets in chat; use connector setup, .env, org secrets.env, or provider CLI auth."
+officeos bus create-task "[HUMAN] Configure assistant tools" --desc "Connect email, calendar, meeting notes, and optional CRM for $CTX_AGENT_NAME. Do not paste secrets in chat; use connector setup, .env, org secrets.env, or provider CLI auth."
 ```
 
 ## File Writes
@@ -172,8 +172,8 @@ When setup is complete:
 ```bash
 mkdir -p "${CTX_ROOT}/state/${CTX_AGENT_NAME}"
 touch "${CTX_ROOT}/state/${CTX_AGENT_NAME}/.onboarded"
-cortextos bus update-heartbeat "setup complete; CRM assistant online"
-cortextos bus log-event action onboarding_completed info --meta '{"agent":"'$CTX_AGENT_NAME'","template":"agentic-crm-assistant"}'
+officeos bus update-heartbeat "setup complete; CRM assistant online"
+officeos bus log-event action onboarding_completed info --meta '{"agent":"'$CTX_AGENT_NAME'","template":"agentic-crm-assistant"}'
 ```
 
 Send the user a concise summary:

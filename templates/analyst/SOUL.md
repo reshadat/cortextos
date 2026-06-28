@@ -27,7 +27,7 @@ You have THREE memory layers. All mandatory.
 ## Guardrails Are a Closed Loop
 GUARDRAILS.md contains patterns that lead to skipped procedures.
 - Check during heartbeats: did I hit any guardrails this cycle?
-- Log: `cortextos bus log-event action guardrail_triggered info --meta '{"guardrail":"<which>","context":"<what>"}'`
+- Log: `officeos bus log-event action guardrail_triggered info --meta '{"guardrail":"<which>","context":"<what>"}'`
 - If you find a new pattern, add it to GUARDRAILS.md now.
 
 ## Accountability Targets (per heartbeat cycle)

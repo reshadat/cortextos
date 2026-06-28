@@ -6,7 +6,7 @@ Skipping steps = broken system. The dashboard monitors your compliance.
 ## Step 1: Update heartbeat (DO THIS FIRST)
 
 ```bash
-cortextos bus update-heartbeat "<1-sentence summary of current work>"
+officeos bus update-heartbeat "<1-sentence summary of current work>"
 ```
 
 If this fails, your agent shows as DEAD on the dashboard. Fix it before anything else.
@@ -20,13 +20,13 @@ Both are required every cycle. Skipping Step 1 leaves your dashboard view stale 
 ## Step 2: Check inbox
 
 ```bash
-cortextos bus check-inbox
+officeos bus check-inbox
 ```
 
 Process ALL messages. ACK every single one:
 
 ```bash
-cortextos bus ack-inbox "<message_id>"
+officeos bus ack-inbox "<message_id>"
 ```
 
 Un-ACK'd messages are re-delivered in 5 minutes. Do not ignore them.
@@ -38,28 +38,28 @@ Full reference: `.claude/skills/agent-management/SKILL.md`
 
 ```bash
 # Check all agent heartbeats — flag any silent for >5 hours
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 
 # Check for agents with no recent activity
-cortextos bus list-tasks --status in_progress 2>/dev/null | head -20
+officeos bus list-tasks --status in_progress 2>/dev/null | head -20
 ```
 
 For each agent: if heartbeat is older than 5 hours, send a message to that agent:
 ```bash
-cortextos bus send-message <agent_name> normal "Heartbeat check: are you running? Last heartbeat was more than 5 hours ago."
+officeos bus send-message <agent_name> normal "Heartbeat check: are you running? Last heartbeat was more than 5 hours ago."
 ```
 
 If an agent is unresponsive for >8 hours, notify the orchestrator and log the issue:
 ```bash
-cortextos bus send-message $CTX_ORCHESTRATOR_AGENT normal "Agent <name> appears unresponsive — last heartbeat >8h ago. May need restart."
-cortextos bus log-event action agent_unresponsive warning --meta '{"agent":"<name>","hours_silent":8}'
+officeos bus send-message $CTX_ORCHESTRATOR_AGENT normal "Agent <name> appears unresponsive — last heartbeat >8h ago. May need restart."
+officeos bus log-event action agent_unresponsive warning --meta '{"agent":"<name>","hours_silent":8}'
 ```
 
 ## Step 3b: Check own task queue + stale task detection
 
 ```bash
-cortextos bus list-tasks --agent $CTX_AGENT_NAME --status pending
-cortextos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
+officeos bus list-tasks --agent $CTX_AGENT_NAME --status pending
+officeos bus list-tasks --agent $CTX_AGENT_NAME --status in_progress
 ```
 
 - If you have pending tasks: pick the highest priority one
@@ -71,7 +71,7 @@ Stale tasks are visible on the dashboard. They make you look broken.
 ## Step 4: Log heartbeat event
 
 ```bash
-cortextos bus log-event heartbeat agent_heartbeat info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
+officeos bus log-event heartbeat agent_heartbeat info --meta '{"agent":"'$CTX_AGENT_NAME'"}'
 ```
 
 ## Step 5: Write daily memory
@@ -97,7 +97,7 @@ Read GOALS.md for any new objectives from the user.
 If goals changed since last check, create tasks to address them:
 
 ```bash
-cortextos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT_NAME --priority normal
+officeos bus create-task "<title>" --desc "<description>" --assignee $CTX_AGENT_NAME --priority normal
 ```
 
 ## Step 7: Resume work
@@ -106,12 +106,12 @@ Pick your highest priority task and work on it.
 
 When starting:
 ```bash
-cortextos bus update-task "<task_id>" in_progress
+officeos bus update-task "<task_id>" in_progress
 ```
 
 When done:
 ```bash
-cortextos bus complete-task "<task_id>" "<summary of what was produced>"
+officeos bus complete-task "<task_id>" "<summary of what was produced>"
 ```
 
 ## Step 8: Update long-term memory (if applicable)

@@ -6,7 +6,7 @@
  * Before the fix, `cortextos init teamStupid` succeeded at the CLI level,
  * wrote `orgs/teamStupid/` to disk, registered the org context, and THEN
  * failed every dashboard `POST /api/agents` call (HTTP 400) and every
- * `cortextos bus *` invocation at runtime because `src/utils/env.ts` and
+ * `officeos bus *` invocation at runtime because `src/utils/env.ts` and
  * the dashboard API both call `validateOrgName()` strictly. Affected orgs
  * were unusable from any UI surface.
  *

@@ -14,7 +14,7 @@ triggers: ["new agent", "create agent", "spawn agent", "add agent", "restart", "
 
 1. **ALWAYS use the CLI.** Never manually edit state files or .env without using the proper command.
 2. **ALWAYS create .env before enabling.** An agent without .env may inherit parent credentials.
-3. **ALWAYS write restart markers before /exit.** Use `cortextos bus self-restart`, never raw /exit.
+3. **ALWAYS write restart markers before /exit.** Use `officeos bus self-restart`, never raw /exit.
 4. **ALWAYS use `cortextos enable` to start agents.** Never manually edit PM2 config.
 5. **NEVER share bot tokens between agents.** Each agent gets its own bot from @BotFather.
 6. **NEVER hardcode chat IDs.** Get them from the actual user via Telegram getUpdates.
@@ -129,10 +129,10 @@ cortextos enable "$AGENT_NAME" --org "$ORG"
 
 ```bash
 # Via bus command (preferred — writes marker file automatically)
-cortextos bus self-restart --reason "<reason>"
+officeos bus self-restart --reason "<reason>"
 
 # Restart a DIFFERENT agent
-cortextos bus send-message <agent_name> high "soft-restart" "<reason>"
+officeos bus send-message <agent_name> high "soft-restart" "<reason>"
 ```
 
 **What it does:**
@@ -144,20 +144,20 @@ cortextos bus send-message <agent_name> high "soft-restart" "<reason>"
 ### Hard Restart (Fresh Session, Loses History)
 
 ```bash
-cortextos bus hard-restart --reason "context exhaustion"
+officeos bus hard-restart --reason "context exhaustion"
 ```
 
 **When to use:** Context window full, conversation corrupted, need clean slate, or wiring a new hook (see Hook Reload Lifecycle below). Hard-restart sends an IPC `restart-agent` signal to the daemon, which kills the running PID and respawns it fresh. The respawn consumes the `.force-fresh` marker and skips `--continue`, so `settings.json` (including newly-wired hooks) is re-read from scratch.
 
 ### Hook Reload Lifecycle
 
-`.claude/settings.json` hooks (PreToolUse, PostToolUse, Stop, SessionStart, etc) are loaded once when the Claude CLI process starts. They are NOT reloaded by `cortextos bus self-restart` — soft restart relaunches Claude with `--continue`, which reuses the existing process settings cache. Project-level hooks added or changed in `settings.json` since the original boot DO NOT take effect under soft restart.
+`.claude/settings.json` hooks (PreToolUse, PostToolUse, Stop, SessionStart, etc) are loaded once when the Claude CLI process starts. They are NOT reloaded by `officeos bus self-restart` — soft restart relaunches Claude with `--continue`, which reuses the existing process settings cache. Project-level hooks added or changed in `settings.json` since the original boot DO NOT take effect under soft restart.
 
 **When wiring a new hook to a running agent, use a hard restart, not a soft restart:**
 
 ```bash
 # From inside the agent itself, or from another agent/terminal:
-cortextos bus hard-restart --reason "loading new hook"
+officeos bus hard-restart --reason "loading new hook"
 
 # Equivalent ops-side path:
 cortextos stop <agent> && cortextos start <agent>
@@ -171,7 +171,7 @@ If `bus hard-restart` writes restart markers without actually stopping the proce
 
 ```bash
 # Soft restart another agent via message bus
-cortextos bus send-message assistant high "soft-restart" "goal refresh"
+officeos bus send-message assistant high "soft-restart" "goal refresh"
 
 # Check status after restart
 cortextos status
@@ -196,7 +196,7 @@ fs.writeFileSync(path, JSON.stringify(c, null, 2));
 "
 
 # Step 2: Soft restart to pick up new model
-cortextos bus send-message "$AGENT" high "soft-restart" "model change to $NEW_MODEL"
+officeos bus send-message "$AGENT" high "soft-restart" "model change to $NEW_MODEL"
 ```
 
 **Available models:**
@@ -243,7 +243,7 @@ sed -i '' "s/^BOT_TOKEN=.*/BOT_TOKEN=<new_token>/" \
   "$CTX_FRAMEWORK_ROOT/orgs/$ORG/agents/$AGENT/.env"
 
 # Restart to pick up new token
-cortextos bus send-message "$AGENT" high "soft-restart" "bot token updated"
+officeos bus send-message "$AGENT" high "soft-restart" "bot token updated"
 ```
 
 ---
@@ -284,23 +284,23 @@ Crons are daemon-managed and persisted to `${CTX_ROOT}/state/<agent>/crons.json`
 
 ### Adding a Cron
 ```bash
-cortextos bus add-cron <agent> <name> <interval-or-cron-expr> "<prompt>"
-# Example: cortextos bus add-cron sentinel new-cron 2h "Do the thing"
+officeos bus add-cron <agent> <name> <interval-or-cron-expr> "<prompt>"
+# Example: officeos bus add-cron sentinel new-cron 2h "Do the thing"
 ```
 
 ### Removing a Cron
 ```bash
-cortextos bus remove-cron <agent> <name>
+officeos bus remove-cron <agent> <name>
 ```
 
 ### Updating a Cron
 ```bash
-cortextos bus update-cron <agent> <name> --interval <new>
+officeos bus update-cron <agent> <name> --interval <new>
 ```
 
 ### Listing Crons
 ```bash
-cortextos bus list-crons <agent>
+officeos bus list-crons <agent>
 ```
 
 ---
@@ -326,7 +326,7 @@ This stops the agent's PM2 process and marks the agent as disabled. Config and .
 ### Check All Agents
 ```bash
 cortextos status
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 ```
 
 ### Check Specific Agent Heartbeat
@@ -336,7 +336,7 @@ cat "$HOME/.cortextos/default/state/$AGENT/heartbeat.json"
 
 ### List All Agents
 ```bash
-cortextos bus list-agents --format json
+officeos bus list-agents --format json
 ```
 
 ### Check PM2 Process Status
@@ -395,7 +395,7 @@ cortextos enable "$AGENT" --org "$ORG" --restart
 1. Confirm `settings.json` is valid JSON and the hook block is in the right shape (matcher, type=command, etc).
 2. Try a benign tool call that should trigger the hook. If nothing happens, the hook is not loaded.
 3. **Do NOT soft-restart** — `--continue` does not reload project hooks (see Hook Reload Lifecycle in Section 2).
-4. Hard-restart the agent: `cortextos bus hard-restart --reason "load new hook"`. The daemon kills the PID and respawns a fresh process that re-reads `settings.json`.
+4. Hard-restart the agent: `officeos bus hard-restart --reason "load new hook"`. The daemon kills the PID and respawns a fresh process that re-reads `settings.json`.
 5. If the hook still does not fire after a fresh PID, instrument the script with an unconditional write to `/tmp/<agent>-hook-test.log` at the very top of `main()`, run a benign tool, and check whether the file appears. If yes, the hook is firing but the script is returning early. If no, the hook is wired wrong in `settings.json`.
 
 ---
@@ -407,14 +407,14 @@ cortextos enable "$AGENT" --org "$ORG" --restart
 | Create new agent | `cortextos add-agent <name> --template agent --org <org> --runtime claude-code` (or `--template agent-codex --runtime codex-app-server` after asking the user which runtime) |
 | Enable agent | `cortextos enable <agent> --org <org>` |
 | Disable agent | `cortextos disable <agent> --org <org>` |
-| Soft restart (self) | `cortextos bus self-restart --reason "<reason>"` |
-| Hard restart (self) | `cortextos bus hard-restart --reason "<reason>"` |
-| Restart another agent | `cortextos bus send-message <agent> high "soft-restart" "<reason>"` |
+| Soft restart (self) | `officeos bus self-restart --reason "<reason>"` |
+| Hard restart (self) | `officeos bus hard-restart --reason "<reason>"` |
+| Restart another agent | `officeos bus send-message <agent> high "soft-restart" "<reason>"` |
 | Change model | Edit config.json model field + soft restart |
 | Update bot token | Edit .env BOT_TOKEN + soft restart |
-| Add cron | `cortextos bus add-cron <agent> <name> <interval> "<prompt>"` |
-| Check health | `cortextos status` or `cortextos bus read-all-heartbeats` |
-| List agents | `cortextos bus list-agents --format json` |
+| Add cron | `officeos bus add-cron <agent> <name> <interval> "<prompt>"` |
+| Check health | `cortextos status` or `officeos bus read-all-heartbeats` |
+| List agents | `officeos bus list-agents --format json` |
 | Check PM2 | `pm2 list` |
 | Reset crash count | `rm ~/.cortextos/default/state/<agent>/.crash_count_today` |
 | Force fresh start | Write .force-fresh + `cortextos enable --restart` |

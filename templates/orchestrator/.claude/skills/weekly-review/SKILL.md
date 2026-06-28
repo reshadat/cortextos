@@ -18,11 +18,11 @@ triggers: ["weekly review", "weekly check-in", "end of week", "week summary", "r
 
 ```bash
 # All agent heartbeats
-cortextos bus read-all-heartbeats
+officeos bus read-all-heartbeats
 
 # All tasks this week
-cortextos bus list-tasks
-cortextos bus list-tasks --status completed
+officeos bus list-tasks
+officeos bus list-tasks --status completed
 
 # This week's memory files (last 7 days)
 for i in 0 1 2 3 4 5 6; do
@@ -36,7 +36,7 @@ cat GOALS.md
 cat $CTX_FRAMEWORK_ROOT/orgs/$CTX_ORG/goals.json
 
 # Inbox
-cortextos bus check-inbox
+officeos bus check-inbox
 ```
 
 ---
@@ -46,7 +46,7 @@ cortextos bus check-inbox
 Format into a comprehensive review and send as chunked Telegram messages:
 
 ```bash
-cortextos bus send-telegram $CTX_TELEGRAM_CHAT_ID "<message chunk>"
+officeos bus send-telegram $CTX_TELEGRAM_CHAT_ID "<message chunk>"
 ```
 
 ### Review Template
@@ -156,10 +156,10 @@ After sending the review, ask the user:
 
 ```bash
 # Log event
-cortextos bus log-event action briefing_sent info --meta '{"type":"weekly_review"}'
+officeos bus log-event action briefing_sent info --meta '{"type":"weekly_review"}'
 
 # Update heartbeat
-cortextos bus update-heartbeat "weekly review complete - next week planned"
+officeos bus update-heartbeat "weekly review complete - next week planned"
 
 # Write to memory
 TODAY=$(date -u +%Y-%m-%d)

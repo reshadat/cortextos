@@ -11,7 +11,7 @@ Check for cortextOS framework updates from the remote repository. Never auto-mer
 
 ## When to Run
 
-- Daily cron (configured via `cortextos bus add-cron`)
+- Daily cron (configured via `officeos bus add-cron`)
 - When user asks about updates
 - After hearing about new cortextOS features
 
@@ -20,7 +20,7 @@ Check for cortextOS framework updates from the remote repository. Never auto-mer
 ### Step 1: Check for updates
 
 ```bash
-RESULT=$(cortextos bus check-upstream)
+RESULT=$(officeos bus check-upstream)
 ```
 
 The script fetches from upstream and returns a JSON summary categorizing changes by type (bus scripts, templates, skills, dashboard, etc.).
@@ -38,7 +38,7 @@ The script fetches from upstream and returns a JSON summary categorizing changes
 ### Step 3: Apply (only after approval)
 
 ```bash
-cortextos bus check-upstream --apply
+officeos bus check-upstream --apply
 ```
 
 ### Step 4: Post-apply

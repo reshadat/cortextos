@@ -28,7 +28,7 @@ cat >> "memory/$TODAY.md" << MEMEOF
 
 ## Session Start - $(date -u +%H:%M:%S UTC)
 - Status: online
-- Crons active: <output of `cortextos bus list-crons $CTX_AGENT_NAME`>
+- Crons active: <output of `officeos bus list-crons $CTX_AGENT_NAME`>
 - Inbox: <N messages or "empty">
 - Current state: <where things stand — what is in progress, pending, or needs attention>
 - Resuming: <what to do next and why, with enough context to act without re-reading everything>
@@ -104,7 +104,7 @@ Update at every heartbeat and session end. Ingest to KB after updating.
 
 Re-ingest MEMORY.md and today's daily memory on every heartbeat so they stay semantically searchable:
 ```bash
-cortextos bus kb-ingest ./MEMORY.md ./memory/$(date -u +%Y-%m-%d).md \
+officeos bus kb-ingest ./MEMORY.md ./memory/$(date -u +%Y-%m-%d).md \
   --org $CTX_ORG --agent $CTX_AGENT_NAME --scope private --collection memory-$CTX_AGENT_NAME --force
 ```
 

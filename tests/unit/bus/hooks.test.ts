@@ -9,7 +9,7 @@ import { tmpdir } from 'os';
 import type { Event } from '../../../src/types/index';
 
 // Capture every execFile invocation so we can assert which bus event was emitted.
-// The dispatcher uses execFile('cortextos', ['bus', 'log-event', 'action', <name>, 'info', '--meta', <json>])
+// The dispatcher uses execFile('officeos', ['bus', 'log-event', 'action', <name>, 'info', '--meta', <json>])
 // fire-and-forget — we intercept before it spawns anything.
 const execFileCalls: Array<{ cmd: string; args: string[] }> = [];
 vi.mock('child_process', () => ({

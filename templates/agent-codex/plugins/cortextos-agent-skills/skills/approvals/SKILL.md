@@ -29,7 +29,7 @@ Before any external, irreversible, or high-stakes action — stop and create an 
 ### 1. Create the approval
 
 ```bash
-APPR_ID=$(cortextos bus create-approval \
+APPR_ID=$(officeos bus create-approval \
   "<what you want to do>" \
   "<category>" \
   "<context: draft content, target, why needed>")
@@ -41,14 +41,14 @@ Categories: `external-comms` | `financial` | `deployment` | `data-deletion` | `o
 ### 2. Block your task on the approval
 
 ```bash
-cortextos bus update-task "$TASK_ID" blocked
-cortextos bus log-event task task_blocked info --meta "{\"task_id\":\"$TASK_ID\",\"blocked_by\":\"$APPR_ID\",\"reason\":\"awaiting approval\"}"
+officeos bus update-task "$TASK_ID" blocked
+officeos bus log-event task task_blocked info --meta "{\"task_id\":\"$TASK_ID\",\"blocked_by\":\"$APPR_ID\",\"reason\":\"awaiting approval\"}"
 ```
 
 ### 3. Notify the user
 
 ```bash
-cortextos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" \
+officeos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" \
   "Approval needed: <title> — check dashboard or reply to approve/reject"
 ```
 
@@ -66,15 +66,15 @@ note: <user's note>
 **Approved:**
 ```bash
 # Unblock task
-cortextos bus update-task "$TASK_ID" in_progress "Approval received — executing"
+officeos bus update-task "$TASK_ID" in_progress "Approval received — executing"
 # Execute the action
 # Complete the task
-cortextos bus complete-task "$TASK_ID" --result "<what was done>"
+officeos bus complete-task "$TASK_ID" --result "<what was done>"
 ```
 
 **Rejected:**
 ```bash
-cortextos bus complete-task "$TASK_ID" --result "Cancelled — approval rejected: <note>"
+officeos bus complete-task "$TASK_ID" --result "Cancelled — approval rejected: <note>"
 ```
 
 ---
@@ -84,7 +84,7 @@ cortextos bus complete-task "$TASK_ID" --result "Cancelled — approval rejected
 If an approval is still pending after 4 hours during day mode, send one re-ping:
 
 ```bash
-cortextos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" \
+officeos bus send-telegram "$CTX_TELEGRAM_CHAT_ID" \
   "Reminder: approval for '<title>' is still pending. No rush, just flagging."
 ```
 
@@ -95,7 +95,7 @@ Send only ONE re-ping. Do not spam.
 ## Listing Pending Approvals
 
 ```bash
-cortextos bus list-approvals --format json
+officeos bus list-approvals --format json
 ```
 
 ---

@@ -63,7 +63,7 @@ async function runCli(args: string[]): Promise<{ stdout: string; stderr: string;
 describe.skipIf(!existsSync(DIST_CLI))('bus upgrade-cron-teaching CLI', () => {
   it('reports zero stale references for a clean agent (exit 0)', async () => {
     writeAgentFile('clean', 'CLAUDE.md',
-      'Crons are daemon-managed. Do NOT use CronCreate or /loop. Use cortextos bus add-cron.\n');
+      'Crons are daemon-managed. Do NOT use CronCreate or /loop. Use officeos bus add-cron.\n');
     const { stdout, code } = await runCli(['clean']);
     expect(code).toBe(0);
     expect(stdout).toContain('no stale cron-teaching references');
@@ -90,7 +90,7 @@ describe.skipIf(!existsSync(DIST_CLI))('bus upgrade-cron-teaching CLI', () => {
       'Heartbeat (configured in config.json).\nUse CronCreate to register.\n');
     const { stdout } = await runCli(['mixed', '--apply']);
     const after = readFileSync(file, 'utf-8');
-    expect(after).toContain('(configured via cortextos bus add-cron)');
+    expect(after).toContain('(configured via officeos bus add-cron)');
     expect(after).not.toContain('(configured in config.json)');
     expect(after).toContain('Use CronCreate to register.');
     expect(stdout).toContain('1 substitution(s) applied');

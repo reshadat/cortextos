@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cortextos bus hook-planmode-telegram",
+            "command": "officeos bus hook-planmode-telegram",
             "timeout": 1860
           }
         ]
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cortextos bus hook-permission-telegram",
+            "command": "officeos bus hook-permission-telegram",
             "timeout": 1860
           }
         ]
@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cortextos bus hook-loop-detector",
+            "command": "officeos bus hook-loop-detector",
             "timeout": 5
           }
         ]
@@ -46,7 +46,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cortextos bus hook-ask-telegram",
+            "command": "officeos bus hook-ask-telegram",
             "timeout": 10
           }
         ]
@@ -57,7 +57,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cortextos bus hook-idle-flag",
+            "command": "officeos bus hook-idle-flag",
             "timeout": 5
           }
         ]
@@ -79,7 +79,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cortextos bus hook-compact-telegram",
+            "command": "officeos bus hook-compact-telegram",
             "timeout": 10
           }
         ]

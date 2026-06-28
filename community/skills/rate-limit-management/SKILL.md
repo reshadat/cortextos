@@ -15,7 +15,7 @@ triggers: ["rate limit", "usage check", "usage high", "wind down", "resume after
 ## Usage Check Command
 
 ```bash
-cortextos bus check-usage-api [--warn-7day N] [--warn-5h N] [--chat-id ID] [--force]
+officeos bus check-usage-api [--warn-7day N] [--warn-5h N] [--chat-id ID] [--force]
 ```
 
 Reads Claude Max utilization from the Anthropic OAuth usage API. Outputs JSON with `five_hour` and `seven_day` utilization fields.
@@ -105,7 +105,7 @@ Check usage every 15 minutes and apply tier logic:
 {
   "name": "usage-check",
   "interval": "15m",
-  "prompt": "Run cortextos bus check-usage-api and apply the rate limit protocol from .claude/skills/rate-limit-management/SKILL.md based on current utilization."
+  "prompt": "Run officeos bus check-usage-api and apply the rate limit protocol from .claude/skills/rate-limit-management/SKILL.md based on current utilization."
 }
 ```
 
