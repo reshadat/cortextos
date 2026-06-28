@@ -426,7 +426,7 @@ describe('AgentProcess - onboarding marker (do not auto-write .onboarded on hear
   // must NOT mark an agent onboarded. This is general daemon behavior (it was
   // surfaced via a manually-scaffolded opencode agent, but applies to any
   // runtime).
-  it('does not auto-mark a heartbeat-only agent as onboarded (still routes to FIRST BOOT)', async () => {
+  it('does not auto-mark a heartbeat-only CHANNEL agent as onboarded (still routes to FIRST BOOT)', async () => {
     fsMocks.existsSync.mockImplementation((path: string) => {
       if (path.endsWith('/.force-fresh')) return false;
       if (path.endsWith('/.onboarded')) return false;
@@ -434,6 +434,8 @@ describe('AgentProcess - onboarding marker (do not auto-write .onboarded on hear
       if (path.endsWith('/ONBOARDING.md')) return true;
       return false;
     });
+    // Channel-facing agent → onboarding (interviews the human) applies.
+    fsMocks.readFileSync.mockImplementation((p: any) => String(p).endsWith('/.env') ? 'SLACK_BOT_TOKEN=xoxb-1\n' : '');
 
     const ap = new AgentProcess('alice', mockEnv, {});
     await ap.start();
@@ -447,6 +449,23 @@ describe('AgentProcess - onboarding marker (do not auto-write .onboarded on hear
       expect.anything(),
       expect.anything(),
     );
+  });
+
+  it('a bus-only specialist (no channel) SKIPS first-boot onboarding — the orchestrator onboards it', async () => {
+    fsMocks.existsSync.mockImplementation((path: string) => {
+      if (path.endsWith('/.onboarded')) return false;
+      if (path.endsWith('/ONBOARDING.md')) return true; // template ships one
+      return false;
+    });
+    // No channel in .env → bus-only → must NOT block on a human-interview protocol.
+    fsMocks.readFileSync.mockImplementation((p: any) => String(p).endsWith('/.env') ? 'CTX_AGENT_NAME=math-bot\n' : '');
+
+    const ap = new AgentProcess('math-bot', mockEnv, {});
+    await ap.start();
+
+    const prompt = mockPty.spawn.mock.calls[0]?.[1] ?? '';
+    expect(prompt).not.toContain('FIRST BOOT');
+    expect(prompt).not.toContain('complete the onboarding protocol');
   });
 
   it('respects an existing .onboarded marker (suppresses FIRST BOOT)', async () => {
