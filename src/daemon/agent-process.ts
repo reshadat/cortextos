@@ -700,7 +700,17 @@ export class AgentProcess {
     const onboardingPath = join(this.env.agentDir, 'ONBOARDING.md');
     let onboardingAppend = '';
 
-    if (!existsSync(onboardedPath) && existsSync(onboardingPath)) {
+    // Onboarding interviews the human over the agent's channel. A bus-only
+    // specialist (no channel) has no one to interview — it must skip onboarding
+    // and start working, or it blocks forever on a first-boot protocol while the
+    // orchestrator routes it queries.
+    let hasChannel = false;
+    try {
+      const env = readFileSync(join(this.env.agentDir, '.env'), 'utf-8');
+      hasChannel = /^(SLACK_BOT_TOKEN|BOT_TOKEN)=\S/m.test(env);
+    } catch { /* no .env → treat as bus-only */ }
+
+    if (hasChannel && !existsSync(onboardedPath) && existsSync(onboardingPath)) {
       onboardingAppend = ' IMPORTANT: This is your FIRST BOOT. Before doing anything else, read ONBOARDING.md and complete the onboarding protocol.';
     }
 
