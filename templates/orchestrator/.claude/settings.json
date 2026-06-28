@@ -74,6 +74,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "officeos bus hook-idle-flag",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }

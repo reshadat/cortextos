@@ -234,16 +234,24 @@ export class FastChecker {
    */
   private isAgentBusy(): boolean {
     if (this.lastInjectAt === 0) return false;
-    // Safety: never stay "busy" forever if the Stop hook misfires.
-    if (Date.now() - this.lastInjectAt > 10 * 60 * 1000) return false;
-    const flagPath = join(this.paths.stateDir, 'last_idle.flag');
+    const since = Date.now() - this.lastInjectAt;
+    if (since > 10 * 60 * 1000) return false; // hard safety
+
+    let idleTs = 0;
     try {
-      if (!existsSync(flagPath)) return true; // no idle since boot → working
-      const idleTs = parseInt(readFileSync(flagPath, 'utf-8').trim(), 10) * 1000;
-      return this.lastInjectAt > idleTs;
-    } catch {
-      return true;
-    }
+      const flagPath = join(this.paths.stateDir, 'last_idle.flag');
+      if (existsSync(flagPath)) idleTs = parseInt(readFileSync(flagPath, 'utf-8').trim(), 10) * 1000;
+    } catch { /* ignore */ }
+
+    // The Stop hook updated last_idle.flag AFTER we injected → the agent finished
+    // its turn → free to start the next request.
+    if (idleTs > this.lastInjectAt) return false;
+
+    // Otherwise it's still working — OR its Stop hook never writes the flag (no
+    // Stop hook, or a broken one). Don't block forever: release after a grace
+    // window so the daemon keeps making progress even without an idle signal.
+    const GRACE_MS = 45_000;
+    return since < GRACE_MS;
   }
 
   private async pollCycle(): Promise<void> {

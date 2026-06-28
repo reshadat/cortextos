@@ -229,6 +229,23 @@ describe('channel message loop', () => {
     expect(agent.injectMessage).toHaveBeenCalledTimes(1);
   }, 20000);
 
+  it('idle gate releases after the grace window when no Stop flag is ever written', async () => {
+    const agent = mockAgent();
+    const checker = new FastChecker(agent, makePaths(ctxRoot, 'orch'), join(ctxRoot, 'fw'));
+    checker.queueSlackMessage(slackFmt('C_A', 'first', 'rA'));
+    checker.queueSlackMessage(slackFmt('C_B', 'second', 'rB'));
+
+    await (checker as any).pollCycle();
+    expect(agent.injectMessage).toHaveBeenCalledTimes(1); // rA injected
+    await (checker as any).pollCycle();
+    expect(agent.injectMessage).toHaveBeenCalledTimes(1); // within grace, no flag → still busy
+    // No last_idle.flag will ever appear (agent has no working Stop hook); after
+    // the grace window the daemon must NOT stay blocked forever.
+    (checker as any).lastInjectAt = Date.now() - 46_000;
+    await (checker as any).pollCycle();
+    expect(agent.injectMessage).toHaveBeenCalledTimes(2); // grace elapsed → rB injected
+  }, 20000);
+
   it('daemon stamps current-request with ONLY the request being processed this turn', async () => {
     const agent = mockAgent();
     const paths = makePaths(ctxRoot, 'orch');

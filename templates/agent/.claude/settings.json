@@ -58,7 +58,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cortextos bus hook-idle-flag",
+            "command": "officeos bus hook-idle-flag",
             "timeout": 5
           }
         ]
